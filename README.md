@@ -6,7 +6,6 @@ mvn spring-boot:run
 ```
 
 ## Build
-Build KeichServicesManagerGUI
 
 Copy files from dist of project KeichServicesManagerGUI to \src\main\resources\static directory
 
