@@ -7,7 +7,7 @@ import random
 
 source = "pyrandom"
 sourcekey = datetime.datetime.now().strftime("%d.%m.%Y, %H:%M:%S")
-api_url = "https://localhost:8080"
+api_url = "http://localhost:8080"
 session = requests.Session()
 session.verify = False
 
