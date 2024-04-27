@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import lombok.Getter;
 import ru.keich.mon.servicemanager.store.BaseEntity;
@@ -83,6 +84,10 @@ public class Entity<K> extends BaseEntity<K> {
 			return Collections.emptySet();
 		}
 		return Collections.singleton(entity.getDeletedOn());
+	}
+	
+	public static Set<Object> getFieldsForIndex(Entity<?> item) {
+		return item.fields.entrySet().stream().collect(Collectors.toSet());
 	}
 	
 	@Override

@@ -22,13 +22,11 @@ import org.springframework.stereotype.Service;
 import ru.keich.mon.servicemanager.entity.EntityService;
 import ru.keich.mon.servicemanager.item.Item;
 import ru.keich.mon.servicemanager.item.ItemService;
-import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
 
 @Service
 public class EventService extends EntityService<String, Event>{
 
 	private ItemService itemService;
-	static final String INDEX_NAME_FIELDS = "fields";
 	
 	public void setItemService(ItemService itemService) {
 		this.itemService = itemService;
@@ -36,7 +34,6 @@ public class EventService extends EntityService<String, Event>{
 
 	public EventService(@Value("${replication.nodename}") String nodeName) {
 		super(nodeName);
-		entityCache.createIndex(INDEX_NAME_FIELDS, IndexType.EQUAL, Event::getFieldsForIndex);
 	}
 	
 	@Override

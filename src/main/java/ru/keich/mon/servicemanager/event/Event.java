@@ -17,8 +17,6 @@ package ru.keich.mon.servicemanager.event;
  */
 
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -73,10 +71,5 @@ public class Event extends Entity<String> {
 				", createdOn=" + getCreatedOn() + ", createdOn=" + getUpdatedOn() + ", deletedOn=" + getDeletedOn() +
 				", fields=" + fields + "]";
 	}
-	
-	public static Set<Object> getFieldsForIndex(Event event) {
-		return event.fields.entrySet().stream().collect(Collectors.toSet());
-	}
-	
 
 }
