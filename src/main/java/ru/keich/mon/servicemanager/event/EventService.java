@@ -55,18 +55,17 @@ public class EventService extends EntityService<String, Event>{
 		entityCache.transaction(() -> {
 			item.getFilters().entrySet().stream()
 				.flatMap(e -> e.getValue().getEqualFields().entrySet().stream())
-				.flatMap(k -> {
-					var ret = entityCache.indexGet(INDEX_NAME_FIELDS, k).stream();
-					return ret;
-				})
+				.flatMap(k -> entityCache.indexGet(INDEX_NAME_FIELDS, k).stream())
 				.distinct()
 				.map(id -> findById(id))
 				.filter(o -> o.isPresent())
-				.map(o -> o.get())		
-					.forEach(event -> {
-						item.findFiltersByEqualFields(event.getFields())
-								.ifPresent(filter -> itemService.eventAdded(event));
-					});
+				.map(o -> o.get())	
+				.filter(event -> item.getFilters().entrySet().stream()
+					.filter(flt -> event.getFields().entrySet().containsAll(flt.getValue().getEqualFields().entrySet()))
+					.findFirst()
+					.isPresent()
+				)
+				.forEach(event -> itemService.eventAdded(event));
 			return null;
 		});
 	}

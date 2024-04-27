@@ -132,28 +132,6 @@ public class Item extends Entity<String> {
 		return Collections.unmodifiableSet(item.getChildren());
 	}
 
-	public Optional<ItemFilter> findFiltersByEqualFields(Map<String, String> fields) {
-		for(var entry: filters.entrySet()) {
-			boolean match = true;
-			for(var filterField: entry.getValue().getEqualFields().entrySet()) {
-				var fieldName = filterField.getKey();
-				var fieldValue = filterField.getValue();
-				if(!fields.containsKey(fieldName)) {
-					match = false;
-					break;
-				}
-				if (!fields.get(fieldName).equals(fieldValue)) {
-					match = false;
-					break;
-				}
-			}
-			if(match) {
-				return Optional.of(entry.getValue());
-			}
-		}
-		return Optional.empty();
-	}
-
 	@Override
 	public String toString() {
 		return "Item [status=" + status + ", fields=" + fields + ", rules=" + rules + ", filters=" + filters

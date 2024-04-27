@@ -168,15 +168,20 @@ public class ItemService extends EntityService<String, Item> {
 	
 	public List<Map.Entry<Item, ItemFilter>> findFiltersByEqualFields(Map<String, String> fields){
 		return fields.entrySet().stream()
-			.flatMap(k -> entityCache.indexGet(INDEX_NAME_FILTERS_EQL,  k).stream())
-			.distinct()
-			.map(id -> findById(id))
-			.filter(o -> o.isPresent())
-			.map(o -> o.get())
-			.map(item -> item.findFiltersByEqualFields(fields).map(ftr -> Map.entry(item, ftr)))
-			.filter(o -> o.isPresent())
-			.map(o -> o.get())
-			.collect(Collectors.toList());
+				.flatMap(k -> entityCache.indexGet(INDEX_NAME_FILTERS_EQL,  k).stream())
+				.distinct()
+				.map(id -> findById(id))
+				.filter(o -> o.isPresent())
+				.map(o -> o.get())
+				.map(item -> {
+					return item.getFilters().entrySet().stream()
+					.filter(flt -> fields.entrySet().containsAll(flt.getValue().getEqualFields().entrySet()))
+					.findFirst()
+					.map(e -> Map.entry(item, e.getValue()));
+				})
+				.filter(o -> o.isPresent())
+				.map(o -> o.get())
+				.collect(Collectors.toList());
 	}
 	
 	public void eventAdded(Event event) {
