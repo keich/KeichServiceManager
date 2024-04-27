@@ -51,18 +51,8 @@ public class EventService extends EntityService<String, Event>{
 	public void itemAdded(Item item){
 		entityCache.transaction(() -> {
 			item.getFilters().entrySet().stream()
-				.flatMap(e -> e.getValue().getEqualFields().entrySet().stream())
-				.flatMap(k -> entityCache.indexGet(INDEX_NAME_FIELDS, k).stream())
-				.distinct()
-				.map(id -> findById(id))
-				.filter(o -> o.isPresent())
-				.map(o -> o.get())	
-				.filter(event -> item.getFilters().entrySet().stream()
-					.filter(flt -> event.getFields().entrySet().containsAll(flt.getValue().getEqualFields().entrySet()))
-					.findFirst()
-					.isPresent()
-				)
-				.forEach(event -> itemService.eventAdded(event));
+			.flatMap(e -> findByFields(e.getValue().getEqualFields()).stream())
+			.forEach(event -> itemService.eventAdded(event));
 			return null;
 		});
 	}
