@@ -19,7 +19,6 @@ package ru.keich.mon.servicemanager.item;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -35,8 +34,6 @@ import ru.keich.mon.servicemanager.entity.Entity;
 public class Item extends Entity<String> {
 
 	private BaseStatus status;
-
-	private final Map<String, String> fields;
 
 	private final Map<String, ItemRule> rules;
 
@@ -56,13 +53,8 @@ public class Item extends Entity<String> {
 			@JsonProperty("rules") Map<String, ItemRule> rules,
 			@JsonProperty("filters") Map<String, ItemFilter> filters,
 			@JsonProperty("children") Set<String> children) {
-		super(id, source, sourceKey);
+		super(id, source, sourceKey, fields);
 
-		if (Objects.nonNull(fields)) {
-			this.fields = Collections.unmodifiableMap(fields);
-		} else {
-			this.fields = Collections.emptyMap();
-		}
 		if (Objects.nonNull(rules)) {
 			this.rules = Collections.unmodifiableMap(rules);
 		} else {

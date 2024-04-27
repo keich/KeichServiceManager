@@ -16,9 +16,7 @@ package ru.keich.mon.servicemanager.event;
  * limitations under the License.
  */
 
-import java.util.Collections;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -37,7 +35,6 @@ public class Event extends Entity<String> {
 	
 	private final EventType type;
 	private final BaseStatus status;
-	private final Map<String, String> fields;
 	
 	@JsonCreator
 	public Event(@JsonProperty(value = "id", required = true) String id,
@@ -46,14 +43,9 @@ public class Event extends Entity<String> {
 			@JsonProperty(value = "type", required = true) EventType type,
 			@JsonProperty(value = "status", required = true) BaseStatus status,
 			@JsonProperty("fields") Map<String, String> fields) {
-		super(id.intern(), source, sourceKey);
+		super(id.intern(), source, sourceKey, fields);
 		this.type = type;
 		this.status = status;
-		if (Objects.nonNull(fields)) {
-			this.fields = Collections.unmodifiableMap(fields);
-		}else{
-			this.fields = Collections.emptyMap();
-		}
 	}
 
 	@Override

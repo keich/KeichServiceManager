@@ -19,6 +19,7 @@ package ru.keich.mon.servicemanager.entity;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -36,11 +37,17 @@ public class Entity<K> extends BaseEntity<K> {
 	private Instant deletedOn;
 
 	private Set<String> fromHistory = new HashSet<String>();
+	protected final Map<String, String> fields;
 	
-	public Entity(K id, String source, String sourceKey) {
+	public Entity(K id, String source, String sourceKey, Map<String, String> fields) {
 		super(id);
 		this.source = source.intern();
 		this.sourceKey = sourceKey.intern();
+		if (Objects.nonNull(fields)) {
+			this.fields = Collections.unmodifiableMap(fields);
+		} else {
+			this.fields = Collections.emptyMap();
+		}
 	}
 
 	protected void setCreatedOn(Instant createdOn) {
