@@ -18,6 +18,7 @@ package ru.keich.mon.servicemanager.entity;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -170,6 +171,19 @@ public class EntityService<K, T extends Entity<K>> {
 			
 			list.addAll(listDeleted);
 			return list;
+		});
+	}
+	
+	public List<T> findByFields(Map<String, String> fields) {
+		return entityCache.transaction(() -> {
+			return fields.keySet().stream()
+			.flatMap(k -> entityCache.indexGet(INDEX_NAME_FIELDS, k).stream())
+			.distinct()
+			.map(id -> findById(id))
+			.filter(o -> o.isPresent())
+			.map(o -> o.get())
+			.filter(item -> item.getFields().keySet().containsAll(fields.keySet()))
+			.collect(Collectors.toList());
 		});
 	}
 	
