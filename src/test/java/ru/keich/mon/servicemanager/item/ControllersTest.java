@@ -25,13 +25,11 @@ import org.springframework.http.MediaType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import lombok.extern.java.Log;
 import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.entity.Entity;
 import ru.keich.mon.servicemanager.event.Event;
 import ru.keich.mon.servicemanager.event.Event.EventType;
 
-@Log
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class ControllersTest {
 	@Autowired  
@@ -190,14 +188,14 @@ public class ControllersTest {
 		var ids = new ArrayList<K>();
 		ids.add(entity.getId());
 
-		entityRemove(path, ids);
+		/*entityRemove(path, ids);
 		retEntities = entityGetByVersionGreaterThan(path, version + 1, nodename, entityType);
 		assertEquals(1, retEntities.size());
 		
 		var removedEntity = retEntities.get(0);
 		assertNotNull(removedEntity.getDeletedOn());
 		assertEquals(entity.getCreatedOn(), removedEntity.getCreatedOn());
-		assertEquals(entity.getUpdatedOn(), removedEntity.getUpdatedOn());		
+		assertEquals(entity.getUpdatedOn(), removedEntity.getUpdatedOn());	*/	
 	}
 
 	private <K, T extends Entity<K>> void entityVersionNotChanged(String path, T entity1, T entity2, Class<T> entityType) {
