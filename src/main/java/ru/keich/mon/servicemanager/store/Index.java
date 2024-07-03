@@ -21,6 +21,7 @@ import java.util.List;
 public interface Index <K, T> {	
 	public void append(T entity);
 	public void remove(T entity);
+	//TODO Set?
 	public List<K> get(Object key);
 	public List<K> getBefore(Object key);
 	public List<K> getAfter(Object key);

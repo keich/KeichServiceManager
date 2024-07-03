@@ -21,9 +21,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
+
+import ru.keich.mon.query.Filter;
 
 public class EntityController<K, T extends Entity<K>> {
 
@@ -39,18 +42,15 @@ public class EntityController<K, T extends Entity<K>> {
 		return ResponseEntity.ok("ok");
 	}
 	
-	public ResponseEntity<List<T>> findByVersionGreaterThan(@RequestParam Map<String, String> reqParam) {
-		if (reqParam.containsKey("version") && reqParam.containsKey("ignoreNodeName")) {
-			Long version = Long.valueOf(reqParam.get("version"));
-			String ignoreNodeName = reqParam.get("ignoreNodeName");
-			var entyties = entityService.findByVersionGreaterThan(version).stream()
-					.filter(e -> !e.getFromHistory().contains(ignoreNodeName))
-					.collect(Collectors.toList());
-			return ResponseEntity.ok(entyties);
-		}
-		return ResponseEntity.notFound().build();
+	public ResponseEntity<List<T>> find(@RequestParam MultiValueMap<String, String> reqParam) {
+		var filters = reqParam.entrySet().stream()
+		.flatMap(param -> {
+			return param.getValue().stream().map(value -> new Filter(param.getKey(),value));
+		}).collect(Collectors.toList());
+		var out = entityService.query(filters);
+		return ResponseEntity.ok(out);
 	}
-	
+
 	public ResponseEntity<T> findById(@PathVariable K id) {
 		return entityService.findById(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
 	}
@@ -68,8 +68,7 @@ public class EntityController<K, T extends Entity<K>> {
 			var sourceKey = reqParam.get("sourceKey");
 
 			if ("bySourceAndSourceKeyNot".equalsIgnoreCase(query)) {
-				var ret =  entityService.deleteBySourceAndSourceKeyNot(source, sourceKey)
-				.size();
+				var ret =  entityService.deleteBySourceAndSourceKeyNot(source, sourceKey).size();
 				return ResponseEntity.ok(ret);
 			}
 		}

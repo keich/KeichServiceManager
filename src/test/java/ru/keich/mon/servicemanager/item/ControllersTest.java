@@ -2,6 +2,7 @@ package ru.keich.mon.servicemanager.item;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -24,11 +25,13 @@ import org.springframework.http.MediaType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import lombok.extern.java.Log;
 import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.entity.Entity;
 import ru.keich.mon.servicemanager.event.Event;
 import ru.keich.mon.servicemanager.event.Event.EventType;
 
+@Log
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class ControllersTest {
 	@Autowired  
@@ -41,6 +44,62 @@ public class ControllersTest {
 	@Autowired
 	private TestRestTemplate restTemplate;
 
+	private List<Event> eventGetBySourceEqual(String source) {
+		var result = restTemplate.exchange("/api/v1/event?source=eq:" + source,
+				HttpMethod.GET, null, new ParameterizedTypeReference<List<Event>>() {});
+		assertEquals(HttpStatus.OK, result.getStatusCode());
+		return result.getBody();
+	}
+	
+	private List<Event> eventGetBySourceNotEqual(String source) {
+		var result = restTemplate.exchange("/api/v1/event?source=ne:" + source,
+				HttpMethod.GET, null, new ParameterizedTypeReference<List<Event>>() {});
+		assertEquals(HttpStatus.OK, result.getStatusCode());
+		return result.getBody();
+	}
+	
+	private List<Event> eventGetBySourceKeyEqual(String sourceKey) {
+		var result = restTemplate.exchange("/api/v1/event?sourceKey=eq:" + sourceKey,
+				HttpMethod.GET, null, new ParameterizedTypeReference<List<Event>>() {});
+		assertEquals(HttpStatus.OK, result.getStatusCode());
+		return result.getBody();
+	}
+	
+	private List<Event> eventGetBySourceKeyNotEqual(String sourceKey) {
+		var result = restTemplate.exchange("/api/v1/event?sourceKey=ne:" + sourceKey,
+				HttpMethod.GET, null, new ParameterizedTypeReference<List<Event>>() {});
+		assertEquals(HttpStatus.OK, result.getStatusCode());
+		return result.getBody();
+	}
+	
+	private  List<Item> itemGetBySourceEqual(String source) {
+		var result = restTemplate.exchange("/api/v1/item?source=eq:" + source,
+				HttpMethod.GET, null, new ParameterizedTypeReference<List<Item>>() {});
+		assertEquals(HttpStatus.OK, result.getStatusCode());
+		return result.getBody();
+	}
+	
+	private List<Item> itemGetBySourceNotEqual(String source) {
+		var result = restTemplate.exchange("/api/v1/item?source=ne:" + source,
+				HttpMethod.GET, null, new ParameterizedTypeReference<List<Item>>() {});
+		assertEquals(HttpStatus.OK, result.getStatusCode());
+		return result.getBody();
+	}
+	
+	private  List<Item> itemGetBySourceKeyEqual(String sourceKey) {
+		var result = restTemplate.exchange("/api/v1/item?sourceKey=eq:" + sourceKey,
+				HttpMethod.GET, null, new ParameterizedTypeReference<List<Item>>() {});
+		assertEquals(HttpStatus.OK, result.getStatusCode());
+		return result.getBody();
+	}
+	
+	private List<Item> itemGetBySourceKeyNotEqual(String sourceKey) {
+		var result = restTemplate.exchange("/api/v1/item?sourceKey=ne:" + sourceKey,
+				HttpMethod.GET, null, new ParameterizedTypeReference<List<Item>>() {});
+		assertEquals(HttpStatus.OK, result.getStatusCode());
+		return result.getBody();
+	}
+	
 	private Event[] itemGetEvents(String id) {
 		var result = restTemplate.getForEntity("/api/v1/item/" + id + "/events", Event[].class);
 		assertEquals(HttpStatus.OK, result.getStatusCode());
@@ -92,10 +151,11 @@ public class ControllersTest {
 		}
 		return version;
 	}
-
-	private <K, T extends Entity<K>> List<T> entityGetByVerson(String path, Long version, String nodename,
+	
+	// TODO use Entity<K> with ParameterizedTypeReference
+	private <K, T extends Entity<K>> List<T> entityGetByVersionGreaterThan(String path, Long version, String nodename,
 			Class<T> responseType) {
-		var result = restTemplate.exchange("/api/v1" + path + "?ignoreNodeName=" + nodename + "&version=" + version,
+		var result = restTemplate.exchange("/api/v1" + path + "?fromHistory=nc:" + nodename + "&version=gt:" + version,
 				HttpMethod.GET, null, new ParameterizedTypeReference<List<T>>() {
 				});
 		assertEquals(HttpStatus.OK, result.getStatusCode());
@@ -113,17 +173,17 @@ public class ControllersTest {
 			Class<T> entityType) throws IOException {
 		Long version = 0L;
 		final String nodename = "somenode1";
-		var retEntities = entityGetByVerson(path, version, nodename, entityType);
+		var retEntities = entityGetByVersionGreaterThan(path, version, nodename, entityType);
 		version = getMaxVersion(retEntities);
 		for (T entity : entities) {
 			entityAdd(path, entity);
-			retEntities = entityGetByVerson(path, version + 1, nodename, entityType);
+			retEntities = entityGetByVersionGreaterThan(path, version + 1, nodename, entityType);
 			assertEquals(1, retEntities.size());
 			var new_version = getMaxVersion(retEntities);
 			assertTrue(new_version > version);
 			version = new_version;
 		}
-		retEntities = entityGetByVerson(path, version + 1, nodename, entityType);
+		retEntities = entityGetByVersionGreaterThan(path, version + 1, nodename, entityType);
 		assertEquals(0, retEntities.size());
 		
 		var entity = entities.get(0);
@@ -131,7 +191,7 @@ public class ControllersTest {
 		ids.add(entity.getId());
 
 		entityRemove(path, ids);
-		retEntities = entityGetByVerson(path, version + 1, nodename, entityType);
+		retEntities = entityGetByVersionGreaterThan(path, version + 1, nodename, entityType);
 		assertEquals(1, retEntities.size());
 		
 		var removedEntity = retEntities.get(0);
@@ -228,6 +288,56 @@ public class ControllersTest {
 			items.add(item);
 		}
 		entityGetWithVersionFilter("/item", items, Item.class);
+	}
+	
+	@Test
+	public void itemSourceFilter() throws IOException {
+		final var source = "src_itemSourceFilter";
+		final var sourceKey = "src_key_itemSourceFilter";
+		final var item = new Item("id_itemSourceFilter", source, sourceKey, null,
+				null, null, null);
+		final var item1 = new Item("id_itemSourceFilter1", source + "1", sourceKey + "1", null,
+				null, null, null);
+		entityAdd("/item", item);
+		entityAdd("/item", item1);
+		
+		var items = itemGetBySourceEqual(source);
+		assertEquals(1, items.size());
+		var retIitem = items.get(0);
+		assertEquals(item.getId(), retIitem.getId());
+		
+		items = itemGetBySourceNotEqual(source);
+		assertNotEquals(0, items.size());
+		
+		items.forEach(i -> {
+			assertNotEquals(item.getId(), i.getId());
+		});
+		
+	}
+	
+	@Test
+	public void itemSourceKeyFilter() throws IOException {
+		final var source = "src_itemSourceKeyFilter";
+		final var sourceKey = "src_key_itemSourceKeyFilter";
+		final var item = new Item("id_itemSourceKeyFilter", source, sourceKey, null,
+				null, null, null);
+		final var item1 = new Item("id_itemSourceKeyFilter1", source + "1", sourceKey + "1", null,
+				null, null, null);
+		entityAdd("/item", item);
+		entityAdd("/item", item1);
+		
+		var items = itemGetBySourceKeyEqual(sourceKey);
+		assertEquals(1, items.size());
+		var retIitem = items.get(0);
+		assertEquals(item.getId(), retIitem.getId());
+		
+		items = itemGetBySourceKeyNotEqual(sourceKey);
+		assertNotEquals(0, items.size());
+		
+		items.forEach(i -> {
+			assertNotEquals(item.getId(), i.getId());
+		});
+		
 	}
 
 	@Test
@@ -524,6 +634,54 @@ public class ControllersTest {
 			events.add(event);
 		}
 		entityGetWithVersionFilter("/event", events, Event.class);
+	}
+	
+	@Test
+	public void eventSourceFilter() throws IOException {
+		final var source = "src_eventSourceFilter";
+		final var sourceKey = "src_eventSourceFilter";
+		final var event = new Event("id_eventSourceFilter", source, sourceKey,
+				EventType.PROBLEM, BaseStatus.WARNING, null);
+		final var event1 = new Event("id_eventSourceFilter1", source + "1", sourceKey + "1",
+				EventType.PROBLEM, BaseStatus.WARNING, null);
+		entityAdd("/event", event);
+		entityAdd("/event", event1);
+		
+		var events = eventGetBySourceEqual(source);
+		assertEquals(1, events.size());
+		var retEvent= events.get(0);
+		assertEquals(event.getId(), retEvent.getId());
+		
+		events = eventGetBySourceNotEqual(source);
+		assertNotEquals(0, events.size());
+		
+		events.forEach(e -> {
+			assertNotEquals(event.getId(), e.getId());
+		});
+	}
+	
+	@Test
+	public void eventSourceKeyFilter() throws IOException {
+		final var source = "src_eventSourceKeyFilter";
+		final var sourceKey = "src_eventSourceKeyFilter";
+		final var event = new Event("id_eventSourceKeyFilter", source, sourceKey,
+				EventType.PROBLEM, BaseStatus.WARNING, null);
+		final var event1 = new Event("id_eventSourceKeyFilter1", source + "1", sourceKey + "1",
+				EventType.PROBLEM, BaseStatus.WARNING, null);
+		entityAdd("/event", event);
+		entityAdd("/event", event1);
+		
+		var events = eventGetBySourceKeyEqual(sourceKey);
+		assertEquals(1, events.size());
+		var retEvent= events.get(0);
+		assertEquals(event.getId(), retEvent.getId());
+		
+		events = eventGetBySourceKeyNotEqual(sourceKey);
+		assertNotEquals(0, events.size());
+		
+		events.forEach(e -> {
+			assertNotEquals(event.getId(), e.getId());
+		});
 	}
 
 	@Test

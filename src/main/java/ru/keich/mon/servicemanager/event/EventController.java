@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -50,8 +51,8 @@ public class EventController extends EntityController<String, Event> {
 	@Override
 	@GetMapping("/event")
 	@CrossOrigin(origins = "*")
-	public ResponseEntity<List<Event>> findByVersionGreaterThan(@RequestParam Map<String, String> reqParam) {
-		return super.findByVersionGreaterThan(reqParam);
+	public ResponseEntity<List<Event>> find(@RequestParam MultiValueMap<String, String> reqParam) {
+		return super.find(reqParam);
 	}
 	
 	@Override

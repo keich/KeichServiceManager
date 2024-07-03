@@ -166,7 +166,7 @@ public class ItemService extends EntityService<String, Item> {
 		calculateStatus(item, history);
 	}
 	
-	public List<Map.Entry<Item, ItemFilter>> findFiltersByEqualFields(Map<String, String> fields){
+	private List<Map.Entry<Item, ItemFilter>> findFiltersByEqualFields(Map<String, String> fields){
 		return fields.entrySet().stream()
 				.flatMap(k -> entityCache.indexGet(INDEX_NAME_FILTERS_EQL,  k).stream())
 				.distinct()
