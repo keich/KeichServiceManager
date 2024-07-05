@@ -31,9 +31,9 @@ import java.util.stream.Collectors;
 
 import org.springframework.scheduling.annotation.Scheduled;
 
-import ru.keich.mon.query.Filter;
-import ru.keich.mon.query.Operator;
-import ru.keich.mon.query.QueryId;
+import ru.keich.mon.servicemanager.query.Filter;
+import ru.keich.mon.servicemanager.query.Operator;
+import ru.keich.mon.servicemanager.query.QueryId;
 import ru.keich.mon.servicemanager.store.IndexedHashMap;
 import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
 

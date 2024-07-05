@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import ru.keich.mon.query.Filter;
+import ru.keich.mon.servicemanager.query.Filter;
 
 public class EntityController<K, T extends Entity<K>> {
 
