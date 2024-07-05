@@ -245,7 +245,7 @@ public class EntityService<K, T extends Entity<K>> {
 	
 	public List<T> findByFields(Map<String, String> fields) {
 		return entityCache.transaction(() -> {
-			return fields.keySet().stream()
+			return fields.entrySet().stream()
 			.flatMap(k -> entityCache.indexGet(INDEX_NAME_FIELDS, k).stream())
 			.distinct()
 			.map(id -> findById(id))
