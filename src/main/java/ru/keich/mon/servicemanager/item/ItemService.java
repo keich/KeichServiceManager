@@ -84,7 +84,7 @@ public class ItemService extends EntityService<String, Item> {
 	@Override
 	protected void afterInsertUnLock(Item item) {
 		super.afterInsertUnLock(item);
-		eventService.itemAdded(item);
+		//eventService.itemAdded(item);
 	}
 
 	@Override
