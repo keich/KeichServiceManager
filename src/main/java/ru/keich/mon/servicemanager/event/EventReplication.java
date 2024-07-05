@@ -1,4 +1,4 @@
-package ru.keich.mon.servicemanager.item;
+package ru.keich.mon.servicemanager.event;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -21,16 +21,15 @@ import javax.net.ssl.SSLException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import ru.keich.mon.servicemanager.entity.EntitySchedule;
+import ru.keich.mon.servicemanager.entity.EntityReplication;
 
 @Component
-public class ItemSchedule extends EntitySchedule<String, Item>  {
-
-	public ItemSchedule(ItemService itemService, 
+public class EventReplication extends EntityReplication<String, Event> {
+	public EventReplication(EventService eventService, 
 			@Value("${replication.nodename}") String nodeName,
 			@Value("${replication.neighbor.host:none}") String replicationNeighborHost,
 			@Value("${replication.neighbor.port:8443}") Integer replicationNeighborPort) throws SSLException {
-		super(itemService, nodeName, replicationNeighborHost, replicationNeighborPort, "/api/v1/item", Item.class);
+		super(eventService, nodeName, replicationNeighborHost, replicationNeighborPort, "/api/v1/event", Event.class);
 	}
 
 }

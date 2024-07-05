@@ -17,13 +17,10 @@ package ru.keich.mon.servicemanager.entity;
  */
 
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
-
 import javax.net.ssl.SSLException;
 
 import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -34,7 +31,7 @@ import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 
 @Log
-public class EntitySchedule<K, T extends Entity<K>> {
+public class EntityReplication<K, T extends Entity<K>> {
 
 	private final String nodeName;
 	private final String replicationNeighborHost;
@@ -45,13 +42,14 @@ public class EntitySchedule<K, T extends Entity<K>> {
 	private final EntityService<K, T> entityService;
 	private final WebClient webClient;
 	
-	private volatile boolean isReplicationShdulerActive = false;
+	private volatile boolean active = false;
+	private volatile boolean first = true;
 	private Long maxVersion = 0L;
-	private Long minVersion = 0L;
+	private Long minVersion = Long.MAX_VALUE;
 	private boolean hasEntity = false;
-	private boolean init = true;
+
 	
-	public EntitySchedule(EntityService<K, T> entityService, String nodeName, String replicationNeighborHost,
+	public EntityReplication(EntityService<K, T> entityService, String nodeName, String replicationNeighborHost,
 			Integer replicationNeighborPort, String path, Class<T> elementClass) throws SSLException {
 		this.entityService = entityService;
 		this.nodeName = nodeName;
@@ -67,57 +65,67 @@ public class EntitySchedule<K, T extends Entity<K>> {
 				.exchangeStrategies(strategies).build();
 	}
 	
-	//TODO to params
-	@Scheduled(fixedRate = 5, timeUnit = TimeUnit.SECONDS)
-	public void ReplicationScheduled() {
+	public void doReplication() {
+		doReplication(() -> {});
+	}
+	
+	public void doReplication(Runnable onFinally) {
 		if ("none".equals(nodeName)) {
 			return;
 		}
+		
 		if ("none".equals(replicationNeighborHost)) {
 			return;
 		}
-		if(isReplicationShdulerActive) {
-			//log.info("Entity " + path + " replication still active");
+		
+		if(active) {
+			log.info("Entity " + path + " replication still active. Version:" + " min=" + minVersion 
+					+ " max=" + maxVersion + " diff=" + (maxVersion - minVersion));
 			return;
 		}
+		
 		//First load
 		final String tmpNodeName;
-		if(init) {
+		final Long fromVersion;
+		if(first) {
 			tmpNodeName = "";
+			fromVersion = 0L;
 		} else {
 			tmpNodeName = nodeName;
+			fromVersion = maxVersion + 1L;
 		}
 
 		minVersion = Long.MAX_VALUE;
 		
 		webClient.get().uri(uriBuilder -> uriBuilder.scheme("https").host(replicationNeighborHost).port(replicationNeighborPort).path(path)
-		//.queryParam("version", replicationLastVersion).queryParam("ignoreNodeName", tmpNodeName).build())
-		.queryParam("version", "gt:" + maxVersion).queryParam("fromHistory", "nc:" + tmpNodeName).build())
+		.queryParam("version", "gt:" + fromVersion).queryParam("fromHistory", "nc:" + tmpNodeName).build())
 		.accept(MediaType.APPLICATION_JSON).retrieve()
 		.bodyToFlux(elementClass)
 		.onErrorResume(e -> {
 			log.warning("Entity " + path + " replication client error: "+e.toString());
 			return Mono.empty();
 		})
+		.doFirst(() -> {
+			active = true;
+			hasEntity = false;
+		})
 		.doFinally(s -> {
-			isReplicationShdulerActive = false;
-			init = false;
+			active = false;
+			first = false;
 			if(hasEntity) {
 				log.info("Entity " + path + " replication is completed. Version:" + " min=" + minVersion 
 						+ " max=" + maxVersion + " diff=" + (maxVersion - minVersion));
 			}
+			onFinally.run();
 		})
-		.doFirst(() -> {
-			isReplicationShdulerActive = true;
-			hasEntity = false;
-		})
-		.doOnNext(entity -> {//TODO sort by version?
-			if(minVersion > entity.getVersion()) {
-				minVersion = entity.getVersion();
+		.doOnNext(entity -> {
+			hasEntity = true;
+			final var version  = entity.getVersion();
+			if(minVersion > version) {
+				minVersion = version;
 			}
-			if(maxVersion < entity.getVersion()) {
-				hasEntity = true;
-				maxVersion = entity.getVersion();
+			if(maxVersion < version) {
+				maxVersion = version;
 			}
 			if(Objects.isNull(entity.getDeletedOn())) {
 				entityService.addOrUpdate(entity);
