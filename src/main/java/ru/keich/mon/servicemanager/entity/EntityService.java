@@ -215,13 +215,9 @@ public class EntityService<K, T extends Entity<K>> {
 	public List<T> deleteByIds(List<K> ids) {
 		return entityCache.transaction(() ->  {
 			return ids.stream()
-				.map(id -> entityCache.remove(id))
+				.map(id -> deleteById(id))
 				.filter(opt -> opt.isPresent())
-				.map(opt -> {
-					var entity = opt.get();
-					entityRemoved(entity);
-					return entity;
-				})
+				.map(opt -> opt.get())
 				.collect(Collectors.toList());
 		});
 	}
@@ -232,13 +228,9 @@ public class EntityService<K, T extends Entity<K>> {
 			var sourceKeyIndex = entityCache.indexGet(INDEX_NAME_SOURCE_KEY, sourceKey);
 			sourceIndex.removeAll(sourceKeyIndex);
 			return sourceIndex.stream()
-				.map(id -> entityCache.remove(id))
+				.map(id -> deleteById(id))
 				.filter(opt -> opt.isPresent())
-				.map(opt -> {
-					var entity = opt.get();
-					entityRemoved(entity);
-					return entity;
-				})
+				.map(opt -> opt.get())
 				.collect(Collectors.toList());
 		});
 	}
