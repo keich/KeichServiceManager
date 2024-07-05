@@ -1,4 +1,4 @@
-package ru.keich.mon.query;
+package ru.keich.mon.servicemanager.query;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -17,33 +17,24 @@ package ru.keich.mon.query;
  */
 
 
-import lombok.Getter;
-
-@Getter
-public class Filter {
-	final QueryId id;
-	final String value;
+public enum Operator {
+	NE, EQ, LT, GT, CO, NC, ERROR, ALL;
 	
-	public Filter(String id, String value) {
-		var arr = value.split(":", 2);
-		if(arr.length == 2) {
-			var operator = Operator.fromString(arr[0]);
-			this.value = arr[1];
-			this.id = new QueryId(id, operator);
-		} else {
-			this.value = value;
-			this.id = new QueryId(id, Operator.ERROR);
-		}
+	public static Operator fromString(String str) {
+        switch(str.toUpperCase()) {
+        case "NE":
+            return NE;
+        case "EQ":
+            return EQ;
+        case "LT":
+            return LT;
+        case "GT":
+            return GT;
+        case "CO":
+            return CO;
+        case "NC":
+            return NC;
+        }
+        return ERROR;
 	}
-	
-	public Filter(QueryId id, String value) {
-		this.value = value;
-		this.id = id;
-	}
-	
-	@Override
-	public String toString() {
-		return "Filter [id=" + id + ", value=" + value + "]";
-	}	
-	
 }
