@@ -86,10 +86,10 @@ public class EntitySchedule<K, T extends Entity<K>> {
 		} else {
 			tmpNodeName = nodeName;
 		}
-		
+
 		webClient.get().uri(uriBuilder -> uriBuilder.scheme("https").host(replicationNeighborHost).port(replicationNeighborPort).path(path)
-		.queryParam("version", replicationLastVersion).queryParam("ignoreNodeName", tmpNodeName).build())
-		//.queryParam("version", "gt:"+replicationLastVersion).queryParam("fromHistory", "nc:" + tmpNodeName).build())
+		//.queryParam("version", replicationLastVersion).queryParam("ignoreNodeName", tmpNodeName).build())
+		.queryParam("version", "gt:"+replicationLastVersion).queryParam("fromHistory", "nc:" + tmpNodeName).build())
 		.accept(MediaType.APPLICATION_JSON).retrieve()
 		.bodyToFlux(elementClass)
 		.onErrorResume(e -> {
