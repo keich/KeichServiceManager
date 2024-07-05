@@ -46,7 +46,8 @@ public class EntitySchedule<K, T extends Entity<K>> {
 	private final WebClient webClient;
 	
 	private volatile boolean isReplicationShdulerActive = false;
-	private Long replicationLastVersion = 0L;
+	private Long maxVersion = 0L;
+	private Long minVersion = 0L;
 	private boolean hasEntity = false;
 	private boolean init = true;
 	
@@ -76,7 +77,7 @@ public class EntitySchedule<K, T extends Entity<K>> {
 			return;
 		}
 		if(isReplicationShdulerActive) {
-			log.info("Entity " + path + " replication still active");
+			//log.info("Entity " + path + " replication still active");
 			return;
 		}
 		//First load
@@ -87,9 +88,11 @@ public class EntitySchedule<K, T extends Entity<K>> {
 			tmpNodeName = nodeName;
 		}
 
+		minVersion = Long.MAX_VALUE;
+		
 		webClient.get().uri(uriBuilder -> uriBuilder.scheme("https").host(replicationNeighborHost).port(replicationNeighborPort).path(path)
 		//.queryParam("version", replicationLastVersion).queryParam("ignoreNodeName", tmpNodeName).build())
-		.queryParam("version", "gt:"+replicationLastVersion).queryParam("fromHistory", "nc:" + tmpNodeName).build())
+		.queryParam("version", "gt:" + maxVersion).queryParam("fromHistory", "nc:" + tmpNodeName).build())
 		.accept(MediaType.APPLICATION_JSON).retrieve()
 		.bodyToFlux(elementClass)
 		.onErrorResume(e -> {
@@ -100,18 +103,21 @@ public class EntitySchedule<K, T extends Entity<K>> {
 			isReplicationShdulerActive = false;
 			init = false;
 			if(hasEntity) {
-				log.info("Entity " + path + " replication end " + s.toString() + " replicationLastVersion:" + replicationLastVersion);
+				log.info("Entity " + path + " replication is completed. Version:" + " min=" + minVersion 
+						+ " max=" + maxVersion + " diff=" + (maxVersion - minVersion));
 			}
 		})
-
 		.doFirst(() -> {
 			isReplicationShdulerActive = true;
 			hasEntity = false;
 		})
 		.doOnNext(entity -> {//TODO sort by version?
-			if(replicationLastVersion < entity.getVersion()) {
+			if(minVersion > entity.getVersion()) {
+				minVersion = entity.getVersion();
+			}
+			if(maxVersion < entity.getVersion()) {
 				hasEntity = true;
-				replicationLastVersion = entity.getVersion();
+				maxVersion = entity.getVersion();
 			}
 			if(Objects.isNull(entity.getDeletedOn())) {
 				entityService.addOrUpdate(entity);
@@ -120,7 +126,7 @@ public class EntitySchedule<K, T extends Entity<K>> {
 			}
 		})
 		.doOnError(e -> {
-            log.info("Entity replication error: " + e.getMessage());
+            log.info("Entity " + path + " replication error. Message: " + e.getMessage());
         })
 		.subscribe();
 	}
