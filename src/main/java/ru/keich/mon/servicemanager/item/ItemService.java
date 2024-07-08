@@ -58,10 +58,7 @@ public class ItemService extends EntityService<String, Item> {
 	protected void entityRemoved(Item item) {
 		super.entityRemoved(item);
 		eventRelationService.itemRemoved(item);
-		item.getChildren().stream()
-		.map(itemId -> findById(itemId))
-		.filter(opt -> opt.isPresent())
-		.map(opt -> opt.get())		
+		findParents(item.getId()).stream()
 		.forEach(parent ->{
 			calculateStatusStart(parent);
 		});
