@@ -139,10 +139,17 @@ public class EntityService<K, T extends Entity<K>> {
 		});
 	}
 	
+	private Long getNextVersion() {
+		synchronized (this) {
+			Long out = incrementVersion;
+			incrementVersion++;
+			return out;
+		}
+	}
+	
 	protected void beforeInsert(T entity) {
 		entity.getFromHistory().add(nodeName);
-		entity.setVersion(incrementVersion);
-		incrementVersion++;
+		entity.setVersion(getNextVersion());
 	}
 	
 	protected void insertFirst(T entity) {
