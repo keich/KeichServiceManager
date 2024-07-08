@@ -24,13 +24,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.springframework.scheduling.annotation.Scheduled;
-
+import lombok.extern.java.Log;
 import ru.keich.mon.servicemanager.query.Filter;
 import ru.keich.mon.servicemanager.query.Operator;
 import ru.keich.mon.servicemanager.query.QueryId;
@@ -45,7 +43,6 @@ public class EntityService<K, T extends Entity<K>> {
 	private Long incrementVersion = VERSION_MIN + 1;
 	
 	final protected IndexedHashMap<K, T> entityCache;
-	final protected IndexedHashMap<K, T> entityCacheDeleted;
 	
 	final protected String nodeName;
 	
@@ -61,9 +58,6 @@ public class EntityService<K, T extends Entity<K>> {
 	public EntityService(String nodeName) {
 		this.nodeName = nodeName;
 		entityCache = new IndexedHashMap<>();
-		entityCacheDeleted = new IndexedHashMap<>();
-		entityCacheDeleted.createIndex(INDEX_NAME_VERSION, IndexType.UNIQ_SORTED, Entity::getVersionForIndex);
-		entityCacheDeleted.createIndex(INDEX_NAME_DELETED_ON, IndexType.SORTED, Entity::getDeletedOnForIndex);
 		
 		entityCache.createIndex(INDEX_NAME_VERSION, IndexType.UNIQ_SORTED, Entity::getVersionForIndex);
 		entityCache.createIndex(INDEX_NAME_SOURCE, IndexType.EQUAL, Entity::getSourceForIndex);
@@ -176,17 +170,7 @@ public class EntityService<K, T extends Entity<K>> {
 	}
 	
 	protected void entityRemoved(T entity) {
-		entityCacheDeleted.put(entity, e -> {
-			
-		}, e -> {
-			e.setDeletedOn(Instant.now());
-			e.setVersion(incrementVersion);
-			incrementVersion++;
-		}, (old, e) -> {
-			return true;
-		}, e -> {
 
-		});
 	}
 	
 	public void addOrUpdate(T entity) {
@@ -207,9 +191,11 @@ public class EntityService<K, T extends Entity<K>> {
 	}
 	
 	public Optional<T> deleteById(K entityId) {
-		var opt = entityCache.remove(entityId);
-		opt.ifPresent(entity -> entityRemoved(entity));
-		return opt;
+		return entityCache.transaction(() -> {
+			var opt = entityCache.remove(entityId);
+			opt.ifPresent(entity -> entityRemoved(entity));
+			return opt;
+		});
 	}
 	
 	public List<T> deleteByIds(List<K> ids) {
@@ -285,13 +271,4 @@ public class EntityService<K, T extends Entity<K>> {
 		return out;
 	}
 	
-	//TODO to params
-	@Scheduled(fixedRate = 60, timeUnit = TimeUnit.SECONDS)
-	public void deleteOldScheduled() {
-		entityCacheDeleted.transaction(() -> {
-			entityCacheDeleted.indexGetBefore(INDEX_NAME_DELETED_ON, Instant.now().minusSeconds(3600)).stream()
-			.forEach(id -> entityCacheDeleted.remove(id));
-			return null;
-		});
-	}
 }
