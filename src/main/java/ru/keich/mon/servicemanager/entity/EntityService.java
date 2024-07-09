@@ -152,7 +152,14 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	protected boolean isEntityEqual(T old, T entity) {
 		if (old.hashCode() == entity.hashCode()) {
 			if (old.equals(entity)) {
+				if(old.getDeletedOn() == entity.getDeletedOn()) {
 					return true;
+				}
+				if(Objects.nonNull(old.getDeletedOn())) {
+					if(old.getDeletedOn().equals(entity.getDeletedOn())) {
+						return true;
+					}
+				}
 			}
 		}
 		return false;
