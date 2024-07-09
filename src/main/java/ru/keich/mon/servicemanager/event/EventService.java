@@ -1,7 +1,9 @@
 package ru.keich.mon.servicemanager.event;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Objects;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -45,7 +47,6 @@ public class EventService extends EntityService<String, Event>{
 			final var newFromHistory = new HashSet<String>();
 			newFromHistory.addAll(event.getFromHistory());
 			newFromHistory.add(nodeName);
-			
 			entityCache.put(event.getId(), () -> {
 				return new Event(event.getId(),
 						getNextVersion(),
@@ -57,7 +58,7 @@ public class EventService extends EntityService<String, Event>{
 						newFromHistory,
 						event.getCreatedOn(),
 						event.getUpdatedOn(),
-						null);				
+						event.getDeletedOn());				
 			}, old -> {
 				if (isEntityEqual(old, event)) {
 					return null;
@@ -72,7 +73,7 @@ public class EventService extends EntityService<String, Event>{
 						newFromHistory,
 						old.getCreatedOn(),
 						Instant.now(),
-						null);
+						event.getDeletedOn());
 			}, addedEvent -> {
 				itemService.eventAdded(addedEvent);
 			});
@@ -84,6 +85,25 @@ public class EventService extends EntityService<String, Event>{
 	protected void entityRemoved(Event event) {
 		super.entityRemoved(event);
 		itemService.eventRemoved(event);
+		
+		final var newFromHistory = Collections.singleton(nodeName);
+		var deletedEvent= new Event(event.getId(),
+			getNextVersion(),
+			event.getSource(),
+			event.getSourceKey(),
+			event.getType(),
+			event.getStatus(),
+			event.getFields(),
+			newFromHistory,
+			event.getCreatedOn(),
+			Instant.now(),
+			Instant.now());
+
+		entityCache.put(event.getId(), () -> {
+			return deletedEvent;
+		}, old -> {
+			return deletedEvent;
+		}, addedItem -> {});
 	}
 
 	public void itemAdded(Item item){

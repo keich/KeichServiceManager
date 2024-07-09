@@ -46,6 +46,8 @@ public class EntityReplication<K, T extends Entity<K>> {
 	private volatile boolean first = true;
 	private Long maxVersion = 0L;
 	private Long minVersion = Long.MAX_VALUE;
+	private Long added = 0L;
+	private Long deleted = 0L;
 	private boolean hasEntity = false;
 
 	
@@ -80,7 +82,7 @@ public class EntityReplication<K, T extends Entity<K>> {
 		
 		if(active) {
 			log.info("Entity " + path + " replication still active. Version:" + " min=" + minVersion 
-					+ " max=" + maxVersion + " diff=" + (maxVersion - minVersion));
+					+ " max=" + maxVersion + " Entity: added=" + added + " deleted=" + deleted);
 			return;
 		}
 		
@@ -96,6 +98,8 @@ public class EntityReplication<K, T extends Entity<K>> {
 		}
 
 		minVersion = Long.MAX_VALUE;
+		added = 0L;
+		deleted = 0L;
 		
 		webClient.get().uri(uriBuilder -> uriBuilder.scheme("https").host(replicationNeighborHost).port(replicationNeighborPort).path(path)
 		.queryParam("version", "gt:" + fromVersion).queryParam("fromHistory", "nc:" + tmpNodeName).build())
@@ -114,7 +118,7 @@ public class EntityReplication<K, T extends Entity<K>> {
 			first = false;
 			if(hasEntity) {
 				log.info("Entity " + path + " replication is completed. Version:" + " min=" + minVersion 
-						+ " max=" + maxVersion + " diff=" + (maxVersion - minVersion));
+						+ " max=" + maxVersion + " Entity: added=" + added + " deleted=" + deleted);
 			}
 			onFinally.run();
 		})
@@ -127,11 +131,11 @@ public class EntityReplication<K, T extends Entity<K>> {
 			if(maxVersion < version) {
 				maxVersion = version;
 			}
-			if(Objects.isNull(entity.getDeletedOn())) {
-				entityService.addOrUpdate(entity);
-			} else {
-				entityService.deleteById(entity.getId());
+			if(Objects.nonNull(entity.getDeletedOn())) {
+				deleted++;
 			}
+			added++;
+			entityService.addOrUpdate(entity);
 		})
 		.doOnError(e -> {
             log.info("Entity " + path + " replication error. Message: " + e.getMessage());

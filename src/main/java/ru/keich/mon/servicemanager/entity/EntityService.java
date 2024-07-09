@@ -24,9 +24,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import org.springframework.scheduling.annotation.Scheduled;
 
 import ru.keich.mon.servicemanager.query.Filter;
 import ru.keich.mon.servicemanager.query.Operator;
@@ -246,4 +249,13 @@ public abstract class EntityService<K, T extends Entity<K>> {
 		return out;
 	}
 	
+	//TODO to params
+	@Scheduled(fixedRate = 60, timeUnit = TimeUnit.SECONDS)
+	public void deleteOldScheduled() {
+		entityCache.transaction(() -> {
+			entityCache.indexGetBefore(INDEX_NAME_DELETED_ON, Instant.now().minusSeconds(30)).stream()
+			.forEach(id -> entityCache.remove(id));
+			return null;
+		});
+	}
 }

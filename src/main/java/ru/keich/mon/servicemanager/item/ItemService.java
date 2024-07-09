@@ -1,7 +1,5 @@
 package ru.keich.mon.servicemanager.item;
 
-import java.time.Instant;
-
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -18,9 +16,12 @@ import java.time.Instant;
  * limitations under the License.
  */
 
+import java.time.Instant;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -61,9 +62,34 @@ public class ItemService extends EntityService<String, Item> {
 		super.entityRemoved(item);
 		eventRelationService.itemRemoved(item);
 		findParents(item.getId()).stream()
+		.filter(parent -> Objects.isNull(parent.getDeletedOn()))
 		.forEach(parent ->{
 			calculateStatusStart(parent);
 		});
+
+		final var newFromHistory = Collections.singleton(nodeName);
+		var deletedItem = new Item(item.getId(),
+			getNextVersion(),
+			item.getSource(),
+			item.getSourceKey(),
+			item.getFields(),
+			item.getRules(),
+			item.getFilters(),
+			item.getChildren(),
+			newFromHistory,
+			item.getCreatedOn(),
+			Instant.now(),
+			Instant.now());
+
+		deletedItem.setStatus(BaseStatus.CLEAR);
+		
+		entityCache.put(item.getId(), () -> {
+			return deletedItem;
+		}, old -> {
+			return deletedItem;
+		}, addedItem -> {});
+
+
 	}
 
 	private int calculateEntityStatusAsCluster(Item item, ItemRule rule) {
@@ -75,6 +101,7 @@ public class ItemService extends EntityService<String, Item> {
 				.map(cid -> findById(cid))
 				.filter(o -> o.isPresent())
 				.map(o -> o.get())
+				.filter(child -> Objects.isNull(child.getDeletedOn()))
 				.mapToInt(child -> child.getStatus().ordinal())
 				.boxed()
 				.filter(i -> i >= rule.getStatusThreshold().ordinal())
@@ -96,6 +123,7 @@ public class ItemService extends EntityService<String, Item> {
 			.map(cid -> findById(cid))
 			.filter(o -> o.isPresent())
 			.map(o -> o.get())
+			.filter(child -> Objects.isNull(child.getDeletedOn()))
 			.mapToInt(child -> child.getStatus().ordinal())
 			.max().orElse(0);
 	}
@@ -120,7 +148,9 @@ public class ItemService extends EntityService<String, Item> {
 		if(maxStatus != item.getStatus()) {
 			history.add(item.getId());
 			item.setStatus(maxStatus);
-			findParents(item.getId()).forEach(parent ->{
+			findParents(item.getId()).stream()
+			.filter(parent -> Objects.isNull(parent.getDeletedOn()))
+			.forEach(parent ->{
 				if (history.contains(parent.getId())) {
 					log.warning("calculateEntityStatusDeeper: circle found from " + item.getId() + " to " + parent.getId());
 				}else {
@@ -143,6 +173,7 @@ public class ItemService extends EntityService<String, Item> {
 				.map(id -> findById(id))
 				.filter(o -> o.isPresent())
 				.map(o -> o.get())
+				.filter(item -> Objects.isNull(item.getDeletedOn()))
 				.map(item -> {
 					return item.getFilters().entrySet().stream()
 					.filter(flt -> fields.entrySet().containsAll(flt.getValue().getEqualFields().entrySet()))
@@ -160,7 +191,6 @@ public class ItemService extends EntityService<String, Item> {
 			final var newFromHistory = new HashSet<String>();
 			newFromHistory.addAll(item.getFromHistory());
 			newFromHistory.add(nodeName);
-			
 			entityCache.put(item.getId(), () -> {
 				var inseredItem = new Item(item.getId(),
 						getNextVersion(),
@@ -173,7 +203,7 @@ public class ItemService extends EntityService<String, Item> {
 						newFromHistory,
 						item.getCreatedOn(),
 						item.getUpdatedOn(),
-						null);
+						item.getDeletedOn());
 					inseredItem.setStatus(BaseStatus.CLEAR);
 					return inseredItem;
 				
@@ -192,7 +222,7 @@ public class ItemService extends EntityService<String, Item> {
 						newFromHistory,
 						old.getCreatedOn(),
 						Instant.now(),
-						null);
+						item.getDeletedOn());
 
 				updatedItem.setStatus(old.getStatus());
 				return updatedItem;

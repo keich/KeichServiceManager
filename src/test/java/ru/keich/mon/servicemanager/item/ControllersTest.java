@@ -4,9 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -212,9 +214,12 @@ public class ControllersTest {
 		entityAdd(path, entity2);
 		restTemplate.delete("/api/v1" + path + "?query=bySourceAndSourceKeyNot&source=" + entity2.getSource()
 				+ "&sourceKey=" + entity2.getSourceKey());
-		var result = restTemplate.getForEntity("/api/v1" + path + "/" + entity1.getId().toString(), entityType);
-		assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
-		entityGetById(path, entity2.getId().toString(), entityType);
+
+		var retEntity1 = entityGetById(path, entity1.getId().toString(), entityType);
+		
+		assertNotNull(retEntity1.getDeletedOn());
+		var retEntity2 = entityGetById(path, entity2.getId().toString(), entityType);
+		assertNull(retEntity2.getDeletedOn());
 	}
 
 	@Test
@@ -281,8 +286,8 @@ public class ControllersTest {
 	public void itemVersionFilter() throws IOException {
 		var items = new ArrayList<Item>();
 		for (int i = 0; i < 10; i++) {
-			var item = new Item("id_itemVersionFilter_" + i, "src_itemVersionFilter", "src_key_itemVersionFilter", null,
-					null, null, null);
+			var item = new Item("id_itemVersionFilter_" + i, 0L, "src_itemVersionFilter", "src_key_itemVersionFilter", null,
+					null, null, null, null,Instant.now(),Instant.now(),null);
 			items.add(item);
 		}
 		entityGetWithVersionFilter("/item", items, Item.class);
@@ -292,10 +297,10 @@ public class ControllersTest {
 	public void itemSourceFilter() throws IOException {
 		final var source = "src_itemSourceFilter";
 		final var sourceKey = "src_key_itemSourceFilter";
-		final var item = new Item("id_itemSourceFilter", source, sourceKey, null,
-				null, null, null);
-		final var item1 = new Item("id_itemSourceFilter1", source + "1", sourceKey + "1", null,
-				null, null, null);
+		final var item = new Item("id_itemSourceFilter", 0L, source, sourceKey, null,
+				null, null, null, null,Instant.now(),Instant.now(),null);
+		final var item1 = new Item("id_itemSourceFilter1", 0L, source + "1", sourceKey + "1", null,
+				null, null, null, null,Instant.now(),Instant.now(),null);
 		entityAdd("/item", item);
 		entityAdd("/item", item1);
 		
@@ -317,10 +322,10 @@ public class ControllersTest {
 	public void itemSourceKeyFilter() throws IOException {
 		final var source = "src_itemSourceKeyFilter";
 		final var sourceKey = "src_key_itemSourceKeyFilter";
-		final var item = new Item("id_itemSourceKeyFilter", source, sourceKey, null,
-				null, null, null);
-		final var item1 = new Item("id_itemSourceKeyFilter1", source + "1", sourceKey + "1", null,
-				null, null, null);
+		final var item = new Item("id_itemSourceKeyFilter", 0L, source, sourceKey, null,
+				null, null, null, null,Instant.now(),Instant.now(),null);
+		final var item1 = new Item("id_itemSourceKeyFilter1", 0L, source + "1", sourceKey + "1", null,
+				null, null, null, null,Instant.now(),Instant.now(),null);
 		entityAdd("/item", item);
 		entityAdd("/item", item1);
 		
@@ -387,10 +392,12 @@ public class ControllersTest {
 	
 	@Test
 	public void itemDeleteBySoyrceAndSourceKeyNot() throws IOException {
-		var item1 = new Item("id_itemDeleteBySoyrceAndSourceKeyNot1", "src_itemDeleteBySoyrceAndSourceKeyNot",
-				"src_key_itemDeleteBySoyrceAndSourceKeyNot", null, null, null, null);
-		var item2 = new Item("id_itemDeleteBySoyrceAndSourceKeyNot2", "src_itemDeleteBySoyrceAndSourceKeyNot",
-				"src_key_itemDeleteBySoyrceAndSourceKeyNot_new", null, null, null, null);
+		var item1 = new Item("id_itemDeleteBySoyrceAndSourceKeyNot1", 0L, "src_itemDeleteBySoyrceAndSourceKeyNot",
+				"src_key_itemDeleteBySoyrceAndSourceKeyNot",null, null, null, null, null
+				,Instant.now(),Instant.now(), null);
+		var item2 = new Item("id_itemDeleteBySoyrceAndSourceKeyNot2", 0L, "src_itemDeleteBySoyrceAndSourceKeyNot",
+				"src_key_itemDeleteBySoyrceAndSourceKeyNot_new",null, null, null, null, null
+				,Instant.now(),Instant.now(), null);
 		entityDeleteBySoyrceAndSourceKeyNot("/item", item1, item2, Item.class);
 	}
 
@@ -627,8 +634,8 @@ public class ControllersTest {
 	public void eventVersionFilter() throws IOException {
 		var events = new ArrayList<Event>();
 		for (int i = 0; i < 10; i++) {
-			var event = new Event("id_eventVersionFilter_" + i, "src_eventVersionFilter", "src_key_eventVersionFilter",
-					EventType.PROBLEM, BaseStatus.WARNING, null);
+			var event = new Event("id_eventVersionFilter_" + i, 0L, "src_eventVersionFilter", "src_key_eventVersionFilter",
+					EventType.PROBLEM, BaseStatus.WARNING, null, null,Instant.now(),Instant.now(),null);
 			events.add(event);
 		}
 		entityGetWithVersionFilter("/event", events, Event.class);
@@ -638,10 +645,10 @@ public class ControllersTest {
 	public void eventSourceFilter() throws IOException {
 		final var source = "src_eventSourceFilter";
 		final var sourceKey = "src_eventSourceFilter";
-		final var event = new Event("id_eventSourceFilter", source, sourceKey,
-				EventType.PROBLEM, BaseStatus.WARNING, null);
-		final var event1 = new Event("id_eventSourceFilter1", source + "1", sourceKey + "1",
-				EventType.PROBLEM, BaseStatus.WARNING, null);
+		final var event = new Event("id_eventSourceFilter", 0L, source, sourceKey,
+				EventType.PROBLEM, BaseStatus.WARNING, null, null,Instant.now(),Instant.now(),null);
+		final var event1 = new Event("id_eventSourceFilter1", 0L, source + "1", sourceKey + "1",
+				EventType.PROBLEM, BaseStatus.WARNING, null, null,Instant.now(),Instant.now(),null);
 		entityAdd("/event", event);
 		entityAdd("/event", event1);
 		
@@ -662,10 +669,10 @@ public class ControllersTest {
 	public void eventSourceKeyFilter() throws IOException {
 		final var source = "src_eventSourceKeyFilter";
 		final var sourceKey = "src_eventSourceKeyFilter";
-		final var event = new Event("id_eventSourceKeyFilter", source, sourceKey,
-				EventType.PROBLEM, BaseStatus.WARNING, null);
-		final var event1 = new Event("id_eventSourceKeyFilter1", source + "1", sourceKey + "1",
-				EventType.PROBLEM, BaseStatus.WARNING, null);
+		final var event = new Event("id_eventSourceKeyFilter", 0L, source, sourceKey,
+				EventType.PROBLEM, BaseStatus.WARNING, null,null,Instant.now(),Instant.now(),null);
+		final var event1 = new Event("id_eventSourceKeyFilter1", 0L, source + "1", sourceKey + "1",
+				EventType.PROBLEM, BaseStatus.WARNING, null,null,Instant.now(),Instant.now(),null);
 		entityAdd("/event", event);
 		entityAdd("/event", event1);
 		
@@ -719,10 +726,12 @@ public class ControllersTest {
 
 	@Test
 	public void eventDeleteBySoyrceAndSourceKeyNot() throws IOException {
-		var event1 = new Event("id_eventDeleteBySoyrceAndSourceKeyNot1", "src_eventDeleteBySoyrceAndSourceKeyNot",
-				"src_key_eventDeleteBySoyrceAndSourceKeyNot", EventType.PROBLEM, BaseStatus.WARNING, null);
-		var event2 = new Event("id_eventDeleteBySoyrceAndSourceKeyNot2", "src_eventDeleteBySoyrceAndSourceKeyNot",
-				"src_key_eventDeleteBySoyrceAndSourceKeyNotNew", EventType.PROBLEM, BaseStatus.WARNING, null);
+		var event1 = new Event("id_eventDeleteBySoyrceAndSourceKeyNot1", 0L, "src_eventDeleteBySoyrceAndSourceKeyNot",
+				"src_key_eventDeleteBySoyrceAndSourceKeyNot", EventType.PROBLEM, BaseStatus.WARNING, null
+				, null,Instant.now(),Instant.now(), null);
+		var event2 = new Event("id_eventDeleteBySoyrceAndSourceKeyNot2", 0L, "src_eventDeleteBySoyrceAndSourceKeyNot",
+				"src_key_eventDeleteBySoyrceAndSourceKeyNotNew", EventType.PROBLEM, BaseStatus.WARNING, null
+				, null,Instant.now(),Instant.now(), null);
 		entityDeleteBySoyrceAndSourceKeyNot("/event", event1, event2, Event.class);
 	}
 	

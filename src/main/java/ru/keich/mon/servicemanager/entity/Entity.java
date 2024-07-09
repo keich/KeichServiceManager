@@ -67,7 +67,11 @@ public class Entity<K> extends BaseEntity<K> {
 		} else {
 			this.updatedOn = updatedOn;
 		}
-		this.deletedOn = deletedOn;
+		if(Objects.nonNull(deletedOn)) {
+			this.deletedOn = Instant.now();
+		} else {
+			this.deletedOn = null;
+		}
 		if (Objects.isNull(fields)) {
 			this.fields = Collections.emptyMap();
 		} else {
