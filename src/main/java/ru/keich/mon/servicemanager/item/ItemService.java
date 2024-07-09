@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -105,7 +104,7 @@ public class ItemService extends EntityService<String, Item> {
 				.mapToInt(child -> child.getStatus().ordinal())
 				.boxed()
 				.filter(i -> i >= rule.getStatusThreshold().ordinal())
-				.collect(Collectors.toList());
+				.toList();
 		var percent = 100 * listStatus.size() / overal;
 		if (percent >= rule.getValueThreshold()) {
 			if (rule.isUsingResultStatus()) {
@@ -182,7 +181,7 @@ public class ItemService extends EntityService<String, Item> {
 				})
 				.filter(o -> o.isPresent())
 				.map(o -> o.get())
-				.collect(Collectors.toList());
+				.toList();
 	}
 	
 	public void addOrUpdate(Item item) {
@@ -270,7 +269,7 @@ public class ItemService extends EntityService<String, Item> {
 			.map(cid -> findById(cid))
 			.filter(o -> o.isPresent())
 			.map(o -> o.get())
-			.collect(Collectors.toList());
+			.toList();
 	}
 	
 	public List<Item> findParents(String itemId) {
@@ -278,7 +277,7 @@ public class ItemService extends EntityService<String, Item> {
 		.map(parentId -> findById(parentId))
 		.filter(opt -> opt.isPresent())
 		.map(opt -> opt.get())
-		.collect(Collectors.toList());
+		.toList();
 	}
 	
 	private List<Event> findEventsByItem(Item item){
@@ -286,7 +285,7 @@ public class ItemService extends EntityService<String, Item> {
 		.map(id -> eventService.findById(id))
 		.filter(opt -> opt.isPresent())
 		.map(opt -> opt.get())
-		.collect(Collectors.toList());
+		.toList();
 	}
 	
 	private void findAllItemsById(String parentId, Set<Item> out, Set<String> history) {
@@ -311,7 +310,7 @@ public class ItemService extends EntityService<String, Item> {
 			findAllItemsById(id, items, history);
 			return items.stream().flatMap(item -> findEventsByItem(item).stream())
 					.distinct()
-					.collect(Collectors.toList());
+					.toList();
 		});
 	}
 	

@@ -27,7 +27,6 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.springframework.scheduling.annotation.Scheduled;
 
@@ -189,7 +188,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 				.map(id -> deleteById(id))
 				.filter(opt -> opt.isPresent())
 				.map(opt -> opt.get())
-				.collect(Collectors.toList());
+				.toList();
 		});
 	}
 	
@@ -202,7 +201,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 				.map(id -> deleteById(id))
 				.filter(opt -> opt.isPresent())
 				.map(opt -> opt.get())
-				.collect(Collectors.toList());
+				.toList();
 		});
 	}
 	
@@ -215,7 +214,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 			.filter(o -> o.isPresent())
 			.map(o -> o.get())
 			.filter(item -> item.getFields().keySet().containsAll(fields.keySet()))
-			.collect(Collectors.toList());
+			.toList();
 		});
 	}
 	
@@ -224,7 +223,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 		// TODO error for undefined filters
 		var producers = filters.stream()
 		.filter(f -> queryProducer.containsKey(f.getId()))
-		.collect(Collectors.toList());
+		.toList();
 		
 		if(producers.size() == 0) {
 			producers = Collections.singletonList(new Filter(PRODUCER_ID_ALL,""));
@@ -246,7 +245,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 		.map(id -> entityCache.get(id))
 		.filter(o -> o.isPresent())
 		.map(o -> o.get())
-		.collect(Collectors.toList());
+		.toList();
 		
 		filters.stream()
 		.filter(f -> queryFilter.containsKey(f.getId()))

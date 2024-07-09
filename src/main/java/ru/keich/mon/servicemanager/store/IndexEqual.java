@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class IndexEqual<K, T extends BaseEntity<K>> implements Index<K, T> {
 	private final Function<T, Set<Object>> mapper;
@@ -63,7 +62,7 @@ public class IndexEqual<K, T extends BaseEntity<K>> implements Index<K, T> {
 	@Override
 	public List<K> get(Object key) {
 		return Optional.ofNullable(objects.get(key))
-				.map(s -> s.stream().collect(Collectors.toList()))
+				.map(s -> s.stream().toList())
 				.orElse(Collections.emptyList());
 	}
 

@@ -19,7 +19,6 @@ package ru.keich.mon.servicemanager.item;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -104,7 +103,7 @@ public class ItemController extends EntityController<String, Item> {
 		.map(childId -> itemService.findById(childId))
 		.filter(opt -> opt.isPresent())
 		.map(opt -> new ItemDTO(opt.get()))
-		.collect(Collectors.toList());
+		.toList();
 		
 		history.add(root.getId());
 		children.forEach(child -> {

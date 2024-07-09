@@ -23,7 +23,6 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> {
 	private final Function<T, Set<Object>> mapper;
@@ -58,12 +57,12 @@ public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> 
 
 	@Override
 	public List<K> getBefore(Object key) {
-		return objects.headMap(key).values().stream().collect(Collectors.toList());
+		return objects.headMap(key).values().stream().toList();
 	}
 
 	@Override
 	public List<K> getAfter(Object key) {
-		return objects.tailMap(key).values().stream().collect(Collectors.toList());
+		return objects.tailMap(key).values().stream().toList();
 	}
 
 }
