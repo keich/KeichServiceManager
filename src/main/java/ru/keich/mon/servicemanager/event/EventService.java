@@ -1,10 +1,5 @@
 package ru.keich.mon.servicemanager.event;
 
-import java.time.Instant;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Objects;
-
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -20,6 +15,10 @@ import java.util.Objects;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import java.time.Instant;
+import java.util.Collections;
+import java.util.HashSet;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -85,6 +84,7 @@ public class EventService extends EntityService<String, Event>{
 	protected void entityRemoved(Event event) {
 		super.entityRemoved(event);
 		itemService.eventRemoved(event);
+
 		
 		final var newFromHistory = Collections.singleton(nodeName);
 		var deletedEvent= new Event(event.getId(),
