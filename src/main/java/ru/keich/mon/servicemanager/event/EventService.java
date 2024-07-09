@@ -56,7 +56,7 @@ public class EventService extends EntityService<String, Event>{
 						event.getFields(),
 						newFromHistory,
 						event.getCreatedOn(),
-						event.getDeletedOn(),
+						event.getUpdatedOn(),
 						null);				
 			}, old -> {
 				if (isEntityEqual(old, event)) {
