@@ -28,23 +28,22 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import lombok.extern.java.Log;
 import ru.keich.mon.servicemanager.query.Filter;
 import ru.keich.mon.servicemanager.query.Operator;
 import ru.keich.mon.servicemanager.query.QueryId;
 import ru.keich.mon.servicemanager.store.IndexedHashMap;
 import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
 
-public class EntityService<K, T extends Entity<K>> {
-	static Long VERSION_MIN = 0L;
+public abstract class EntityService<K, T extends Entity<K>> {
+	static public Long VERSION_MIN = 0L;
 	
-	static QueryId PRODUCER_ID_ALL = new QueryId("", Operator.ALL);
+	static public QueryId PRODUCER_ID_ALL = new QueryId("", Operator.ALL);
 	
 	private Long incrementVersion = VERSION_MIN + 1;
 	
 	final protected IndexedHashMap<K, T> entityCache;
 	
-	final protected String nodeName;
+	final public String nodeName;
 	
 	static final public String INDEX_NAME_VERSION= "version";
 	static final public String INDEX_NAME_SOURCE = "source";
@@ -139,7 +138,7 @@ public class EntityService<K, T extends Entity<K>> {
 		});
 	}
 	
-	private Long getNextVersion() {
+	protected Long getNextVersion() {
 		synchronized (this) {
 			Long out = incrementVersion;
 			incrementVersion++;
@@ -147,51 +146,20 @@ public class EntityService<K, T extends Entity<K>> {
 		}
 	}
 	
-	protected void beforeInsert(T entity) {
-		entity.getFromHistory().add(nodeName);
-		entity.setVersion(getNextVersion());
-	}
-	
-	protected void insertFirst(T entity) {
-
-	}
-	
-	protected boolean insertExist(T old, T entity) {
-		entity.setCreatedOn(old.getCreatedOn());
+	protected boolean isEntityEqual(T old, T entity) {
 		if (old.hashCode() == entity.hashCode()) {
 			if (old.equals(entity)) {
-				if (old.getFromHistory().equals(entity.getFromHistory())) {
-					return false;
-				}
+					return true;
 			}
 		}
-		return true;
-	}
-	
-	protected void afterInsert(T entity) {
-
-	}
-	
-	protected void afterInsertUnLock(T entity) {
-
+		return false;
 	}
 	
 	protected void entityRemoved(T entity) {
 
 	}
 	
-	public void addOrUpdate(T entity) {
-		entityCache.put(entity, e -> {
-			beforeInsert(e);
-		}, e -> {
-			insertFirst(e);
-		}, (old, e) -> {
-			return insertExist(old, e);
-		}, e -> {
-			afterInsert(e);
-		});
-		afterInsertUnLock(entity);
-	}
+	public abstract void addOrUpdate(T entity);
 	
 	public Optional<T> findById(K id) {
 		return entityCache.get(id);

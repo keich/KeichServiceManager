@@ -18,7 +18,6 @@ package ru.keich.mon.servicemanager.entity;
 
 import java.time.Instant;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -29,42 +28,51 @@ import ru.keich.mon.servicemanager.store.BaseEntity;
 
 @Getter
 public class Entity<K> extends BaseEntity<K> {
-	private Long version = 0L;
+	private final Long version;
 	private final String source;
 	private final String sourceKey;
 
-	private Instant createdOn = Instant.now();
-	private Instant updatedOn = Instant.now();
-	private Instant deletedOn;
+	private final Instant createdOn;
+	private final Instant updatedOn;
+	private final Instant deletedOn;
 
-	private Set<String> fromHistory = new HashSet<String>();
-	protected final Map<String, String> fields;
+	private final Set<String> fromHistory;// = new HashSet<String>();
+	private final Map<String, String> fields;
 	
-	public Entity(K id, String source, String sourceKey, Map<String, String> fields) {
+	public Entity(K id,
+			Long version,
+			String source,
+			String sourceKey,
+			Map<String, String> fields,
+			Set<String> fromHistory,
+			Instant createdOn,
+			Instant updatedOn,
+			Instant deletedOn) {
 		super(id);
+		this.version = version;
 		this.source = source.intern();
 		this.sourceKey = sourceKey.intern();
-		if (Objects.nonNull(fields)) {
-			this.fields = Collections.unmodifiableMap(fields);
+		if (Objects.isNull(fromHistory)) {
+			this.fromHistory = Collections.emptySet();
 		} else {
-			this.fields = Collections.emptyMap();
+			this.fromHistory = Collections.unmodifiableSet(fromHistory);
 		}
-	}
-
-	protected void setCreatedOn(Instant createdOn) {
-		this.createdOn = createdOn;
-	}
-
-	protected void setUpdatedOn(Instant updatedOn) {
-		this.updatedOn = updatedOn;
-	}
-
-	protected void setDeletedOn(Instant deletedOn) {
+		if(Objects.isNull(createdOn)) {
+			this.createdOn = Instant.now();
+		} else {
+			this.createdOn = createdOn;
+		}
+		if(Objects.isNull(updatedOn)) {
+			this.updatedOn = Instant.now();
+		} else {
+			this.updatedOn = updatedOn;
+		}
 		this.deletedOn = deletedOn;
-	}
-
-	protected void setVersion(Long version) {
-		this.version = version;
+		if (Objects.isNull(fields)) {
+			this.fields = Collections.emptyMap();
+		} else {
+			this.fields = Collections.unmodifiableMap(fields);
+		}
 	}
 	
 	public static Set<Object> getSourceForIndex(Entity<?> entity){

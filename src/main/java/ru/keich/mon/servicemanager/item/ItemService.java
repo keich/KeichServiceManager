@@ -1,5 +1,7 @@
 package ru.keich.mon.servicemanager.item;
 
+import java.time.Instant;
+
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -62,35 +64,6 @@ public class ItemService extends EntityService<String, Item> {
 		.forEach(parent ->{
 			calculateStatusStart(parent);
 		});
-	}
-
-	
-	@Override
-	protected void beforeInsert(Item item) {
-		super.beforeInsert(item);
-		item.setStatus(BaseStatus.CLEAR);
-	}
-
-	@Override
-	protected void afterInsert(Item item) {
-		super.afterInsert(item);
-		calculateStatusStart(item);
-	}
-	
-
-	@Override
-	protected void afterInsertUnLock(Item item) {
-		super.afterInsertUnLock(item);
-		//eventService.itemAdded(item);
-	}
-
-	@Override
-	protected boolean insertExist(Item old, Item item) {
-		if(!super.insertExist(old, item)) {
-			return false;
-		}
-		item.setStatus(old.getStatus());
-		return true;
 	}
 
 	private int calculateEntityStatusAsCluster(Item item, ItemRule rule) {
@@ -179,6 +152,56 @@ public class ItemService extends EntityService<String, Item> {
 				.filter(o -> o.isPresent())
 				.map(o -> o.get())
 				.collect(Collectors.toList());
+	}
+	
+	public void addOrUpdate(Item item) {
+		
+		entityCache.transaction(() -> {
+			final var newFromHistory = new HashSet<String>();
+			newFromHistory.addAll(item.getFromHistory());
+			newFromHistory.add(nodeName);
+			
+			entityCache.put(item.getId(), () -> {
+				var inseredItem = new Item(item.getId(),
+						getNextVersion(),
+						item.getSource(),
+						item.getSourceKey(),
+						item.getFields(),
+						item.getRules(),
+						item.getFilters(),
+						item.getChildren(),
+						newFromHistory,
+						item.getCreatedOn(),
+						item.getUpdatedOn(),
+						null);
+					inseredItem.setStatus(BaseStatus.CLEAR);
+					return inseredItem;
+				
+			}, old -> {
+				if (isEntityEqual(old, item)) {
+					return null;
+				}
+				var updatedItem = new Item(item.getId(),
+						getNextVersion(),
+						item.getSource(),
+						item.getSourceKey(),
+						item.getFields(),
+						item.getRules(),
+						item.getFilters(),
+						item.getChildren(),
+						newFromHistory,
+						old.getCreatedOn(),
+						Instant.now(),
+						null);
+
+				updatedItem.setStatus(old.getStatus());
+				return updatedItem;
+			}, addedItem -> {
+				calculateStatusStart(addedItem);
+			});
+			return null;
+		});
+		
 	}
 	
 	public void eventAdded(Event event) {

@@ -92,18 +92,20 @@ public class EventRelationService {
 	}
 	
 	public void add(Item item, Event event, BaseStatus status) {
-		var relation = new EventRelation(item.getId(), event.getId(), status);
-		relationCache.put(relation, r -> {
-			
-		},r -> {
-			
-		}, (oldRelation, newRelation) -> {
-			if(oldRelation.getStatus() == newRelation.getStatus()) {
-				return false;
-			}
-			return true;
-		},r -> {
-			addCalculateMaxStatus(item, event, status);
+		final var relation = new EventRelation(item.getId(), event.getId(), status);
+		
+		relationCache.transaction(() -> {
+			relationCache.put(relation.getId(), () -> {
+				return relation;
+			}, old -> {
+				if(old.getStatus() == relation.getStatus()) {
+					return null;
+				}
+				return relation;
+			}, addedRelation -> {
+				addCalculateMaxStatus(item, event, status);
+			});
+			return null;
 		});
 	}
 	

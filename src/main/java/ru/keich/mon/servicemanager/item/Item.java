@@ -1,5 +1,7 @@
 package ru.keich.mon.servicemanager.item;
 
+import java.time.Instant;
+
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -33,7 +35,7 @@ import ru.keich.mon.servicemanager.entity.Entity;
 @Getter
 public class Item extends Entity<String> {
 
-	private BaseStatus status;
+	private BaseStatus status = BaseStatus.CLEAR;
 
 	private final Map<String, ItemRule> rules;
 
@@ -47,13 +49,18 @@ public class Item extends Entity<String> {
 	@JsonCreator
 	public Item(
 			@JsonProperty(value = "id", required = true) String id,
+			@JsonProperty(value = "version", required = false) Long version,
 			@JsonProperty(value = "source", required = true) String source,
 			@JsonProperty(value = "sourceKey", required = true) String sourceKey,
 			@JsonProperty("fields") Map<String, String> fields,
 			@JsonProperty("rules") Map<String, ItemRule> rules,
 			@JsonProperty("filters") Map<String, ItemFilter> filters,
-			@JsonProperty("children") Set<String> children) {
-		super(id, source, sourceKey, fields);
+			@JsonProperty("children") Set<String> children,
+			@JsonProperty("fromHistory") Set<String> fromHistory,
+			@JsonProperty(value = "createdOn", required = false) Instant createdOn,
+			@JsonProperty(value = "updatedOn", required = false) Instant updatedOn,
+			@JsonProperty(value = "deletedOn", required = false) Instant deletedOn) {
+		super(id, version, source, sourceKey, fields, fromHistory, createdOn, updatedOn, deletedOn);
 
 		if (Objects.nonNull(rules)) {
 			this.rules = Collections.unmodifiableMap(rules);
@@ -80,7 +87,7 @@ public class Item extends Entity<String> {
 		final int prime = 41;
 		int result = super.hashCode();
 
-		result = prime * result + fields.size();
+		result = prime * result + getFields().size();
 
 		result = prime * result + filters.size();
 
@@ -104,9 +111,7 @@ public class Item extends Entity<String> {
 			return false;
 		}
 
-		return super.equals(other) 
-				&& fields.equals(other.fields) 
-				&& rules.equals(other.rules) 
+		return super.equals(other) && getFields().equals(other.getFields()) && rules.equals(other.rules)
 				&& filters.equals(other.filters);
 	}	
 	
@@ -126,7 +131,7 @@ public class Item extends Entity<String> {
 
 	@Override
 	public String toString() {
-		return "Item [status=" + status + ", fields=" + fields + ", rules=" + rules + ", filters=" + filters
+		return "Item [status=" + status + ", fields=" + getFields() + ", rules=" + rules + ", filters=" + filters
 				+ ", getVersion()=" + getVersion() + ", getSource()=" + getSource() + ", getSourceKey()="
 				+ getSourceKey() + ", getCreatedOn()=" + getCreatedOn() + ", getUpdatedOn()=" + getUpdatedOn()
 				+ ", getDeletedOn()=" + getDeletedOn() + ", getFromHistory()=" + getFromHistory() + ", getId()="

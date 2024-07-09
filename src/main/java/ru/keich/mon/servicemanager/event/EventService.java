@@ -1,5 +1,8 @@
 package ru.keich.mon.servicemanager.event;
 
+import java.time.Instant;
+import java.util.HashSet;
+
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -37,9 +40,44 @@ public class EventService extends EntityService<String, Event>{
 	}
 	
 	@Override
-	protected void afterInsert(Event event) {
-		super.afterInsert(event);
-		itemService.eventAdded(event);
+	public void addOrUpdate(Event event) {
+		entityCache.transaction(() -> {
+			final var newFromHistory = new HashSet<String>();
+			newFromHistory.addAll(event.getFromHistory());
+			newFromHistory.add(nodeName);
+			
+			entityCache.put(event.getId(), () -> {
+				return new Event(event.getId(),
+						getNextVersion(),
+						event.getSource(),
+						event.getSourceKey(),
+						event.getType(),
+						event.getStatus(),
+						event.getFields(),
+						newFromHistory,
+						event.getCreatedOn(),
+						event.getDeletedOn(),
+						null);				
+			}, old -> {
+				if (isEntityEqual(old, event)) {
+					return null;
+				}
+				return new Event(event.getId(),
+						getNextVersion(),
+						event.getSource(),
+						event.getSourceKey(),
+						event.getType(),
+						event.getStatus(),
+						event.getFields(),
+						newFromHistory,
+						old.getCreatedOn(),
+						Instant.now(),
+						null);
+			}, addedEvent -> {
+				itemService.eventAdded(addedEvent);
+			});
+			return null;
+		});
 	}
 
 	@Override

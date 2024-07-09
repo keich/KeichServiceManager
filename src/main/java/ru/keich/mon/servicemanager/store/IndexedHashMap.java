@@ -19,10 +19,10 @@ package ru.keich.mon.servicemanager.store;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -74,27 +74,27 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 		}
 	}
 	
-	public void put(T entity, Consumer<T> before, Consumer<T> insertTrigger, BiFunction<T,T,Boolean> updateTrigger, Consumer<T> after) {
+	public void put(K entityId, Supplier<T> insertTrigger, Function<T,T> updateTrigger, Consumer<T> after) {
 		synchronized (this) {
-			before.accept(entity);
-			Optional.ofNullable(cache.get(entity.getId())).ifPresentOrElse(old -> {
-				var notIgnore = updateTrigger.apply(old, entity);
-				if(!notIgnore) {
-					return;
+			Optional.ofNullable(cache.get(entityId)).ifPresentOrElse(old -> {
+				final var entity = updateTrigger.apply(old);
+				if(Objects.nonNull(entity)) {
+					final var oldEntity = cache.put(entityId, entity);
+					index.entrySet().forEach(e -> {
+						e.getValue().remove(oldEntity);
+						e.getValue().append(entity);
+					});
+					after.accept(entity);
 				}
-				final var oldEntity = cache.put(entity.getId(), entity);
-				index.entrySet().forEach(e -> {
-					e.getValue().remove(oldEntity);
-					e.getValue().append(entity);
-				});
-				after.accept(entity);
 			}, () -> {
-				insertTrigger.accept(entity);
-				cache.put(entity.getId(), entity);
-				index.entrySet().forEach(e -> {
-					e.getValue().append(entity);
-				});
-				after.accept(entity);
+				final var entity = insertTrigger.get();
+				if(Objects.nonNull(entity)) {
+					cache.put(entityId, entity);
+					index.entrySet().forEach(e -> {
+						e.getValue().append(entity);
+					});
+					after.accept(entity);
+				}
 			});
 		}
 	}

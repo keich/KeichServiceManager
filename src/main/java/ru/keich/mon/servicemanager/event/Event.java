@@ -16,7 +16,9 @@ package ru.keich.mon.servicemanager.event;
  * limitations under the License.
  */
 
+import java.time.Instant;
 import java.util.Map;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -36,12 +38,17 @@ public class Event extends Entity<String> {
 	
 	@JsonCreator
 	public Event(@JsonProperty(value = "id", required = true) String id,
+			@JsonProperty(value = "version", required = false) Long version,
 			@JsonProperty(value = "source", required = true) String source,
 			@JsonProperty(value = "sourceKey", required = true) String sourceKey,
 			@JsonProperty(value = "type", required = true) EventType type,
 			@JsonProperty(value = "status", required = true) BaseStatus status,
-			@JsonProperty("fields") Map<String, String> fields) {
-		super(id.intern(), source, sourceKey, fields);
+			@JsonProperty("fields") Map<String, String> fields,
+			@JsonProperty("fromHistory") Set<String> fromHistory,
+			@JsonProperty(value = "createdOn") Instant createdOn,
+			@JsonProperty(value = "updatedOn") Instant updatedOn,
+			@JsonProperty(value = "deletedOn") Instant deletedOn) {
+		super(id.intern(), version, source, sourceKey, fields, fromHistory, createdOn, updatedOn, deletedOn);
 		this.type = type;
 		this.status = status;
 	}
@@ -49,7 +56,7 @@ public class Event extends Entity<String> {
 	@Override
 	public int hashCode() {
 		final int prime = 31;
-		int result = super.hashCode() + prime * fields.size();
+		int result = super.hashCode() + prime * getFields().size();
 		result = prime * result + prime * status.hashCode() +  prime * type.hashCode();
 		return result;
 	}
@@ -59,17 +66,17 @@ public class Event extends Entity<String> {
 		if (!super.equals(obj))
 			return false;
 		Event other = (Event) obj;
-		if(fields.size() != other.fields.size()) {
+		if(getFields().size() != getFields().size()) {
 			return false;
 		}
-		return super.equals(other) && status == other.status && type == other.type && fields.equals(other.fields);
+		return super.equals(other) && status == other.status && type == other.type && getFields().equals(other.getFields());
 	}
 
 	@Override
 	public String toString() {
 		return "Event [id=" + getId() + ", type=" + type + ", status=" + status +
 				", createdOn=" + getCreatedOn() + ", createdOn=" + getUpdatedOn() + ", deletedOn=" + getDeletedOn() +
-				", fields=" + fields + "]";
+				", fields=" + getFields() + "]";
 	}
 
 }
