@@ -35,6 +35,11 @@ public class IndexSorted<K, T extends BaseEntity<K>> implements Index<K, T> {
 	}
 
 	@Override
+	public Set<Object> getKeys() {
+		return objects.keySet();
+	}
+
+	@Override
 	public void append(T entity) {
 		mapper.apply(entity).forEach(key -> {
 			if(objects.containsKey(key)) {

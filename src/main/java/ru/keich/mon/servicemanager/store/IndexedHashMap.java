@@ -62,6 +62,12 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 		}
 	}
 	
+	public Set<Object> indexGetKeys(String name) {
+		synchronized (this) {
+			return index.get(name).getKeys();
+		}
+	}
+	
 	public List<K> indexGetAfter(String name,Object key) {
 		synchronized (this) {
 			return index.get(name).getAfter(key);
