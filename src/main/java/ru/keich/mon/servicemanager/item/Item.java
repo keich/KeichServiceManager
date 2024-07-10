@@ -21,6 +21,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -127,6 +128,14 @@ public class Item extends Entity<String> {
 	
 	public static Set<Object> getParentsForIndex(Item item) {
 		return Collections.unmodifiableSet(item.getChildren());
+	}
+	
+	public static Set<Object> getFieldsNameForIndex(Entity<?> item) {
+		var opt = Optional.ofNullable(item.getFields().get("name"));
+		if(opt.isPresent()) {
+			return Collections.singleton(opt.get());
+		}
+		return Collections.emptySet();
 	}
 
 	@Override

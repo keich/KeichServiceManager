@@ -34,6 +34,8 @@ import ru.keich.mon.servicemanager.entity.EntityService;
 import ru.keich.mon.servicemanager.event.Event;
 import ru.keich.mon.servicemanager.event.EventService;
 import ru.keich.mon.servicemanager.eventrelation.EventRelationService;
+import ru.keich.mon.servicemanager.query.Operator;
+import ru.keich.mon.servicemanager.query.QueryId;
 import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
 
 
@@ -47,14 +49,28 @@ public class ItemService extends EntityService<String, Item> {
 	static final String INDEX_NAME_FILTERS_EQL = "filter_equal";
 	static final String INDEX_NAME_PARENTS = "parents";
 	
+	static final public String INDEX_NAME_FIELDS_NAME = "field.name";
+	
 	public ItemService(@Value("${replication.nodename}") String nodeName, EventService eventService,
 			EventRelationService eventRelationService) {
 		super(nodeName);
 		entityCache.createIndex(INDEX_NAME_FILTERS_EQL, IndexType.EQUAL, Item::getFiltersForIndex);
 		entityCache.createIndex(INDEX_NAME_PARENTS, IndexType.EQUAL, Item::getParentsForIndex);
+		
+		entityCache.createIndex(INDEX_NAME_FIELDS_NAME, IndexType.EQUAL, Item::getFieldsNameForIndex);
+		
 		this.eventService = eventService;
 		this.eventRelationService = eventRelationService;
 		eventService.setItemService(this);
+		
+		queryProducer.put(new QueryId("fields.name", Operator.CO), (value)  -> {			
+			return entityCache.indexGetKeys(INDEX_NAME_FIELDS_NAME)
+			.stream()
+			.map(key -> key.toString())
+			.filter(key -> key.toUpperCase().contains(value.toUpperCase()))
+			.flatMap(name -> entityCache.indexGet(INDEX_NAME_FIELDS_NAME,name).stream())
+			.collect(Collectors.toList());
+		});
 	}
 	
 	@Override
