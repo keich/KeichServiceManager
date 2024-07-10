@@ -18,6 +18,7 @@ package ru.keich.mon.servicemanager.entity;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
@@ -45,7 +46,7 @@ public class EntityController<K, T extends Entity<K>> {
 		var filters = reqParam.entrySet().stream()
 		.flatMap(param -> {
 			return param.getValue().stream().map(value -> new Filter(param.getKey(),value));
-		}).toList();
+		}).collect(Collectors.toList());
 		var out = entityService.query(filters);
 		return ResponseEntity.ok(out);
 	}

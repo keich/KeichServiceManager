@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -181,7 +182,7 @@ public class ItemService extends EntityService<String, Item> {
 				})
 				.filter(o -> o.isPresent())
 				.map(o -> o.get())
-				.toList();
+				.collect(Collectors.toList());
 	}
 	
 	public void addOrUpdate(Item item) {
@@ -269,7 +270,7 @@ public class ItemService extends EntityService<String, Item> {
 			.map(cid -> findById(cid))
 			.filter(o -> o.isPresent())
 			.map(o -> o.get())
-			.toList();
+			.collect(Collectors.toList());
 	}
 	
 	public List<Item> findParents(String itemId) {
@@ -277,7 +278,7 @@ public class ItemService extends EntityService<String, Item> {
 		.map(parentId -> findById(parentId))
 		.filter(opt -> opt.isPresent())
 		.map(opt -> opt.get())
-		.toList();
+		.collect(Collectors.toList());
 	}
 	
 	private List<Event> findEventsByItem(Item item){
@@ -285,7 +286,7 @@ public class ItemService extends EntityService<String, Item> {
 		.map(id -> eventService.findById(id))
 		.filter(opt -> opt.isPresent())
 		.map(opt -> opt.get())
-		.toList();
+		.collect(Collectors.toList());
 	}
 	
 	private void findAllItemsById(String parentId, Set<Item> out, Set<String> history) {
@@ -310,7 +311,7 @@ public class ItemService extends EntityService<String, Item> {
 			findAllItemsById(id, items, history);
 			return items.stream().flatMap(item -> findEventsByItem(item).stream())
 					.distinct()
-					.toList();
+					.collect(Collectors.toList());
 		});
 	}
 	
