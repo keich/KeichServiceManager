@@ -1,5 +1,7 @@
 package ru.keich.mon.servicemanager.item;
 
+import java.time.Instant;
+
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -43,6 +45,10 @@ public class ItemDTO {
 	private List<ItemDTO> children = Collections.emptyList();
 	private boolean hasChildren;
 	
+	private Instant createdOn;
+	private Instant updatedOn;
+	private Instant deletedOn;
+	
 	public ItemDTO() {
 		
 	}
@@ -58,6 +64,9 @@ public class ItemDTO {
 		this.filters = item.getFilters();
 		this.childrenIds = item.getChildren();
 		this.hasChildren = item.isHasChildren();
+		this.createdOn = item.getCreatedOn();
+		this.updatedOn = item.getUpdatedOn();
+		this.deletedOn = item.getDeletedOn();
 	}
 	
 	public void setChildren(List<ItemDTO> children) {
