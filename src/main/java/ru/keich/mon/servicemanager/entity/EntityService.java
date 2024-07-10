@@ -256,8 +256,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 		return out;
 	}
 	
-	//TODO to params
-	@Scheduled(fixedRate = 60, timeUnit = TimeUnit.SECONDS)
+	@Scheduled(fixedRateString = "${entity.delete.fixedrate:60}", timeUnit = TimeUnit.SECONDS)
 	public void deleteOldScheduled() {
 		entityCache.transaction(() -> {
 			entityCache.indexGetBefore(INDEX_NAME_DELETED_ON, Instant.now().minusSeconds(30)).stream()
