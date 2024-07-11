@@ -23,10 +23,13 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.annotation.JsonFilter;
+
 import lombok.Getter;
 import ru.keich.mon.servicemanager.store.BaseEntity;
 
 @Getter
+@JsonFilter("propertiesFilter")
 public class Entity<K> extends BaseEntity<K> {
 	private final Long version;
 	private final String source;
@@ -36,7 +39,7 @@ public class Entity<K> extends BaseEntity<K> {
 	private final Instant updatedOn;
 	private final Instant deletedOn;
 
-	private final Set<String> fromHistory;// = new HashSet<String>();
+	private final Set<String> fromHistory;
 	private final Map<String, String> fields;
 	
 	public Entity(K id,

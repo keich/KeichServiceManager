@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import lombok.Getter;
@@ -31,6 +32,7 @@ import ru.keich.mon.servicemanager.BaseStatus;
 
 @Getter
 @Setter
+@JsonFilter("propertiesFilter")
 public class ItemDTO {
 	private String id;
 	private Long version;

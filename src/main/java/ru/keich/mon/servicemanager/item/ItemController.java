@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.json.MappingJacksonValue;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -33,6 +34,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
+
 import lombok.extern.java.Log;
 import ru.keich.mon.servicemanager.entity.EntityController;
 import ru.keich.mon.servicemanager.event.Event;
@@ -42,6 +45,8 @@ import ru.keich.mon.servicemanager.event.Event;
 @Log
 public class ItemController extends EntityController<String, Item> {
 
+	public static final String QUERY_CHILDREN= "children";
+	
 	private final ItemService itemService;
 	
 	public ItemController(@Autowired  ItemService itemService) {
@@ -58,7 +63,7 @@ public class ItemController extends EntityController<String, Item> {
 	@Override
 	@GetMapping("/item")
 	@CrossOrigin(origins = "*")
-	public ResponseEntity<List<Item>> find(@RequestParam MultiValueMap<String, String> reqParam) {
+	public ResponseEntity<MappingJacksonValue> find(@RequestParam MultiValueMap<String, String> reqParam) {
 		return super.find(reqParam);
 	}
 
@@ -90,12 +95,22 @@ public class ItemController extends EntityController<String, Item> {
 
 	@GetMapping("/item/{id}/tree")
 	@CrossOrigin(origins = "*")
-	ResponseEntity<ItemDTO> getTree(@PathVariable String id) {
+	ResponseEntity<MappingJacksonValue> getTree(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
 		var history = new HashSet<String>();
 		return itemService.findById(id).map(item -> {
 			var root = new ItemDTO(item);
 			return setChildren(root, history);
-		}).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+		})
+		.map(item -> {
+			if(reqParam.containsKey(QUERY_PROPERTY)) {
+				reqParam.add(QUERY_PROPERTY, QUERY_CHILDREN);
+			}
+			final SimpleFilterProvider jsonFilter = getJsonFilter(reqParam);
+			var value = new MappingJacksonValue(item);
+			value.setFilters(jsonFilter);
+			return ResponseEntity.ok(value);
+		})
+		.orElse(ResponseEntity.notFound().build());
 	}
 	
 	private ItemDTO setChildren(ItemDTO root, HashSet<String> history) {

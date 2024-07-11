@@ -21,16 +21,23 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.json.MappingJacksonValue;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
+
+import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
+import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 
 import ru.keich.mon.servicemanager.query.Filter;
 
 public class EntityController<K, T extends Entity<K>> {
 
 	private EntityService<K, T> entityService;
+	public static final String QUERY_PROPERTY = "property";
+	public static final String QUERY_ID = "id";
+	public static final String FILTER_NAME = "propertiesFilter";
 	
 	public EntityController(EntityService<K, T> entityService) {
 		super();
@@ -42,13 +49,28 @@ public class EntityController<K, T extends Entity<K>> {
 		return ResponseEntity.ok("ok");
 	}
 	
-	public ResponseEntity<List<T>> find(@RequestParam MultiValueMap<String, String> reqParam) {
+	protected SimpleFilterProvider getJsonFilter(MultiValueMap<String, String> reqParam){
+		if(reqParam.containsKey(QUERY_PROPERTY)) {
+			var properties = reqParam.get(QUERY_PROPERTY).stream().collect(Collectors.toSet());
+			properties.add(QUERY_ID);
+			return new SimpleFilterProvider().addFilter(FILTER_NAME, SimpleBeanPropertyFilter.filterOutAllExcept(properties));
+		}
+		return new SimpleFilterProvider().addFilter(FILTER_NAME, SimpleBeanPropertyFilter.serializeAll());
+	}
+	
+	public ResponseEntity<MappingJacksonValue> find(@RequestParam MultiValueMap<String, String> reqParam) {
+		final SimpleFilterProvider jsonFilter = getJsonFilter(reqParam);
+		reqParam.remove(QUERY_PROPERTY);
+		
 		var filters = reqParam.entrySet().stream()
 		.flatMap(param -> {
 			return param.getValue().stream().map(value -> new Filter(param.getKey(),value));
 		}).collect(Collectors.toList());
 		var out = entityService.query(filters);
-		return ResponseEntity.ok(out);
+		
+		var value = new MappingJacksonValue(out);
+		value.setFilters(jsonFilter);
+		return ResponseEntity.ok(value);
 	}
 
 	public ResponseEntity<T> findById(@PathVariable K id) {
