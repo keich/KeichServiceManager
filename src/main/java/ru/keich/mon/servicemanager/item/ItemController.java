@@ -38,7 +38,6 @@ import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 
 import lombok.extern.java.Log;
 import ru.keich.mon.servicemanager.entity.EntityController;
-import ru.keich.mon.servicemanager.event.Event;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -89,8 +88,12 @@ public class ItemController extends EntityController<String, Item> {
 	
 	@GetMapping("/item/{id}/events")
 	@CrossOrigin(origins = "*")
-	public ResponseEntity<List<Event>> findAllEventsById(@PathVariable String id) {
-		return ResponseEntity.ok(itemService.findAllEventsById(id));
+	public ResponseEntity<MappingJacksonValue> findAllEventsById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
+		var events = itemService.findAllEventsById(id);
+		final SimpleFilterProvider jsonFilter = getJsonFilter(reqParam);
+		var value = new MappingJacksonValue(events);
+		value.setFilters(jsonFilter);
+		return ResponseEntity.ok(value);
 	}
 
 	@GetMapping("/item/{id}/tree")
