@@ -38,6 +38,7 @@ public class ItemDTO {
 	private Long version;
 	private String source;
 	private String sourceKey;
+	private String name;
 	private BaseStatus status;
 	private Map<String, String> fields;
 	private Map<String, ItemRule> rules;
@@ -60,6 +61,7 @@ public class ItemDTO {
 		this.version = item.getVersion();
 		this.source = item.getSource();
 		this.sourceKey = item.getSourceKey();
+		this.name = item.getName();
 		this.status = item.getStatus();
 		this.fields = item.getFields();
 		this.rules = item.getRules();

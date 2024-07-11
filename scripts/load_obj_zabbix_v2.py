@@ -104,7 +104,7 @@ for host in hosts:
             zabbixGroups[groupId]['children'] = [hostId]
     del host['groups']
     filters = {'byHostId': {'equalFields': {'hostid': hostId}}}
-    objs.append({'id': hostId, 'source':source, 'sourceKey': sourcekey, 'fields': host, 'filters': filters })
+    objs.append({'id': hostId, 'source':source, 'sourceKey': sourcekey, 'name': host['name'], 'fields': host, 'filters': filters })
 
 groupIds = []
 kGroups = { zabbix_id: { 'fields': {'name': zabbix_name,'zabbix_url': zabbix_url}, 'children': {} } }
@@ -130,9 +130,9 @@ for groupId in kGroups:
     group = kGroups[groupId]
     fields = group['fields']
     children = list(group['children'].keys())
-    objs.append({'id': groupId, 'source': source, 'sourceKey': sourcekey, 'fields': fields, 'children': children})
+    objs.append({'id': groupId, 'source': source, 'sourceKey': sourcekey, 'name': fields['name'],  'fields': fields, 'children': children})
 
-objs.append({'id': '1', 'source': source, 'sourceKey': sourcekey, 'fields': {'name': 'ROOT'}, 'children': [zabbix_id]})
+objs.append({'id': '1', 'source': source, 'sourceKey': sourcekey, 'name': 'ROOT', 'fields': {'name': 'ROOT'}, 'children': [zabbix_id]})
 
 events = []
 

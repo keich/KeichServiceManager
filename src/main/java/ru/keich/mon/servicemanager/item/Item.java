@@ -47,12 +47,15 @@ public class Item extends Entity<String> {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	private final boolean hasChildren;
 	
+	private final String name;
+	
 	@JsonCreator
 	public Item(
 			@JsonProperty(value = "id", required = true) String id,
 			@JsonProperty(value = "version", required = false) Long version,
 			@JsonProperty(value = "source", required = true) String source,
 			@JsonProperty(value = "sourceKey", required = true) String sourceKey,
+			@JsonProperty("name") String name,
 			@JsonProperty("fields") Map<String, String> fields,
 			@JsonProperty("rules") Map<String, ItemRule> rules,
 			@JsonProperty("filters") Map<String, ItemFilter> filters,
@@ -63,6 +66,8 @@ public class Item extends Entity<String> {
 			@JsonProperty(value = "deletedOn", required = false) Instant deletedOn) {
 		super(id, version, source, sourceKey, fields, fromHistory, createdOn, updatedOn, deletedOn);
 
+		this.name = name;
+		
 		if (Objects.nonNull(rules)) {
 			this.rules = Collections.unmodifiableMap(rules);
 		} else {
@@ -130,8 +135,9 @@ public class Item extends Entity<String> {
 		return Collections.unmodifiableSet(item.getChildren());
 	}
 	
-	public static Set<Object> getFieldsNameForIndex(Entity<?> item) {
-		var opt = Optional.ofNullable(item.getFields().get("name"));
+	public static Set<Object> getNameForIndex(Entity<?> entity) {
+		Item item = (Item)entity;
+		var opt = Optional.ofNullable(item.getName());
 		if(opt.isPresent()) {
 			return Collections.singleton(opt.get());
 		}
@@ -140,7 +146,7 @@ public class Item extends Entity<String> {
 
 	@Override
 	public String toString() {
-		return "Item [status=" + status + ", fields=" + getFields() + ", rules=" + rules + ", filters=" + filters
+		return "Item [name=" + name + ", status=" + status + ", fields=" + getFields() + ", rules=" + rules + ", filters=" + filters
 				+ ", getVersion()=" + getVersion() + ", getSource()=" + getSource() + ", getSourceKey()="
 				+ getSourceKey() + ", getCreatedOn()=" + getCreatedOn() + ", getUpdatedOn()=" + getUpdatedOn()
 				+ ", getDeletedOn()=" + getDeletedOn() + ", getFromHistory()=" + getFromHistory() + ", getId()="

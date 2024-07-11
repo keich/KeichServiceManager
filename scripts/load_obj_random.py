@@ -29,14 +29,16 @@ for parentCount in range(1000):
         childId = getItemId()
         children.append(childId)
         flt = { 'byId': {'equalFields': {'itemId': childId}}}
-        obj = {'id': childId, 'source': source, 'sourceKey': sourcekey, 'fields': {'name':'Child' + childId}, 'filters': flt}
+        name = 'Child' + childId
+        obj = {'id': childId, 'source': source, 'sourceKey': sourcekey, 'name': name, 'fields': {'name': name}, 'filters': flt}
         objs.append(obj)
     flt = { 'byId': {'equalFields': {'itemId': parentId}}}
-    obj = {'id': parentId, 'source': source, 'sourceKey': sourcekey, 'fields': {'name':'Parent' + parentId}, 'filters': flt, 'children': children}
+    name = 'Parent' + parentId
+    obj = {'id': parentId, 'source': source, 'sourceKey': sourcekey, 'name': name, 'fields': {'name': name}, 'filters': flt, 'children': children}
     objs.append(obj)
 
 
-obj = {'id':'1','source':source,'sourceKey': sourcekey, 'fields':{'name':'ROOT'},'children': rootChildren}
+obj = {'id':'1','source':source,'sourceKey': sourcekey, 'name': 'ROOT','fields':{'name':'ROOT'},'children': rootChildren}
 objs.append(obj)
 
 events = []

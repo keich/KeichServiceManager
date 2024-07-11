@@ -49,7 +49,7 @@ public class ItemService extends EntityService<String, Item> {
 	static final String INDEX_NAME_FILTERS_EQL = "filter_equal";
 	static final String INDEX_NAME_PARENTS = "parents";
 	
-	static final public String INDEX_NAME_FIELDS_NAME = "field.name";
+	static final public String INDEX_NAME_NAME = "name";
 	
 	public ItemService(@Value("${replication.nodename}") String nodeName, EventService eventService,
 			EventRelationService eventRelationService) {
@@ -57,18 +57,18 @@ public class ItemService extends EntityService<String, Item> {
 		entityCache.createIndex(INDEX_NAME_FILTERS_EQL, IndexType.EQUAL, Item::getFiltersForIndex);
 		entityCache.createIndex(INDEX_NAME_PARENTS, IndexType.EQUAL, Item::getParentsForIndex);
 		
-		entityCache.createIndex(INDEX_NAME_FIELDS_NAME, IndexType.EQUAL, Item::getFieldsNameForIndex);
+		entityCache.createIndex(INDEX_NAME_NAME, IndexType.EQUAL, Item::getNameForIndex);
 		
 		this.eventService = eventService;
 		this.eventRelationService = eventRelationService;
 		eventService.setItemService(this);
 		
-		queryProducer.put(new QueryId("fields.name", Operator.CO), (value)  -> {			
-			return entityCache.indexGetKeys(INDEX_NAME_FIELDS_NAME)
+		queryProducer.put(new QueryId("name", Operator.CO), (value)  -> {			
+			return entityCache.indexGetKeys(INDEX_NAME_NAME)
 			.stream()
 			.map(key -> key.toString())
 			.filter(key -> key.toUpperCase().contains(value.toUpperCase()))
-			.flatMap(name -> entityCache.indexGet(INDEX_NAME_FIELDS_NAME,name).stream())
+			.flatMap(name -> entityCache.indexGet(INDEX_NAME_NAME, name).stream())
 			.collect(Collectors.toList());
 		});
 	}
@@ -88,6 +88,7 @@ public class ItemService extends EntityService<String, Item> {
 			getNextVersion(),
 			item.getSource(),
 			item.getSourceKey(),
+			item.getName(),
 			item.getFields(),
 			item.getRules(),
 			item.getFilters(),
@@ -212,6 +213,7 @@ public class ItemService extends EntityService<String, Item> {
 						getNextVersion(),
 						item.getSource(),
 						item.getSourceKey(),
+						item.getName(),
 						item.getFields(),
 						item.getRules(),
 						item.getFilters(),
@@ -231,6 +233,7 @@ public class ItemService extends EntityService<String, Item> {
 						getNextVersion(),
 						item.getSource(),
 						item.getSourceKey(),
+						item.getName(),
 						item.getFields(),
 						item.getRules(),
 						item.getFilters(),
