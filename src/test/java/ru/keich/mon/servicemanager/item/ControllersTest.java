@@ -27,7 +27,6 @@ import org.springframework.http.MediaType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import lombok.extern.java.Log;
 import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.entity.Entity;
 import ru.keich.mon.servicemanager.event.Event;
@@ -635,7 +634,7 @@ public class ControllersTest {
 		var events = new ArrayList<Event>();
 		for (int i = 0; i < 10; i++) {
 			var event = new Event("id_eventVersionFilter_" + i, 0L, "src_eventVersionFilter", "src_key_eventVersionFilter",
-					EventType.PROBLEM, BaseStatus.WARNING, null, null,Instant.now(),Instant.now(),null);
+					"node", "summary",EventType.PROBLEM, BaseStatus.WARNING, null, null,Instant.now(),Instant.now(),null);
 			events.add(event);
 		}
 		entityGetWithVersionFilter("/event", events, Event.class);
@@ -645,9 +644,9 @@ public class ControllersTest {
 	public void eventSourceFilter() throws IOException {
 		final var source = "src_eventSourceFilter";
 		final var sourceKey = "src_eventSourceFilter";
-		final var event = new Event("id_eventSourceFilter", 0L, source, sourceKey,
+		final var event = new Event("id_eventSourceFilter", 0L, source, sourceKey, "node", "summary",
 				EventType.PROBLEM, BaseStatus.WARNING, null, null,Instant.now(),Instant.now(),null);
-		final var event1 = new Event("id_eventSourceFilter1", 0L, source + "1", sourceKey + "1",
+		final var event1 = new Event("id_eventSourceFilter1", 0L, source + "1", sourceKey + "1","node", "summary",
 				EventType.PROBLEM, BaseStatus.WARNING, null, null,Instant.now(),Instant.now(),null);
 		entityAdd("/event", event);
 		entityAdd("/event", event1);
@@ -669,9 +668,9 @@ public class ControllersTest {
 	public void eventSourceKeyFilter() throws IOException {
 		final var source = "src_eventSourceKeyFilter";
 		final var sourceKey = "src_eventSourceKeyFilter";
-		final var event = new Event("id_eventSourceKeyFilter", 0L, source, sourceKey,
+		final var event = new Event("id_eventSourceKeyFilter", 0L, source, sourceKey,"node", "summary",
 				EventType.PROBLEM, BaseStatus.WARNING, null,null,Instant.now(),Instant.now(),null);
-		final var event1 = new Event("id_eventSourceKeyFilter1", 0L, source + "1", sourceKey + "1",
+		final var event1 = new Event("id_eventSourceKeyFilter1", 0L, source + "1", sourceKey + "1","node", "summary",
 				EventType.PROBLEM, BaseStatus.WARNING, null,null,Instant.now(),Instant.now(),null);
 		entityAdd("/event", event);
 		entityAdd("/event", event1);
@@ -727,10 +726,10 @@ public class ControllersTest {
 	@Test
 	public void eventDeleteBySoyrceAndSourceKeyNot() throws IOException {
 		var event1 = new Event("id_eventDeleteBySoyrceAndSourceKeyNot1", 0L, "src_eventDeleteBySoyrceAndSourceKeyNot",
-				"src_key_eventDeleteBySoyrceAndSourceKeyNot", EventType.PROBLEM, BaseStatus.WARNING, null
+				"src_key_eventDeleteBySoyrceAndSourceKeyNot", "node", "summary", EventType.PROBLEM, BaseStatus.WARNING, null
 				, null,Instant.now(),Instant.now(), null);
 		var event2 = new Event("id_eventDeleteBySoyrceAndSourceKeyNot2", 0L, "src_eventDeleteBySoyrceAndSourceKeyNot",
-				"src_key_eventDeleteBySoyrceAndSourceKeyNotNew", EventType.PROBLEM, BaseStatus.WARNING, null
+				"src_key_eventDeleteBySoyrceAndSourceKeyNotNew", "node", "summary", EventType.PROBLEM, BaseStatus.WARNING, null
 				, null,Instant.now(),Instant.now(), null);
 		entityDeleteBySoyrceAndSourceKeyNot("/event", event1, event2, Event.class);
 	}

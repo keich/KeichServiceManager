@@ -19,6 +19,7 @@ package ru.keich.mon.servicemanager.event;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -47,10 +48,27 @@ public class EventService extends EntityService<String, Event>{
 			newFromHistory.addAll(event.getFromHistory());
 			newFromHistory.add(nodeName);
 			entityCache.put(event.getId(), () -> {
+				// TODO temporary
+				var summary = event.getSummary();
+				if(Objects.isNull(summary)) {
+					var fieldsSummary = event.getFields().get("summary");
+					if(Objects.nonNull(fieldsSummary)) {
+						summary = fieldsSummary;
+					}
+				}
+				var node = event.getNode();
+				if(Objects.isNull(node)) {
+					var fieldsNode = event.getFields().get("node");
+					if(Objects.nonNull(fieldsNode)) {
+						node = fieldsNode;
+					}
+				}
 				return new Event(event.getId(),
 						getNextVersion(),
 						event.getSource(),
 						event.getSourceKey(),
+						node,
+						summary,
 						event.getType(),
 						event.getStatus(),
 						event.getFields(),
@@ -66,6 +84,8 @@ public class EventService extends EntityService<String, Event>{
 						getNextVersion(),
 						event.getSource(),
 						event.getSourceKey(),
+						event.getNode(),
+						event.getSummary(),
 						event.getType(),
 						event.getStatus(),
 						event.getFields(),
@@ -91,6 +111,8 @@ public class EventService extends EntityService<String, Event>{
 			getNextVersion(),
 			event.getSource(),
 			event.getSourceKey(),
+			event.getNode(),
+			event.getSummary(),
 			event.getType(),
 			event.getStatus(),
 			event.getFields(),

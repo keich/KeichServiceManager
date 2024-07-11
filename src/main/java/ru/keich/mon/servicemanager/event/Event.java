@@ -35,12 +35,16 @@ public class Event extends Entity<String> {
 	
 	private final EventType type;
 	private final BaseStatus status;
+	private final String node;
+	private final String summary;
 	
 	@JsonCreator
 	public Event(@JsonProperty(value = "id", required = true) String id,
 			@JsonProperty(value = "version", required = false) Long version,
 			@JsonProperty(value = "source", required = true) String source,
 			@JsonProperty(value = "sourceKey", required = true) String sourceKey,
+			@JsonProperty(value = "node") String node,
+			@JsonProperty(value = "summary") String summary,
 			@JsonProperty(value = "type", required = true) EventType type,
 			@JsonProperty(value = "status", required = true) BaseStatus status,
 			@JsonProperty("fields") Map<String, String> fields,
@@ -51,6 +55,8 @@ public class Event extends Entity<String> {
 		super(id.intern(), version, source, sourceKey, fields, fromHistory, createdOn, updatedOn, deletedOn);
 		this.type = type;
 		this.status = status;
+		this.node = node;
+		this.summary = summary;
 	}
 
 	@Override

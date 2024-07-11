@@ -130,7 +130,7 @@ for problem in problems:
     fields['summary'] = problem['name']
     fields['hostid'] = hostId
     fields['node'] = hostName
-    events.append({'id': eventId, 'source': source, 'sourceKey': sourcekey, 'fields': fields, 'status': status, 'type': 'PROBLEM' })
+    events.append({'id': eventId, 'source': source, 'sourceKey': sourcekey, 'node': fields['node'], 'summary': fields['summary'], 'fields': fields, 'status': status, 'type': 'PROBLEM' })
 
 start = datetime.datetime.now()
 print(str(start) + " Items Add Start ")

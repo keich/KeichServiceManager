@@ -67,7 +67,9 @@ def getEventStatusRandom():
 for itemId in range(itemCounter):
     eventId = getEventId()
     status = getEventStatusRandom()
-    event = {'id': eventId, 'source': source, 'sourceKey': sourcekey, 'fields': {'itemId': str(itemId),'node': 'Item ' + str(itemId), 'summary': 'Test message for ' + str(itemId) }, 'status': status,'type': 'PROBLEM' }
+    summary = 'Test message for ' + str(itemId)
+    node = 'Item ' + str(itemId)
+    event = {'id': eventId, 'source': source, 'sourceKey': sourcekey,'node': node, 'summary': summary, 'fields': {'itemId': str(itemId),'node': node, 'summary': summary }, 'status': status,'type': 'PROBLEM' }
     events.append(event)
 
 
