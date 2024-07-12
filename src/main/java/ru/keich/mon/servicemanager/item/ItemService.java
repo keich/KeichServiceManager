@@ -77,7 +77,7 @@ public class ItemService extends EntityService<String, Item> {
 	protected void entityRemoved(Item item) {
 		super.entityRemoved(item);
 		eventRelationService.itemRemoved(item);
-		findParents(item.getId()).stream()
+		findParents(item).stream()
 		.filter(parent -> Objects.isNull(parent.getDeletedOn()))
 		.forEach(parent ->{
 			calculateStatusStart(parent);
@@ -165,7 +165,7 @@ public class ItemService extends EntityService<String, Item> {
 		if(maxStatus != item.getStatus()) {
 			history.add(item.getId());
 			item.setStatus(maxStatus);
-			findParents(item.getId()).stream()
+			findParents(item).stream()
 			.filter(parent -> Objects.isNull(parent.getDeletedOn()))
 			.forEach(parent ->{
 				if (history.contains(parent.getId())) {
@@ -283,16 +283,26 @@ public class ItemService extends EntityService<String, Item> {
 		});
 	}
 
-	public List<Item> findChildren(String itemId) {
-		return findById(itemId).map( item -> item.getChildren()).stream()
-			.flatMap(set -> set.stream())
+	public List<Item> findChildren(Item item) {
+		return item.getChildren().stream()
+			.distinct()
 			.map(cid -> findById(cid))
 			.filter(o -> o.isPresent())
 			.map(o -> o.get())
 			.collect(Collectors.toList());
 	}
 	
-	public List<Item> findParents(String itemId) {
+	public List<Item> findChildrenById(String id) {
+		return findById(id)
+		.map(parent -> findChildren(parent))
+		.orElse(Collections.emptyList());
+	}
+	
+	public List<Item> findParents(Item item) {
+		return findParentsById(item.getId());
+	}
+	
+	public List<Item> findParentsById(String itemId) {
 		return entityCache.indexGet(INDEX_NAME_PARENTS, itemId).stream()
 		.map(parentId -> findById(parentId))
 		.filter(opt -> opt.isPresent())

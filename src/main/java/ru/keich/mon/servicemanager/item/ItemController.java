@@ -44,7 +44,8 @@ import ru.keich.mon.servicemanager.entity.EntityController;
 @Log
 public class ItemController extends EntityController<String, Item> {
 
-	public static final String QUERY_CHILDREN= "children";
+	public static final String QUERY_CHILDREN = "children";
+	public static final String QUERY_PARENTS = "parents";
 	
 	private final ItemService itemService;
 	
@@ -76,7 +77,13 @@ public class ItemController extends EntityController<String, Item> {
 	@GetMapping("/item/{id}/children")
 	@CrossOrigin(origins = "*")
 	ResponseEntity<List<Item>> findChildrenById(@PathVariable String id) {
-		return ResponseEntity.ok(itemService.findChildren(id));
+		return ResponseEntity.ok(itemService.findChildrenById(id));
+	}
+	
+	@GetMapping("/item/{id}/parents")
+	@CrossOrigin(origins = "*")
+	ResponseEntity<List<Item>> findParentsById(@PathVariable String id) {
+		return ResponseEntity.ok(itemService.findParentsById(id));
 	}
 
 	@Override
@@ -98,41 +105,77 @@ public class ItemController extends EntityController<String, Item> {
 
 	@GetMapping("/item/{id}/tree")
 	@CrossOrigin(origins = "*")
+	// TODO rename children/tree
 	ResponseEntity<MappingJacksonValue> getTree(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
 		var history = new HashSet<String>();
-		return itemService.findById(id).map(item -> {
-			var root = new ItemDTO(item);
-			return setChildren(root, history);
-		})
-		.map(item -> {
+		return itemService.findById(id)
+		.map(parent -> {
+			var parentDTO = new ItemDTO(parent);
+			setChildren(parentDTO, history);
 			if(reqParam.containsKey(QUERY_PROPERTY)) {
 				reqParam.add(QUERY_PROPERTY, QUERY_CHILDREN);
 			}
 			final SimpleFilterProvider jsonFilter = getJsonFilter(reqParam);
-			var value = new MappingJacksonValue(item);
+			var value = new MappingJacksonValue(parentDTO);
 			value.setFilters(jsonFilter);
 			return ResponseEntity.ok(value);
 		})
 		.orElse(ResponseEntity.notFound().build());
 	}
 	
-	private ItemDTO setChildren(ItemDTO root, HashSet<String> history) {
-		var children = root.getChildrenIds().stream()
-		.map(childId -> itemService.findById(childId))
-		.filter(opt -> opt.isPresent())
-		.map(opt -> new ItemDTO(opt.get()))
+	private ItemDTO setChildren(ItemDTO parent, HashSet<String> history) {
+		var children = itemService.findChildrenById(parent.getId()).stream()
+		.map(child -> new ItemDTO(child))
 		.toList();
 		
-		history.add(root.getId());
+		history.add(parent.getId());
 		children.forEach(child -> {
 			if (history.contains(child.getId())) {
-				log.warning("setChildren: circle found from " + root.getId() + " to " + child.getId());
+				log.warning("setChildren: circle found from " + parent.getId() + " to " + child.getId());
 			} else {
 				setChildren(child, history);
 			}
 		});
-		root.setChildren(children);
-		history.remove(root.getId());
-		return root;
+		parent.setChildren(children);
+		history.remove(parent.getId());
+		return parent;
 	}
+	
+	@GetMapping("/item/{id}/parents/tree")
+	@CrossOrigin(origins = "*")
+	ResponseEntity<MappingJacksonValue> findParentsTreeById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
+		var history = new HashSet<String>();
+		return itemService.findById(id)
+		.map(child -> {
+			var childTDO = new ItemDTO(child);
+			setParents(childTDO, history);
+			if(reqParam.containsKey(QUERY_PROPERTY)) {
+				reqParam.add(QUERY_PROPERTY, QUERY_PARENTS);
+			}
+			final SimpleFilterProvider jsonFilter = getJsonFilter(reqParam);
+			var value = new MappingJacksonValue(childTDO);
+			value.setFilters(jsonFilter);
+			return ResponseEntity.ok(value);
+		})
+		.orElse(ResponseEntity.notFound().build());
+	}
+	
+	private ItemDTO setParents(ItemDTO child, HashSet<String> history) {
+		var parents = itemService.findParentsById(child.getId()).stream()
+		.map(parent -> new ItemDTO(parent))
+		.toList();
+		
+		history.add(child.getId());
+		parents.forEach(parent -> {
+			if (history.contains(parent.getId())) {
+				log.warning("setParents: circle found from " + parent.getId() + " to " + child.getId());
+			} else {
+				setParents(parent, history);
+			}
+		});
+		child.setParents(parents);
+		history.remove(child.getId());
+		return child;
+	}
+	
 }

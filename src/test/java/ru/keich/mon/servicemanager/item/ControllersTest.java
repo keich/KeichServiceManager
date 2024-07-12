@@ -785,7 +785,9 @@ public class ControllersTest {
 	}
 	
 	
-	//TODO test update not clear internal fields
-	//TODO search test
+	// TODO test update not clear internal fields
+	// TODO search test
+	// TODO check query params
+	// TODO check tree
 
 }

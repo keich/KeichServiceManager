@@ -43,9 +43,13 @@ public class ItemDTO {
 	private Map<String, String> fields;
 	private Map<String, ItemRule> rules;
 	private Map<String, ItemFilter> filters;
+	
 	@JsonIgnore
 	private Set<String> childrenIds;
 	private List<ItemDTO> children = Collections.emptyList();
+	
+	private List<ItemDTO> parents = Collections.emptyList();
+	
 	private boolean hasChildren;
 	
 	private Instant createdOn;
@@ -72,8 +76,5 @@ public class ItemDTO {
 		this.updatedOn = item.getUpdatedOn();
 		this.deletedOn = item.getDeletedOn();
 	}
-	
-	public void setChildren(List<ItemDTO> children) {
-		this.children = children;
-	}
+
 }
