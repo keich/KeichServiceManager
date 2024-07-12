@@ -135,11 +135,11 @@ public class Item extends Entity<String> {
 		return Collections.unmodifiableSet(item.getChildren());
 	}
 	
-	public static Set<Object> getNameForIndex(Entity<?> entity) {
+	public static Set<Object> getNameUpperCaseForIndex(Entity<?> entity) {
 		Item item = (Item)entity;
 		var opt = Optional.ofNullable(item.getName());
 		if(opt.isPresent()) {
-			return Collections.singleton(opt.get());
+			return Collections.singleton(opt.get().toUpperCase());
 		}
 		return Collections.emptySet();
 	}

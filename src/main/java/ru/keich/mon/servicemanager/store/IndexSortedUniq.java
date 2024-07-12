@@ -35,14 +35,16 @@ public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> 
 	}
 
 	@Override
-	public Set<Object> findKeys(Predicate<Object> predicate) {
+	public List<K> findByKey(long limit, Predicate<Object> predicate) {
 		synchronized (this) {
 			return objects.keySet().stream()
 				.filter(key -> predicate.test(key))
-				.collect(Collectors.toSet());
+				.map(key -> objects.get(key))
+				.limit(limit)
+				.collect(Collectors.toList());
 		}
 	}
-
+	
 	@Override
 	public void append(T entity) {
 		synchronized (this) {

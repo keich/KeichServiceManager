@@ -17,7 +17,6 @@ package ru.keich.mon.servicemanager.store;
  */
 
 import java.util.List;
-import java.util.Set;
 import java.util.function.Predicate;
 
 public interface Index <K, T> {	
@@ -27,5 +26,5 @@ public interface Index <K, T> {
 	public List<K> get(Object key);
 	public List<K> getBefore(Object key);
 	public List<K> getAfter(Object key);
-	public Set<Object> findKeys(Predicate<Object> predicate);
+	public List<K> findByKey(long limit, Predicate<Object> predicate);
 }

@@ -49,7 +49,7 @@ public class ItemService extends EntityService<String, Item> {
 	static final String INDEX_NAME_FILTERS_EQL = "filter_equal";
 	static final String INDEX_NAME_PARENTS = "parents";
 	
-	static final public String INDEX_NAME_NAME = "name";
+	static final public String INDEX_NAME_NAME_UPPERCASE = "name";
 	
 	public ItemService(@Value("${replication.nodename}") String nodeName, EventService eventService,
 			EventRelationService eventRelationService) {
@@ -57,18 +57,17 @@ public class ItemService extends EntityService<String, Item> {
 		entityCache.createIndex(INDEX_NAME_FILTERS_EQL, IndexType.EQUAL, Item::getFiltersForIndex);
 		entityCache.createIndex(INDEX_NAME_PARENTS, IndexType.EQUAL, Item::getParentsForIndex);
 		
-		entityCache.createIndex(INDEX_NAME_NAME, IndexType.EQUAL, Item::getNameForIndex);
+		entityCache.createIndex(INDEX_NAME_NAME_UPPERCASE, IndexType.EQUAL, Item::getNameUpperCaseForIndex);
 		
 		this.eventService = eventService;
 		this.eventRelationService = eventRelationService;
 		eventService.setItemService(this);
 		
 		queryProducer.put(new QueryId("name", Operator.CO), (value)  -> {
-			return entityCache.findKeys(INDEX_NAME_NAME, key -> {
-				return key.toString().toUpperCase().contains(value.toUpperCase());
-			}).stream()
-			.flatMap(name -> entityCache.indexGet(INDEX_NAME_NAME, name).stream())
-			.collect(Collectors.toList());
+			var valueUpper = value.toUpperCase();
+			// TODO limit?
+			return entityCache
+			.findByKey(INDEX_NAME_NAME_UPPERCASE, 1000, key -> key.toString().contains(valueUpper));
 		});
 	}
 	

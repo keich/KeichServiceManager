@@ -59,8 +59,8 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 		return index.get(name).get(key);
 	}
 	
-	public Set<Object> findKeys(String name, Predicate<Object> predicate) {
-		return index.get(name).findKeys(predicate);
+	public List<K> findByKey(String name, long limit, Predicate<Object> predicate) {
+		return index.get(name).findByKey(limit, predicate);
 	}
 	
 	public List<K> indexGetAfter(String name,Object key) {

@@ -36,11 +36,13 @@ public class IndexEqual<K, T extends BaseEntity<K>> implements Index<K, T> {
 	}
 
 	@Override
-	public Set<Object> findKeys(Predicate<Object> predicate) {
+	public List<K> findByKey(long limit, Predicate<Object> predicate) {
 		synchronized (this) {
 			return objects.keySet().stream()
 				.filter(key -> predicate.test(key))
-				.collect(Collectors.toSet());
+				.flatMap(key -> objects.get(key).stream())
+				.limit(limit)
+				.collect(Collectors.toList());
 		}
 	}
 
@@ -85,16 +87,12 @@ public class IndexEqual<K, T extends BaseEntity<K>> implements Index<K, T> {
 
 	@Override
 	public List<K> getBefore(Object key) {
-		synchronized (this) {
-			throw new UnsupportedOperationException("Equal index has't this method");
-		}
+		throw new UnsupportedOperationException("Equal index has't this method");
 	}
 
 	@Override
 	public List<K> getAfter(Object key) {
-		synchronized (this) {
-			throw new UnsupportedOperationException("Equal index has't this method");
-		}
+		throw new UnsupportedOperationException("Equal index has't this method");
 	}
 
 }
