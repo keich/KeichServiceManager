@@ -63,11 +63,10 @@ public class ItemService extends EntityService<String, Item> {
 		this.eventRelationService = eventRelationService;
 		eventService.setItemService(this);
 		
-		queryProducer.put(new QueryId("name", Operator.CO), (value)  -> {			
-			return entityCache.indexGetKeys(INDEX_NAME_NAME)
-			.stream()
-			.map(key -> key.toString())
-			.filter(key -> key.toUpperCase().contains(value.toUpperCase()))
+		queryProducer.put(new QueryId("name", Operator.CO), (value)  -> {
+			return entityCache.findKeys(INDEX_NAME_NAME, key -> {
+				return key.toString().toUpperCase().contains(value.toUpperCase());
+			}).stream()
 			.flatMap(name -> entityCache.indexGet(INDEX_NAME_NAME, name).stream())
 			.collect(Collectors.toList());
 		});

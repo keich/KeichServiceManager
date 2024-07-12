@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> {
@@ -34,41 +35,55 @@ public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> 
 	}
 
 	@Override
-	public Set<Object> getKeys() {
-		return objects.keySet();
+	public Set<Object> findKeys(Predicate<Object> predicate) {
+		synchronized (this) {
+			return objects.keySet().stream()
+				.filter(key -> predicate.test(key))
+				.collect(Collectors.toSet());
+		}
 	}
 
 	@Override
 	public void append(T entity) {
-		mapper.apply(entity).forEach(key -> {
-			if(objects.containsKey(key)) {
-				throw new UnsupportedOperationException("Already contains key " + key);
-			}
-			objects.put(key, entity.getId());
-		});
+		synchronized (this) {
+			mapper.apply(entity).forEach(key -> {
+				if(objects.containsKey(key)) {
+					throw new UnsupportedOperationException("Already contains key " + key);
+				}
+				objects.put(key, entity.getId());
+			});
+		}
 	}
 
 	@Override
 	public void remove(final T entity) {
-		mapper.apply(entity).forEach(key -> {
-			objects.remove(key);
-		});
+		synchronized (this) {
+			mapper.apply(entity).forEach(key -> {
+				objects.remove(key);
+			});
+		}
 	}
 
 	@Override
 	public List<K> get(Object key) {
-		return Optional.ofNullable(objects.get(key)).map(v -> Collections.singletonList(v))
+		synchronized (this) {
+			return Optional.ofNullable(objects.get(key)).map(v -> Collections.singletonList(v))
 				.orElse(Collections.emptyList());
+		}
 	}
 
 	@Override
 	public List<K> getBefore(Object key) {
-		return objects.headMap(key).values().stream().collect(Collectors.toList());
+		synchronized (this) {
+			return objects.headMap(key).values().stream().collect(Collectors.toList());
+		}
 	}
 
 	@Override
 	public List<K> getAfter(Object key) {
-		return objects.tailMap(key).values().stream().collect(Collectors.toList());
+		synchronized (this) {
+			return objects.tailMap(key).values().stream().collect(Collectors.toList());
+		}
 	}
 
 }

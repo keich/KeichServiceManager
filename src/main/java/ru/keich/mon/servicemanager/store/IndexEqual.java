@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class IndexEqual<K, T extends BaseEntity<K>> implements Index<K, T> {
@@ -35,51 +36,65 @@ public class IndexEqual<K, T extends BaseEntity<K>> implements Index<K, T> {
 	}
 
 	@Override
-	public Set<Object> getKeys() {
-		return objects.keySet();
+	public Set<Object> findKeys(Predicate<Object> predicate) {
+		synchronized (this) {
+			return objects.keySet().stream()
+				.filter(key -> predicate.test(key))
+				.collect(Collectors.toSet());
+		}
 	}
 
 	@Override
 	public void append(T entity) {
-		mapper.apply(entity).forEach(key -> {
-			if(objects.containsKey(key)) {
-				objects.get(key).add(entity.getId());
-			}else {
-				Set<K> set = new HashSet<>();
-				set.add(entity.getId());
-				objects.put(key, set);
-			}
-		});
+		synchronized (this) {
+			mapper.apply(entity).forEach(key -> {
+				if(objects.containsKey(key)) {
+					objects.get(key).add(entity.getId());
+				}else {
+					Set<K> set = new HashSet<>();
+					set.add(entity.getId());
+					objects.put(key, set);
+				}
+			});
+		}
 	}
 
 	@Override
 	public void remove(final T entity) {
-		mapper.apply(entity).forEach(key -> {
-			if(objects.containsKey(key)) {
-				var set = objects.get(key);
-				set.remove(entity.getId());
-				if (set.size() == 0) {
-					objects.remove(key);
+		synchronized (this) {
+			mapper.apply(entity).forEach(key -> {
+				if(objects.containsKey(key)) {
+					var set = objects.get(key);
+					set.remove(entity.getId());
+					if (set.size() == 0) {
+						objects.remove(key);
+					}
 				}
-			}
-		});
+			});
+		}
 	}
 
 	@Override
 	public List<K> get(Object key) {
-		return Optional.ofNullable(objects.get(key))
+		synchronized (this) {
+			return Optional.ofNullable(objects.get(key))
 				.map(s -> s.stream().collect(Collectors.toList()))
 				.orElse(Collections.emptyList());
+		}
 	}
 
 	@Override
 	public List<K> getBefore(Object key) {
-		throw new UnsupportedOperationException("Equal index has't this method");
+		synchronized (this) {
+			throw new UnsupportedOperationException("Equal index has't this method");
+		}
 	}
 
 	@Override
 	public List<K> getAfter(Object key) {
-		throw new UnsupportedOperationException("Equal index has't this method");
+		synchronized (this) {
+			throw new UnsupportedOperationException("Equal index has't this method");
+		}
 	}
 
 }

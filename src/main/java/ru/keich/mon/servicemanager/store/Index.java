@@ -18,6 +18,7 @@ package ru.keich.mon.servicemanager.store;
 
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 
 public interface Index <K, T> {	
 	public void append(T entity);
@@ -26,5 +27,5 @@ public interface Index <K, T> {
 	public List<K> get(Object key);
 	public List<K> getBefore(Object key);
 	public List<K> getAfter(Object key);
-	public Set<Object> getKeys();
+	public Set<Object> findKeys(Predicate<Object> predicate);
 }

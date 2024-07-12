@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 public class IndexedHashMap<K, T extends BaseEntity<K>> {
@@ -41,43 +42,33 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 	}
 	
 	public void createIndex(String name, IndexType type, Function<T, Set<Object>> mapper) {
-		synchronized (this) {
-			switch(type) {
-			case EQUAL:
-				index.put(name, new IndexEqual<K,T>(mapper));
-				break;
-			case SORTED:
-				index.put(name, new IndexSorted<K,T>(mapper));
-				break;
-			case UNIQ_SORTED:
-				index.put(name, new IndexSortedUniq<K,T>(mapper));
-				break;		
-			}
+		switch(type) {
+		case EQUAL:
+			index.put(name, new IndexEqual<K,T>(mapper));
+			break;
+		case SORTED:
+			index.put(name, new IndexSorted<K,T>(mapper));
+			break;
+		case UNIQ_SORTED:
+			index.put(name, new IndexSortedUniq<K,T>(mapper));
+			break;		
 		}
 	}
 	
 	public List<K> indexGet(String name,Object key) {
-		synchronized (this) {
-			return index.get(name).get(key);
-		}
+		return index.get(name).get(key);
 	}
 	
-	public Set<Object> indexGetKeys(String name) {
-		synchronized (this) {
-			return index.get(name).getKeys();
-		}
+	public Set<Object> findKeys(String name, Predicate<Object> predicate) {
+		return index.get(name).findKeys(predicate);
 	}
 	
 	public List<K> indexGetAfter(String name,Object key) {
-		synchronized (this) {
-			return index.get(name).getAfter(key);
-		}
+		return index.get(name).getAfter(key);
 	}
 	
 	public List<K> indexGetBefore(String name,Object key) {
-		synchronized (this) {
-			return index.get(name).getBefore(key);
-		}
+		return index.get(name).getBefore(key);
 	}
 	
 	public void put(K entityId, Supplier<T> insertTrigger, Function<T,T> updateTrigger, Consumer<T> after) {
@@ -110,14 +101,12 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 	}
 
 	public Optional<T> remove(K id) {
-		synchronized (this) {
-			return Optional.ofNullable(cache.remove(id)).map(oldEntity -> {
-				index.entrySet().forEach(e -> {
-					e.getValue().remove(oldEntity);
-				});
-				return oldEntity;
+		return Optional.ofNullable(cache.remove(id)).map(oldEntity -> {
+			index.entrySet().forEach(e -> {
+				e.getValue().remove(oldEntity);
 			});
-		}
+			return oldEntity;
+		});
 	}
 	
 	public <R> R transaction(Supplier<R> supplier) {
