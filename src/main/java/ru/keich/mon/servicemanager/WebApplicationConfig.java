@@ -23,10 +23,15 @@ import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerF
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import lombok.extern.java.Log;
+
 @Configuration
+@Log
 public class WebApplicationConfig implements WebMvcConfigurer {
 
 	@Override
@@ -41,4 +46,13 @@ public class WebApplicationConfig implements WebMvcConfigurer {
 		};
 	}
 	
+	@Bean
+	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+		http.authorizeHttpRequests(a -> a.requestMatchers(m -> {
+			log.info("Client: " + m.getRemoteAddr() + ":"+ m.getRemotePort() + " Request: " + m.getRequestURI());
+			return true;
+		}).permitAll());
+		http.csrf(csrf -> csrf.disable());
+		return http.build();
+	}
 }
