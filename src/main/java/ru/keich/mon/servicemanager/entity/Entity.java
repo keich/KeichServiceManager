@@ -53,8 +53,8 @@ public class Entity<K> extends BaseEntity<K> {
 			Instant deletedOn) {
 		super(id);
 		this.version = version;
-		this.source = source.intern();
-		this.sourceKey = sourceKey.intern();
+		this.source = source;
+		this.sourceKey = sourceKey;
 		if (Objects.isNull(fromHistory)) {
 			this.fromHistory = Collections.emptySet();
 		} else {

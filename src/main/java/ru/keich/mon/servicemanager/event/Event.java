@@ -52,7 +52,7 @@ public class Event extends Entity<String> {
 			@JsonProperty(value = "createdOn") Instant createdOn,
 			@JsonProperty(value = "updatedOn") Instant updatedOn,
 			@JsonProperty(value = "deletedOn") Instant deletedOn) {
-		super(id.intern(), version, source, sourceKey, fields, fromHistory, createdOn, updatedOn, deletedOn);
+		super(id, version, source, sourceKey, fields, fromHistory, createdOn, updatedOn, deletedOn);
 		this.type = type;
 		this.status = status;
 		this.node = node;

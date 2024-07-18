@@ -25,8 +25,8 @@ public class EventRelationId {
 	
 	public EventRelationId(String itemId, String eventId) {
 		super();
-		this.itemId = itemId.intern();
-		this.eventId = eventId.intern();
+		this.itemId = itemId;
+		this.eventId = eventId;
 	}
 	
 	@Override
