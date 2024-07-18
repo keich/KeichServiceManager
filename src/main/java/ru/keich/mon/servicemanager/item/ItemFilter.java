@@ -1,5 +1,7 @@
 package ru.keich.mon.servicemanager.item;
 
+import java.util.Collections;
+
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -85,8 +87,11 @@ public class ItemFilter {
 		} else {
 			this.usingResultStatus = false;
 		}
-		
-		this.equalFields = equalFields;
+		if (Objects.isNull(equalFields)) {
+			this.equalFields = Collections.emptyMap();
+		} else {
+			this.equalFields = Collections.unmodifiableMap(equalFields);
+		}
 	}
 
 }
