@@ -70,16 +70,13 @@ public class ItemController extends EntityController<String, Item> {
 	@Override
 	@GetMapping("/item/{id}")
 	@CrossOrigin(origins = "*")
-	public ResponseEntity<Item> findById(@PathVariable String id) {
-		return super.findById(id);
+	public ResponseEntity<MappingJacksonValue> findById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
+		return super.findById(id, reqParam);
 	}
 
 	@GetMapping("/item/{id}/children")
 	@CrossOrigin(origins = "*")
 	ResponseEntity<MappingJacksonValue> findChildrenById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
-		if(reqParam.containsKey(QUERY_PROPERTY)) {
-			reqParam.add(QUERY_PROPERTY, QUERY_CHILDREN);
-		}
 		var child = itemService.findChildrenById(id);
 		final SimpleFilterProvider jsonFilter = getJsonFilter(reqParam);
 		var value = new MappingJacksonValue(child);
@@ -90,9 +87,6 @@ public class ItemController extends EntityController<String, Item> {
 	@GetMapping("/item/{id}/parents")
 	@CrossOrigin(origins = "*")
 	ResponseEntity<MappingJacksonValue> findParentsById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
-		if(reqParam.containsKey(QUERY_PROPERTY)) {
-			reqParam.add(QUERY_PROPERTY, QUERY_CHILDREN);
-		}
 		var child = itemService.findParentsById(id);
 		final SimpleFilterProvider jsonFilter = getJsonFilter(reqParam);
 		var value = new MappingJacksonValue(child);

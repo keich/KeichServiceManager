@@ -59,8 +59,8 @@ public class EventController extends EntityController<String, Event> {
 	@Override
 	@GetMapping("/event/{id}")
 	@CrossOrigin(origins = "*")
-	public ResponseEntity<Event> findById(@PathVariable String id) {
-		return super.findById(id);
+	public ResponseEntity<MappingJacksonValue> findById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
+		return super.findById(id, reqParam);
 	}
 
 	@Override

@@ -73,8 +73,13 @@ public class EntityController<K, T extends Entity<K>> {
 		return ResponseEntity.ok(value);
 	}
 
-	public ResponseEntity<T> findById(@PathVariable K id) {
-		return entityService.findById(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+	public ResponseEntity<MappingJacksonValue> findById(@PathVariable K id, @RequestParam MultiValueMap<String, String> reqParam) {
+		return entityService.findById(id).map(entity -> {
+			final SimpleFilterProvider jsonFilter = getJsonFilter(reqParam);
+			var value = new MappingJacksonValue(entity);
+			value.setFilters(jsonFilter);
+			return ResponseEntity.ok(value);
+		}).orElse(ResponseEntity.notFound().build());
 	}
 
 	public ResponseEntity<Integer> deleteByFilter(@RequestBody(required = false) List<K> enties, @RequestParam Map<String, String> reqParam) {
