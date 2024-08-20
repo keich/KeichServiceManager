@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -31,12 +32,14 @@ import java.util.stream.Collectors;
 
 import org.springframework.scheduling.annotation.Scheduled;
 
+import lombok.extern.java.Log;
 import ru.keich.mon.servicemanager.query.Filter;
 import ru.keich.mon.servicemanager.query.Operator;
 import ru.keich.mon.servicemanager.query.QueryId;
 import ru.keich.mon.servicemanager.store.IndexedHashMap;
 import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
 
+@Log
 public abstract class EntityService<K, T extends Entity<K>> {
 	static public Long VERSION_MIN = 0L;
 	
@@ -54,7 +57,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	static final public String INDEX_NAME_DELETED_ON = "deleted_on";
 	static final public String INDEX_NAME_FIELDS = "fields";
 	
-	final protected Map<QueryId, Function<String, List<K>>> queryProducer = new HashMap<QueryId, Function<String, List<K>>>();
+	final protected Map<QueryId, Function<String, Set<K>>> queryProducer = new HashMap<QueryId, Function<String, Set<K>>>();
 	final protected Map<QueryId, BiFunction<T, String, Boolean>> queryFilter = new HashMap<QueryId, BiFunction<T, String, Boolean>>();
 	
 	public EntityService(String nodeName) {

@@ -16,10 +16,8 @@ package ru.keich.mon.servicemanager.store;
  * limitations under the License.
  */
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -36,13 +34,13 @@ public class IndexEqual<K, T extends BaseEntity<K>> implements Index<K, T> {
 	}
 
 	@Override
-	public List<K> findByKey(long limit, Predicate<Object> predicate) {
+	public Set<K> findByKey(long limit, Predicate<Object> predicate) {
 		synchronized (this) {
 			return objects.keySet().stream()
 				.filter(key -> predicate.test(key))
 				.flatMap(key -> objects.get(key).stream())
 				.limit(limit)
-				.collect(Collectors.toList());
+				.collect(Collectors.toSet());
 		}
 	}
 
@@ -77,21 +75,20 @@ public class IndexEqual<K, T extends BaseEntity<K>> implements Index<K, T> {
 	}
 
 	@Override
-	public List<K> get(Object key) {
+	public Set<K> get(Object key) {
 		synchronized (this) {
-			return Optional.ofNullable(objects.get(key))
-				.map(s -> s.stream().collect(Collectors.toList()))
-				.orElse(Collections.emptyList());
+			return Optional.ofNullable(objects.get(key)).stream().flatMap(s -> s.stream())
+				.collect(Collectors.toSet());
 		}
 	}
 
 	@Override
-	public List<K> getBefore(Object key) {
+	public Set<K> getBefore(Object key) {
 		throw new UnsupportedOperationException("Equal index has't this method");
 	}
 
 	@Override
-	public List<K> getAfter(Object key) {
+	public Set<K> getAfter(Object key) {
 		throw new UnsupportedOperationException("Equal index has't this method");
 	}
 

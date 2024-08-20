@@ -16,15 +16,14 @@ package ru.keich.mon.servicemanager.store;
  * limitations under the License.
  */
 
-import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 
 public interface Index <K, T> {	
 	public void append(T entity);
 	public void remove(T entity);
-	//TODO Set?
-	public List<K> get(Object key);
-	public List<K> getBefore(Object key);
-	public List<K> getAfter(Object key);
-	public List<K> findByKey(long limit, Predicate<Object> predicate);
+	public Set<K> get(Object key);
+	public Set<K> getBefore(Object key);
+	public Set<K> getAfter(Object key);
+	public Set<K> findByKey(long limit, Predicate<Object> predicate);
 }

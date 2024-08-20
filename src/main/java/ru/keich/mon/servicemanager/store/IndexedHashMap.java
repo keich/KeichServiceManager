@@ -17,7 +17,6 @@ package ru.keich.mon.servicemanager.store;
  */
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -55,19 +54,19 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 		}
 	}
 	
-	public List<K> indexGet(String name,Object key) {
+	public Set<K> indexGet(String name,Object key) {
 		return index.get(name).get(key);
 	}
 	
-	public List<K> findByKey(String name, long limit, Predicate<Object> predicate) {
+	public Set<K> findByKey(String name, long limit, Predicate<Object> predicate) {
 		return index.get(name).findByKey(limit, predicate);
 	}
 	
-	public List<K> indexGetAfter(String name,Object key) {
+	public Set<K> indexGetAfter(String name,Object key) {
 		return index.get(name).getAfter(key);
 	}
 	
-	public List<K> indexGetBefore(String name,Object key) {
+	public Set<K> indexGetBefore(String name,Object key) {
 		return index.get(name).getBefore(key);
 	}
 	

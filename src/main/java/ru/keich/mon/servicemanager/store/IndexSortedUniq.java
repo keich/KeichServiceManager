@@ -17,7 +17,6 @@ package ru.keich.mon.servicemanager.store;
  */
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
@@ -35,13 +34,13 @@ public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> 
 	}
 
 	@Override
-	public List<K> findByKey(long limit, Predicate<Object> predicate) {
+	public Set<K> findByKey(long limit, Predicate<Object> predicate) {
 		synchronized (this) {
 			return objects.keySet().stream()
 				.filter(key -> predicate.test(key))
 				.map(key -> objects.get(key))
 				.limit(limit)
-				.collect(Collectors.toList());
+				.collect(Collectors.toSet());
 		}
 	}
 	
@@ -67,24 +66,25 @@ public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> 
 	}
 
 	@Override
-	public List<K> get(Object key) {
+	public Set<K> get(Object key) {
 		synchronized (this) {
-			return Optional.ofNullable(objects.get(key)).map(v -> Collections.singletonList(v))
-				.orElse(Collections.emptyList());
+			return Optional.ofNullable(objects.get(key))
+			.map(s -> Collections.singleton(s))
+			.orElse(Collections.emptySet());
 		}
 	}
 
 	@Override
-	public List<K> getBefore(Object key) {
+	public Set<K> getBefore(Object key) {
 		synchronized (this) {
-			return objects.headMap(key).values().stream().collect(Collectors.toList());
+			return objects.headMap(key).values().stream().collect(Collectors.toSet());
 		}
 	}
 
 	@Override
-	public List<K> getAfter(Object key) {
+	public Set<K> getAfter(Object key) {
 		synchronized (this) {
-			return objects.tailMap(key).values().stream().collect(Collectors.toList());
+			return objects.tailMap(key).values().stream().collect(Collectors.toSet());
 		}
 	}
 
