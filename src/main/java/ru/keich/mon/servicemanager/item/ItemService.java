@@ -101,6 +101,9 @@ public class ItemService extends EntityService<String, Item> {
 		entityCache.put(item.getId(), () -> {
 			return deletedItem;
 		}, old -> {
+			if(Objects.nonNull(old.getDeletedOn())) {
+				return null;
+			}
 			return deletedItem;
 		}, addedItem -> {});
 
