@@ -124,6 +124,9 @@ public class EventService extends EntityService<String, Event>{
 		entityCache.put(event.getId(), () -> {
 			return deletedEvent;
 		}, old -> {
+			if(Objects.nonNull(old.getDeletedOn())) {
+				return null;
+			}
 			return deletedEvent;
 		}, addedItem -> {});
 	}
