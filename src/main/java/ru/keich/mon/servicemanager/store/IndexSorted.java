@@ -16,6 +16,8 @@ package ru.keich.mon.servicemanager.store;
  * limitations under the License.
  */
 
+import java.util.Collections;
+
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -93,6 +95,17 @@ public class IndexSorted<K, T extends BaseEntity<K>> implements Index<K, T> {
 	public Set<K> getAfter(Object key) {
 		synchronized (this) {
 			return objects.tailMap(key).values().stream().flatMap(l -> l.stream()).collect(Collectors.toSet());
+		}
+	}
+	
+	@Override
+	public Set<K> getAfterFirst(Object key) {
+		synchronized (this) {
+			var view = objects.tailMap(key);
+			if(view.isEmpty()) {
+				return Collections.emptySet();
+			}
+			return objects.get(view.firstKey());
 		}
 	}
 

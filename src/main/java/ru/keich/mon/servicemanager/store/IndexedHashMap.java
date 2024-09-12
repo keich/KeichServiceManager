@@ -66,6 +66,10 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 		return index.get(name).getAfter(key);
 	}
 	
+	public Set<K> indexGetAfterFirst(String name,Object key) {
+		return index.get(name).getAfterFirst(key);
+	}
+	
 	public Set<K> indexGetBefore(String name,Object key) {
 		return index.get(name).getBefore(key);
 	}

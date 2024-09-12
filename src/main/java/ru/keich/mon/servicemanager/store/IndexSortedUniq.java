@@ -88,4 +88,15 @@ public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> 
 		}
 	}
 
+	@Override
+	public Set<K> getAfterFirst(Object key) {
+		synchronized (this) {
+			var view = objects.tailMap(key);
+			if(view.isEmpty()) {
+				return Collections.emptySet();
+			}
+			return Collections.singleton(objects.get(view.firstKey()));
+		}
+	}
+
 }

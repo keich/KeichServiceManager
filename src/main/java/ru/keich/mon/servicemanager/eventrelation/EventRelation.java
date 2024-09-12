@@ -24,7 +24,7 @@ import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.store.BaseEntity;
 
 @Getter
-public class EventRelation extends BaseEntity<EventRelationId> {
+public class EventRelation extends BaseEntity<EventRelationId> implements Comparable<EventRelation> {
 
 	private final BaseStatus status;
 	
@@ -45,7 +45,23 @@ public class EventRelation extends BaseEntity<EventRelationId> {
 	public static Set<Object> getItemIdsForCache(EventRelation relation) {
 		return Collections.singleton(relation.getId().getItemId());
 	}
+	
+	public static Set<Object> getItemStatusForCache(EventRelation relation) {
+		return Collections.singleton(relation);
+	}
 
+	@Override
+	public int compareTo(EventRelation rel) {
+		var ret = getId().getItemId().compareTo(rel.getId().getItemId());
+		if(ret == 0) {
+			ret = -getStatus().compareTo(rel.getStatus()); 
+			if(ret == 0) {
+				return getId().getEventId().compareTo(rel.getId().getEventId());
+			}
+		}
+		return ret;
+	}
+	
 	@Override
 	public String toString() {
 		return "EventRelation [status=" + status + ", getId()=" + getId() + "]";

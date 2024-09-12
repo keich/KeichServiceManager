@@ -16,10 +16,7 @@ package ru.keich.mon.servicemanager.eventrelation;
  * limitations under the License.
  */
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -34,61 +31,14 @@ import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
 public class EventRelationService {
 	protected final IndexedHashMap<EventRelationId, EventRelation> relationCache = new IndexedHashMap<>();
 	
-	private Map<String, String> maxStatusEventId = new HashMap<>();
-	
 	static final String INDEX_NAME_RELATIONS_BY_EVENTID = "eventToRel";
 	static final String INDEX_NAME_RELATIONS_BY_ITEMID = "itemToRel";
+	static final String INDEX_NAME_RELATIONS_SORT_STATUS = "itemStatus";
 	
 	public EventRelationService() {
 		relationCache.createIndex(INDEX_NAME_RELATIONS_BY_EVENTID, IndexType.EQUAL, EventRelation::getEventIdsForCache);
 		relationCache.createIndex(INDEX_NAME_RELATIONS_BY_ITEMID, IndexType.EQUAL, EventRelation::getItemIdsForCache);
-	}
-	
-	private String findEventIdWithMaxStatus(String itemId) {
-		return relationCache.indexGet(INDEX_NAME_RELATIONS_BY_ITEMID, itemId).stream()
-				.map(id -> relationCache.get(id))
-				.filter(opt -> opt.isPresent())
-				.map(opt -> opt.get())
-				.map(rel -> Map.entry(rel.getId().getEventId(), rel.getStatus()))
-				.reduce(Map.entry("", BaseStatus.CLEAR), (acc, rel) -> {
-					if(acc.getValue().lessThenOrEqual(rel.getValue())) {
-						acc = rel;
-					}
-					return acc;
-				}).getKey();
-	}
-	
-	private void addCalculateMaxStatus(Item item, Event event, BaseStatus newStatus) {
-		final var itemId = item.getId();
-		final var eventId = event.getId();
-		Optional.ofNullable(maxStatusEventId.get(itemId))
-		.ifPresentOrElse(maxEventId -> {
-			var opt =  relationCache.get(new EventRelationId(itemId, eventId));
-			var oldStatus = opt.map(rel -> rel.getStatus()).orElse(BaseStatus.CLEAR);
-
-			if (maxEventId.equals(eventId)) {
-				if(oldStatus.lessThenOrEqual(newStatus)) {
-					return;
-				}
-			}
-
-			opt =  relationCache.get(new EventRelationId(itemId, maxEventId));
-			var maxStatus = opt.map(rel -> rel.getStatus()).orElse(BaseStatus.CLEAR);
-			
-			if(newStatus.lessThenOrEqual(maxStatus)) {
-				return;
-			}
-			maxStatusEventId.put(itemId, findEventIdWithMaxStatus(itemId));
-		}, () -> maxStatusEventId.put(itemId, eventId));
-	}
-	
-	private void removeCalculateMaxStatus(String itemId, String eventId) {
-		Optional.ofNullable(maxStatusEventId.get(itemId))
-		.ifPresent(maxEventId -> {
-			if(maxEventId.equals(eventId)) {
-				maxStatusEventId.put(itemId, findEventIdWithMaxStatus(itemId));
-			}
-		});
+		relationCache.createIndex(INDEX_NAME_RELATIONS_SORT_STATUS, IndexType.UNIQ_SORTED, EventRelation::getItemStatusForCache);
 	}
 	
 	public void add(Item item, Event event, BaseStatus status) {
@@ -103,7 +53,7 @@ public class EventRelationService {
 				}
 				return relation;
 			}, addedRelation -> {
-				addCalculateMaxStatus(item, event, status);
+
 			});
 			return null;
 		});
@@ -111,13 +61,6 @@ public class EventRelationService {
 	
 	private void remove(EventRelationId eventRelationId) {
 		relationCache.remove(eventRelationId);
-		final var itemId = eventRelationId.getItemId();
-		if(relationCache.indexGet(INDEX_NAME_RELATIONS_BY_ITEMID, itemId).size() == 0){
-			maxStatusEventId.remove(itemId);//TODO add max in index?
-			return;
-		}
-		final var eventId = eventRelationId.getEventId();
-		removeCalculateMaxStatus(itemId, eventId);
 		return;
 	}
 	
@@ -154,14 +97,13 @@ public class EventRelationService {
 	}
 	
 	public BaseStatus getMaxStatus(Item item) {
-		final var itemId = item.getId();
-		return relationCache.transaction(() -> {
-			return Optional.ofNullable(maxStatusEventId.get(itemId))
-			.map(eventId -> relationCache.get(new EventRelationId(itemId, eventId)))
-			.filter(o -> o.isPresent())
-			.map(o -> o.get().getStatus())
-			.orElse(BaseStatus.CLEAR);
-		});
+		var itemId = item.getId();
+		var searchKey = new EventRelation(new EventRelationId(itemId,""), BaseStatus.CRITICAL);		
+		return relationCache.indexGetAfterFirst(INDEX_NAME_RELATIONS_SORT_STATUS, searchKey).stream()
+		.filter(key -> key.getItemId() == itemId)
+		.findFirst()
+		.flatMap(key -> relationCache.get(key))
+		.map(rel -> rel.getStatus()).orElse(BaseStatus.CLEAR);
 	}
 	
 }
