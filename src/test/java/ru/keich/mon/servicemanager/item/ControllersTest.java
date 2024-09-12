@@ -784,7 +784,7 @@ public class ControllersTest {
 		assertTrue(retRoot.getChildren().size() > 0);
 		
 		var opt = retRoot.getChildren().stream()
-		.filter(retChild -> child.getId() == child.getId()).findFirst();
+		.filter(retChild -> child.getId().equals(child.getId())).findFirst();
 		assertThat(opt).isNotEmpty();
 		var retChild = opt.get();
 		assertEquals(child.getId(), retChild.getId());

@@ -69,7 +69,7 @@ public enum BaseStatus {
 		if(this.status < other.status) {
 			return true;
 		}
-		if(this.status == other.status) {
+		if(this.status.equals(other.status)) {
 			return true;
 		}
 		return false;
