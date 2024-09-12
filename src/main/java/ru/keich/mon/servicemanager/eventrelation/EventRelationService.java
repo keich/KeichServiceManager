@@ -100,7 +100,7 @@ public class EventRelationService {
 		var itemId = item.getId();
 		var searchKey = new EventRelation(new EventRelationId(itemId,""), BaseStatus.CRITICAL);		
 		return relationCache.indexGetAfterFirst(INDEX_NAME_RELATIONS_SORT_STATUS, searchKey).stream()
-		.filter(key -> key.getItemId() == itemId)
+		.filter(key -> key.getItemId().equals(itemId))
 		.findFirst()
 		.flatMap(key -> relationCache.get(key))
 		.map(rel -> rel.getStatus()).orElse(BaseStatus.CLEAR);

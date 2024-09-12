@@ -126,6 +126,13 @@ public class ControllersTest {
 		var result = restTemplate.postForEntity("/api/v1" + path, list, String.class);
 		assertEquals(HttpStatus.OK, result.getStatusCode());
 	}
+	
+	private <T> void entityAdd(String path, T []list) {
+		var headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		var result = restTemplate.postForEntity("/api/v1" + path, list, String.class);
+		assertEquals(HttpStatus.OK, result.getStatusCode());
+	}
 
 	private <K, T> void entityRemove(String path, List<K> ids) throws JsonProcessingException {
 		var requestJson = mapper.writeValueAsString(ids);
@@ -784,6 +791,74 @@ public class ControllersTest {
 		
 	}
 	
+	@Test
+	public void updateItemAndKeepStatus()  throws IOException, InterruptedException {
+		var json = """
+				 [{
+			        "id": "item_updateItemAndKeepStatus",
+			        "source": "src_updateItemAndKeepStatus",
+			        "sourceKey": "src_key_updateItemAndKeepStatus",
+			        "fields": {
+			            "name": "Hello",
+			            "description": "World"
+			        },
+			        "rules": {},
+			        "filters": {
+			            "by_identity": {
+			                "resultStatus": "INDETERMINATE",
+			                "usingResultStatus": false,
+			                "equalFields": { "identity": "i_updateItemAndKeepStatus" }
+			            }
+			        }
+			    }]
+			""";
+		var items  = mapper.readValue(json, Item[].class);
+		entityAdd("/item", items);
+		
+		
+		json = """
+				[
+			    {
+			    	"id": "event_updateItemAndKeepStatus_3",
+			        "type": "PROBLEM",
+			        "status": "WARNING",
+			        "source": "source_updateItemAndKeepStatus",
+			        "sourceKey": "sourceKey_updateItemAndKeepStatus",
+			        "fields": {
+			            "server": "localhost",
+			            "summary": "Hello World",
+			            "identity": "i_updateItemAndKeepStatus"
+			        }
+			    }]
+			""";
+		var events = mapper.readValue(json, Event[].class);
+		entityAdd("/event", events);
+		
+		json = """
+				 [{
+			        "id": "item_updateItemAndKeepStatus",
+			        "source": "src_updateItemAndKeepStatus",
+			        "sourceKey": "src_key_updateItemAndKeepStatus1",
+			        "fields": {
+			            "name": "Hello",
+			            "description": "World"
+			        },
+			        "rules": {},
+			        "filters": {
+			            "by_identity": {
+			                "resultStatus": "INDETERMINATE",
+			                "usingResultStatus": false,
+			                "equalFields": { "identity": "i_updateItemAndKeepStatus" }
+			            }
+			        }
+			    }]
+			""";
+		items  = mapper.readValue(json, Item[].class);
+		entityAdd("/item", items);
+		
+		var retItem = entityGetById("/item", "item_updateItemAndKeepStatus", Item.class);
+		assertEquals(BaseStatus.WARNING, retItem.getStatus());
+	}
 	
 	// TODO test update not clear internal fields
 	// TODO search test
