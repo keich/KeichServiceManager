@@ -1,5 +1,8 @@
 package ru.keich.mon.servicemanager.store;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -15,9 +18,6 @@ package ru.keich.mon.servicemanager.store;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class BaseEntity<K> {
 	private final K id;

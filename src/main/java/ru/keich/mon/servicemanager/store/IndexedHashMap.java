@@ -1,5 +1,16 @@
 package ru.keich.mon.servicemanager.store;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -15,17 +26,6 @@ package ru.keich.mon.servicemanager.store;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 public class IndexedHashMap<K, T extends BaseEntity<K>> {
 

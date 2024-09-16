@@ -1,5 +1,7 @@
 package ru.keich.mon.servicemanager.query;
 
+import lombok.Getter;
+
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -15,9 +17,6 @@ package ru.keich.mon.servicemanager.query;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-
-import lombok.Getter;
 
 @Getter
 public class Filter {

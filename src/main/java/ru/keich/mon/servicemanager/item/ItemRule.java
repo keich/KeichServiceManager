@@ -1,5 +1,14 @@
 package ru.keich.mon.servicemanager.item;
 
+import java.util.Objects;
+import java.util.Optional;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import lombok.Getter;
+import ru.keich.mon.servicemanager.BaseStatus;
+
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -15,14 +24,6 @@ package ru.keich.mon.servicemanager.item;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import java.util.Objects;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import lombok.Getter;
-import ru.keich.mon.servicemanager.BaseStatus;
 
 @Getter
 public class ItemRule {
@@ -76,30 +77,10 @@ public class ItemRule {
 			@JsonProperty(value = "type", required = true) RuleType type) {
 		super();
 
-		if (Objects.nonNull(resultStatus)) {
-			this.resultStatus = resultStatus;
-		} else {
-			this.resultStatus = BaseStatus.INDETERMINATE;
-		}
-
-		if (Objects.nonNull(usingResultStatus)) {
-			this.usingResultStatus = usingResultStatus;
-		} else {
-			this.usingResultStatus = false;
-		}
-
-		if (Objects.nonNull(statusThreshold)) {
-			this.statusThreshold = statusThreshold;
-		} else {
-			this.statusThreshold = BaseStatus.CLEAR;
-		}
-
-		if (Objects.nonNull(valueThreshold)) {
-			this.valueThreshold = valueThreshold;
-		} else {
-			this.valueThreshold = 0;
-		}
-
+		this.resultStatus = Optional.ofNullable(resultStatus).orElse(BaseStatus.INDETERMINATE);
+		this.usingResultStatus = Optional.ofNullable(usingResultStatus).orElse(false);
+		this.statusThreshold = Optional.ofNullable(statusThreshold).orElse(BaseStatus.CLEAR);
+		this.valueThreshold = Optional.ofNullable(valueThreshold).orElse(0);
 		this.type = type;
 	}
 

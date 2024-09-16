@@ -1,5 +1,16 @@
 package ru.keich.mon.servicemanager.eventrelation;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+
+import ru.keich.mon.servicemanager.BaseStatus;
+import ru.keich.mon.servicemanager.event.Event;
+import ru.keich.mon.servicemanager.item.Item;
+import ru.keich.mon.servicemanager.store.IndexedHashMap;
+import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
+
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -15,17 +26,6 @@ package ru.keich.mon.servicemanager.eventrelation;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.springframework.stereotype.Service;
-
-import ru.keich.mon.servicemanager.BaseStatus;
-import ru.keich.mon.servicemanager.event.Event;
-import ru.keich.mon.servicemanager.item.Item;
-import ru.keich.mon.servicemanager.store.IndexedHashMap;
-import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
 
 @Service
 public class EventRelationService {
@@ -86,24 +86,25 @@ public class EventRelationService {
 	
 	public List<String> getItemIds(Event event) {
 		return relationCache.indexGet(INDEX_NAME_RELATIONS_BY_EVENTID, event.getId()).stream()
-			.map(id -> id.getItemId())
-			.collect(Collectors.toUnmodifiableList());
+				.map(EventRelationId::getItemId)
+				.collect(Collectors.toUnmodifiableList());
 	}
 	
 	public List<String> getEventIds(Item item) {
 		return relationCache.indexGet(INDEX_NAME_RELATIONS_BY_ITEMID, item.getId()).stream()
-			.map(id -> id.getEventId())
-			.collect(Collectors.toUnmodifiableList());
+				.map(EventRelationId::getEventId)
+				.collect(Collectors.toUnmodifiableList());
 	}
 	
 	public BaseStatus getMaxStatus(Item item) {
 		var itemId = item.getId();
 		var searchKey = new EventRelation(new EventRelationId(itemId,""), BaseStatus.CRITICAL);		
 		return relationCache.indexGetAfterFirst(INDEX_NAME_RELATIONS_SORT_STATUS, searchKey).stream()
-		.filter(key -> key.getItemId().equals(itemId))
-		.findFirst()
-		.flatMap(key -> relationCache.get(key))
-		.map(rel -> rel.getStatus()).orElse(BaseStatus.CLEAR);
+				.filter(key -> key.getItemId().equals(itemId))
+				.findFirst()
+				.flatMap(key -> relationCache.get(key))
+				.map(EventRelation::getStatus)
+				.orElse(BaseStatus.CLEAR);
 	}
 	
 }

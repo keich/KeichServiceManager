@@ -1,5 +1,13 @@
 package ru.keich.mon.servicemanager.replication;
 
+import java.util.concurrent.TimeUnit;
+
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+import ru.keich.mon.servicemanager.event.EventReplication;
+import ru.keich.mon.servicemanager.item.ItemReplication;
+
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -16,15 +24,6 @@ package ru.keich.mon.servicemanager.replication;
  * limitations under the License.
  */
 
-
-import java.util.concurrent.TimeUnit;
-
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
-
-import ru.keich.mon.servicemanager.event.EventReplication;
-import ru.keich.mon.servicemanager.item.ItemReplication;
-
 @Component
 public class Replication {
 	final private EventReplication eventReplication;
@@ -39,8 +38,6 @@ public class Replication {
 	//TODO to params
 	@Scheduled(fixedRate = 5, timeUnit = TimeUnit.SECONDS)
 	public void replicationScheduled() {
-		itemReplication.doReplication(() -> {
-			eventReplication.doReplication();
-		});
+		itemReplication.doReplication(() -> eventReplication.doReplication());
 	}
 }

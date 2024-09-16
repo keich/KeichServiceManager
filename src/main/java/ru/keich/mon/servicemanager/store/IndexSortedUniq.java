@@ -1,5 +1,15 @@
 package ru.keich.mon.servicemanager.store;
 
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -16,15 +26,6 @@ package ru.keich.mon.servicemanager.store;
  * limitations under the License.
  */
 
-import java.util.Collections;
-import java.util.Optional;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
 public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> {
 	private final Function<T, Set<Object>> mapper;
 	private final SortedMap<Object, K> objects = new TreeMap<>();
@@ -36,11 +37,11 @@ public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> 
 	@Override
 	public Set<K> findByKey(long limit, Predicate<Object> predicate) {
 		synchronized (this) {
-			return objects.keySet().stream()
-				.filter(key -> predicate.test(key))
-				.map(key -> objects.get(key))
-				.limit(limit)
-				.collect(Collectors.toSet());
+			return objects.entrySet().stream()
+					.filter(entry -> predicate.test(entry.getKey()))
+					.map(Map.Entry::getValue)
+					.limit(limit)
+					.collect(Collectors.toSet());
 		}
 	}
 	
@@ -69,8 +70,8 @@ public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> 
 	public Set<K> get(Object key) {
 		synchronized (this) {
 			return Optional.ofNullable(objects.get(key))
-			.map(s -> Collections.singleton(s))
-			.orElse(Collections.emptySet());
+					.map(Collections::singleton)
+					.orElse(Collections.emptySet());
 		}
 	}
 

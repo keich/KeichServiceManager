@@ -1,5 +1,12 @@
 package ru.keich.mon.servicemanager.event;
 
+import javax.net.ssl.SSLException;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import ru.keich.mon.servicemanager.entity.EntityReplication;
+
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -15,13 +22,6 @@ package ru.keich.mon.servicemanager.event;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import javax.net.ssl.SSLException;
-
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
-import ru.keich.mon.servicemanager.entity.EntityReplication;
 
 @Component
 public class EventReplication extends EntityReplication<String, Event> {

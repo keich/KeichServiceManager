@@ -1,6 +1,14 @@
 package ru.keich.mon.servicemanager.item;
 
 import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import lombok.Getter;
+import ru.keich.mon.servicemanager.BaseStatus;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -17,17 +25,6 @@ import java.util.Collections;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import java.util.Map;
-import java.util.Objects;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import lombok.Getter;
-import ru.keich.mon.servicemanager.BaseStatus;
-
-
 
 @Getter
 public class ItemFilter {
@@ -76,22 +73,9 @@ public class ItemFilter {
 			@JsonProperty(value = "equalFields", required = true) Map<String, String> equalFields) {
 		super();
 		
-		if(Objects.nonNull(resultStatus)) {
-			this.resultStatus = resultStatus;
-		}else {
-			this.resultStatus = BaseStatus.INDETERMINATE;
-		}
-		
-		if(Objects.nonNull(usingResultStatus)) {
-			this.usingResultStatus = usingResultStatus;
-		} else {
-			this.usingResultStatus = false;
-		}
-		if (Objects.isNull(equalFields)) {
-			this.equalFields = Collections.emptyMap();
-		} else {
-			this.equalFields = Collections.unmodifiableMap(equalFields);
-		}
+		this.resultStatus = Optional.ofNullable(resultStatus).orElse(BaseStatus.INDETERMINATE);
+		this.usingResultStatus = Optional.ofNullable(usingResultStatus).orElse(false);
+		this.equalFields = Optional.ofNullable(equalFields).map(Collections::unmodifiableMap).orElse(Collections.emptyMap());
 	}
 
 }

@@ -1,5 +1,12 @@
 package ru.keich.mon.servicemanager.eventrelation;
 
+import java.util.Collections;
+import java.util.Set;
+
+import lombok.Getter;
+import ru.keich.mon.servicemanager.BaseStatus;
+import ru.keich.mon.servicemanager.store.BaseEntity;
+
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -15,13 +22,6 @@ package ru.keich.mon.servicemanager.eventrelation;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import java.util.Collections;
-import java.util.Set;
-
-import lombok.Getter;
-import ru.keich.mon.servicemanager.BaseStatus;
-import ru.keich.mon.servicemanager.store.BaseEntity;
 
 @Getter
 public class EventRelation extends BaseEntity<EventRelationId> implements Comparable<EventRelation> {

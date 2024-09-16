@@ -1,5 +1,16 @@
 package ru.keich.mon.servicemanager.store;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -16,17 +27,6 @@ package ru.keich.mon.servicemanager.store;
  * limitations under the License.
  */
 
-import java.util.Collections;
-
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
 public class IndexSorted<K, T extends BaseEntity<K>> implements Index<K, T> {
 	private final Function<T, Set<Object>> mapper;
 	private final SortedMap<Object, Set<K>> objects = new TreeMap<>();
@@ -38,11 +38,12 @@ public class IndexSorted<K, T extends BaseEntity<K>> implements Index<K, T> {
 	@Override
 	public Set<K> findByKey(long limit, Predicate<Object> predicate) {
 		synchronized (this) {
-			return objects.keySet().stream()
-				.filter(key -> predicate.test(key))
-				.flatMap(key -> objects.get(key).stream())
-				.limit(limit)
-				.collect(Collectors.toSet());
+			return objects.entrySet().stream()
+					.filter(entry -> predicate.test(entry.getKey()))
+					.map(Map.Entry::getValue)
+					.flatMap(Set::stream)
+					.limit(limit)
+					.collect(Collectors.toSet());
 		}
 	}
 
@@ -50,13 +51,9 @@ public class IndexSorted<K, T extends BaseEntity<K>> implements Index<K, T> {
 	public void append(T entity) {
 		synchronized (this) {
 			mapper.apply(entity).forEach(key -> {
-				if(objects.containsKey(key)) {
-					objects.get(key).add(entity.getId());
-				}else {
-					Set<K> set = new HashSet<>();
-					set.add(entity.getId());
-					objects.put(key, set);
-				}
+				var set = Optional.ofNullable(objects.get(key)).orElse(new HashSet<>());
+				set.add(entity.getId());
+				objects.put(key, set);
 			});
 		}
 	}
@@ -65,13 +62,12 @@ public class IndexSorted<K, T extends BaseEntity<K>> implements Index<K, T> {
 	public void remove(final T entity) {
 		synchronized (this) {
 			mapper.apply(entity).forEach(key -> {
-				if(objects.containsKey(key)) {
-					var set = objects.get(key);
+				Optional.ofNullable(objects.get(key)).ifPresent(set -> {
 					set.remove(entity.getId());
 					if (set.size() == 0) {
 						objects.remove(key);
 					}
-				}
+				});
 			});
 		}
 	}
@@ -79,8 +75,7 @@ public class IndexSorted<K, T extends BaseEntity<K>> implements Index<K, T> {
 	@Override
 	public Set<K> get(Object key) {
 		synchronized (this) {
-			return Optional.ofNullable(objects.get(key)).stream().flatMap(s -> s.stream())
-					.collect(Collectors.toSet());
+			return Optional.ofNullable(objects.get(key)).stream().flatMap(s -> s.stream()).collect(Collectors.toSet());
 		}
 	}
 

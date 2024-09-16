@@ -1,6 +1,18 @@
 package ru.keich.mon.servicemanager.item;
 
 import java.time.Instant;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import lombok.Getter;
+import ru.keich.mon.servicemanager.BaseStatus;
+import ru.keich.mon.servicemanager.entity.Entity;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -17,21 +29,6 @@ import java.time.Instant;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import java.util.Collections;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import lombok.Getter;
-import ru.keich.mon.servicemanager.BaseStatus;
-import ru.keich.mon.servicemanager.entity.Entity;
-
 
 @Getter
 public class Item extends Entity<String> {
@@ -68,24 +65,15 @@ public class Item extends Entity<String> {
 
 		this.name = name;
 		
-		if (Objects.nonNull(rules)) {
-			this.rules = Collections.unmodifiableMap(rules);
-		} else {
-			this.rules = Collections.emptyMap();
-		}
-		if (Objects.nonNull(filters)) {
-			this.filters = Collections.unmodifiableMap(filters);
-		} else {
-			this.filters = Collections.emptyMap();
-		}
-		if (Objects.nonNull(children) && !children.isEmpty()) {
-			this.children = Collections.unmodifiableSet(children);
+		this.rules = Optional.ofNullable(rules).map(Collections::unmodifiableMap).orElse(Collections.emptyMap());
+		this.filters = Optional.ofNullable(filters).map(Collections::unmodifiableMap).orElse(Collections.emptyMap());
+		this.children = Optional.ofNullable(children).map(Collections::unmodifiableSet).orElse(Collections.emptySet());
+		
+		if(this.children.size() > 0) {
 			this.hasChildren = true;
-		} else {
-			this.children = Collections.emptySet();
+		}else {
 			this.hasChildren = false;
 		}
-
 	}
 
 	@Override
@@ -127,8 +115,11 @@ public class Item extends Entity<String> {
 
 	public static Set<Object> getFiltersForIndex(Item item) {
 		return item.filters.entrySet().stream()
-			.flatMap(e -> e.getValue().getEqualFields().entrySet().stream())
-			.collect(Collectors.toSet());
+				.map(Map.Entry::getValue)
+				.map(ItemFilter::getEqualFields)
+		  		.map(Map::entrySet)
+				.flatMap(Set::stream)
+				.collect(Collectors.toSet());
 	}
 	
 	public static Set<Object> getParentsForIndex(Item item) {
@@ -137,11 +128,10 @@ public class Item extends Entity<String> {
 	
 	public static Set<Object> getNameUpperCaseForIndex(Entity<?> entity) {
 		Item item = (Item)entity;
-		var opt = Optional.ofNullable(item.getName());
-		if(opt.isPresent()) {
-			return Collections.singleton(opt.get().toUpperCase());
-		}
-		return Collections.emptySet();
+		return  Optional.ofNullable(item.getName())
+				.map(String::toUpperCase)
+				.map(s -> Collections.singleton((Object)s))
+				.orElse(Collections.emptySet());
 	}
 
 	@Override

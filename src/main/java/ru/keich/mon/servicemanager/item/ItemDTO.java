@@ -1,6 +1,17 @@
 package ru.keich.mon.servicemanager.item;
 
 import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonFilter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import lombok.Getter;
+import lombok.Setter;
+import ru.keich.mon.servicemanager.BaseStatus;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -17,18 +28,6 @@ import java.time.Instant;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import com.fasterxml.jackson.annotation.JsonFilter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import lombok.Getter;
-import lombok.Setter;
-import ru.keich.mon.servicemanager.BaseStatus;
 
 @Getter
 @Setter

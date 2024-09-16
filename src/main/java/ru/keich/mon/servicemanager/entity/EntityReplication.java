@@ -1,5 +1,20 @@
 package ru.keich.mon.servicemanager.entity;
 
+import java.util.Objects;
+
+import javax.net.ssl.SSLException;
+
+import org.springframework.http.MediaType;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import lombok.extern.java.Log;
+import reactor.core.publisher.Mono;
+import reactor.netty.http.client.HttpClient;
+
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -15,20 +30,6 @@ package ru.keich.mon.servicemanager.entity;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import java.util.Objects;
-import javax.net.ssl.SSLException;
-
-import org.springframework.http.MediaType;
-import org.springframework.http.client.reactive.ReactorClientHttpConnector;
-import org.springframework.web.reactive.function.client.ExchangeStrategies;
-import org.springframework.web.reactive.function.client.WebClient;
-
-import io.netty.handler.ssl.SslContextBuilder;
-import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
-import lombok.extern.java.Log;
-import reactor.core.publisher.Mono;
-import reactor.netty.http.client.HttpClient;
 
 @Log
 public class EntityReplication<K, T extends Entity<K>> {
@@ -102,44 +103,44 @@ public class EntityReplication<K, T extends Entity<K>> {
 		deleted = 0L;
 		
 		webClient.get().uri(uriBuilder -> uriBuilder.scheme("https").host(replicationNeighborHost).port(replicationNeighborPort).path(path)
-		.queryParam("version", "gt:" + fromVersion).queryParam("fromHistory", "nc:" + tmpNodeName).build())
-		.accept(MediaType.APPLICATION_JSON).retrieve()
-		.bodyToFlux(elementClass)
-		.onErrorResume(e -> {
-			log.warning("Entity " + path + " replication client error: "+e.toString());
-			return Mono.empty();
-		})
-		.doFirst(() -> {
-			active = true;
-			hasEntity = false;
-		})
-		.doFinally(s -> {
-			active = false;
-			first = false;
-			if(hasEntity) {
-				log.info("Entity " + path + " replication is completed. Version:" + " min=" + minVersion 
-						+ " max=" + maxVersion + " Entity: added=" + added + " deleted=" + deleted);
-			}
-			onFinally.run();
-		})
-		.doOnNext(entity -> {
-			hasEntity = true;
-			final var version  = entity.getVersion();
-			if(minVersion > version) {
-				minVersion = version;
-			}
-			if(maxVersion < version) {
-				maxVersion = version;
-			}
-			if(Objects.nonNull(entity.getDeletedOn())) {
-				deleted++;
-			}
-			added++;
-			entityService.addOrUpdate(entity);
-		})
-		.doOnError(e -> {
-            log.info("Entity " + path + " replication error. Message: " + e.getMessage());
-        })
-		.subscribe();
+				.queryParam("version", "gt:" + fromVersion).queryParam("fromHistory", "nc:" + tmpNodeName).build())
+				.accept(MediaType.APPLICATION_JSON).retrieve()
+				.bodyToFlux(elementClass)
+				.onErrorResume(e -> {
+					log.warning("Entity " + path + " replication client error: "+e.toString());
+					return Mono.empty();
+				})
+				.doFirst(() -> {
+					active = true;
+					hasEntity = false;
+				})
+				.doFinally(s -> {
+					active = false;
+					first = false;
+					if(hasEntity) {
+						log.info("Entity " + path + " replication is completed. Version:" + " min=" + minVersion 
+								+ " max=" + maxVersion + " Entity: added=" + added + " deleted=" + deleted);
+					}
+					onFinally.run();
+				})
+				.doOnNext(entity -> {
+					hasEntity = true;
+					final var version  = entity.getVersion();
+					if(minVersion > version) {
+						minVersion = version;
+					}
+					if(maxVersion < version) {
+						maxVersion = version;
+					}
+					if(Objects.nonNull(entity.getDeletedOn())) {
+						deleted++;
+					}
+					added++;
+					entityService.addOrUpdate(entity);
+				})
+				.doOnError(e -> {
+		            log.info("Entity " + path + " replication error. Message: " + e.getMessage());
+		        })
+				.subscribe();
 	}
 }

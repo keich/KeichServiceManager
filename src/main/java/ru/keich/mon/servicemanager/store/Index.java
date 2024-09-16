@@ -1,5 +1,8 @@
 package ru.keich.mon.servicemanager.store;
 
+import java.util.Set;
+import java.util.function.Predicate;
+
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -15,9 +18,6 @@ package ru.keich.mon.servicemanager.store;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import java.util.Set;
-import java.util.function.Predicate;
 
 public interface Index <K, T> {	
 	public void append(T entity);

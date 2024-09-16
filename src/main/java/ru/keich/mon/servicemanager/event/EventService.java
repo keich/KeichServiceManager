@@ -19,6 +19,8 @@ package ru.keich.mon.servicemanager.event;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +28,7 @@ import org.springframework.stereotype.Service;
 
 import ru.keich.mon.servicemanager.entity.EntityService;
 import ru.keich.mon.servicemanager.item.Item;
+import ru.keich.mon.servicemanager.item.ItemFilter;
 import ru.keich.mon.servicemanager.item.ItemService;
 
 @Service
@@ -101,25 +104,25 @@ public class EventService extends EntityService<String, Event>{
 	}
 
 	@Override
-	protected void entityRemoved(Event event) {
+	protected Event entityRemoved(Event event) {
 		super.entityRemoved(event);
 		itemService.eventRemoved(event);
 
 		
 		final var newFromHistory = Collections.singleton(nodeName);
 		var deletedEvent= new Event(event.getId(),
-			getNextVersion(),
-			event.getSource(),
-			event.getSourceKey(),
-			event.getNode(),
-			event.getSummary(),
-			event.getType(),
-			event.getStatus(),
-			event.getFields(),
-			newFromHistory,
-			event.getCreatedOn(),
-			Instant.now(),
-			Instant.now());
+				getNextVersion(),
+				event.getSource(),
+				event.getSourceKey(),
+				event.getNode(),
+				event.getSummary(),
+				event.getType(),
+				event.getStatus(),
+				event.getFields(),
+				newFromHistory,
+				event.getCreatedOn(),
+				Instant.now(),
+				Instant.now());
 
 		entityCache.put(event.getId(), () -> {
 			return deletedEvent;
@@ -129,13 +132,18 @@ public class EventService extends EntityService<String, Event>{
 			}
 			return deletedEvent;
 		}, addedItem -> {});
+		
+		return event;
 	}
 
 	public void itemAdded(Item item){
 		entityCache.transaction(() -> {
 			item.getFilters().entrySet().stream()
-			.flatMap(e -> findByFields(e.getValue().getEqualFields()).stream())
-			.forEach(event -> itemService.eventAdded(event));
+					.map(Map.Entry::getValue)
+					.map(ItemFilter::getEqualFields)
+			  		.map(this::findByFields)
+					.flatMap(List::stream)
+					.forEach(itemService::eventAdded);
 			return null;
 		});
 	}

@@ -1,5 +1,17 @@
 package ru.keich.mon.servicemanager.entity;
 
+import java.time.Instant;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.annotation.JsonFilter;
+
+import lombok.Getter;
+import ru.keich.mon.servicemanager.store.BaseEntity;
+
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -15,18 +27,6 @@ package ru.keich.mon.servicemanager.entity;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import java.time.Instant;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import com.fasterxml.jackson.annotation.JsonFilter;
-
-import lombok.Getter;
-import ru.keich.mon.servicemanager.store.BaseEntity;
 
 @Getter
 @JsonFilter("propertiesFilter")
@@ -55,50 +55,27 @@ public class Entity<K> extends BaseEntity<K> {
 		this.version = version;
 		this.source = source;
 		this.sourceKey = sourceKey;
-		if (Objects.isNull(fromHistory)) {
-			this.fromHistory = Collections.emptySet();
-		} else {
-			this.fromHistory = Collections.unmodifiableSet(fromHistory);
-		}
-		if(Objects.isNull(createdOn)) {
-			this.createdOn = Instant.now();
-		} else {
-			this.createdOn = createdOn;
-		}
-		if(Objects.isNull(updatedOn)) {
-			this.updatedOn = Instant.now();
-		} else {
-			this.updatedOn = updatedOn;
-		}
-		if(Objects.nonNull(deletedOn)) {
-			this.deletedOn = Instant.now();
-		} else {
-			this.deletedOn = null;
-		}
-		if (Objects.isNull(fields)) {
-			this.fields = Collections.emptyMap();
-		} else {
-			this.fields = Collections.unmodifiableMap(fields);
-		}
+		this.fromHistory = Optional.ofNullable(fromHistory).map(Collections::unmodifiableSet).orElse(Collections.emptySet());
+		this.createdOn = Optional.ofNullable(createdOn).orElse(Instant.now());
+		this.updatedOn = Optional.ofNullable(updatedOn).orElse(Instant.now());
+		this.deletedOn = Optional.ofNullable(deletedOn).orElse(null);
+		this.fields = Optional.ofNullable(fields).map(Collections::unmodifiableMap).orElse(Collections.emptyMap());
 	}
 	
-	public static Set<Object> getSourceForIndex(Entity<?> entity){
+	public static Set<Object> getSourceForIndex(Entity<?> entity) {
 		return Collections.singleton(entity.getSource());
 	}
-	
-	public static Set<Object> getSourceKeyForIndex(Entity<?> entity){
+
+	public static Set<Object> getSourceKeyForIndex(Entity<?> entity) {
 		return Collections.singleton(entity.getSourceKey());
 	}
-	
-	public static Set<Object> getVersionForIndex(Entity<?> entity){
+
+	public static Set<Object> getVersionForIndex(Entity<?> entity) {
 		return Collections.singleton(entity.getVersion());
 	}
 	
-	public static Set<Object> getDeletedOnForIndex(Entity<?> entity){
-		if(Objects.isNull(entity.deletedOn)) {
-			return Collections.emptySet();
-		}
-		return Collections.singleton(entity.getDeletedOn());
+	public static Set<Object> getDeletedOnForIndex(Entity<?> entity) {
+		return Optional.ofNullable((Object)entity.deletedOn).map(Collections::singleton).orElse(Collections.emptySet());
 	}
 	
 	public static Set<Object> getFieldsForIndex(Entity<?> item) {

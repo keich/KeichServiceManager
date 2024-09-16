@@ -1,5 +1,7 @@
 package ru.keich.mon.servicemanager.eventrelation;
 
+import lombok.Getter;
+
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -15,8 +17,6 @@ package ru.keich.mon.servicemanager.eventrelation;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import lombok.Getter;
 
 @Getter
 public class EventRelationId {

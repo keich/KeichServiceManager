@@ -16,7 +16,6 @@ package ru.keich.mon.servicemanager.query;
  * limitations under the License.
  */
 
-
 public enum Operator {
 	NE, EQ, LT, GT, CO, NC, ERROR, ALL;
 	

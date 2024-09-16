@@ -1,21 +1,5 @@
 package ru.keich.mon.servicemanager.entity;
 
-/*
- * Copyright 2024 the original author or authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,14 +16,28 @@ import java.util.stream.Collectors;
 
 import org.springframework.scheduling.annotation.Scheduled;
 
-import lombok.extern.java.Log;
 import ru.keich.mon.servicemanager.query.Filter;
 import ru.keich.mon.servicemanager.query.Operator;
 import ru.keich.mon.servicemanager.query.QueryId;
 import ru.keich.mon.servicemanager.store.IndexedHashMap;
 import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
 
-@Log
+/*
+ * Copyright 2024 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 public abstract class EntityService<K, T extends Entity<K>> {
 	static public Long VERSION_MIN = 0L;
 	
@@ -168,8 +166,8 @@ public abstract class EntityService<K, T extends Entity<K>> {
 		return false;
 	}
 	
-	protected void entityRemoved(T entity) {
-
+	protected T entityRemoved(T entity) {
+		return entity;
 	}
 	
 	public abstract void addOrUpdate(T entity);
@@ -180,19 +178,17 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	
 	public Optional<T> deleteById(K entityId) {
 		return entityCache.transaction(() -> {
-			var opt = entityCache.remove(entityId);
-			opt.ifPresent(entity -> entityRemoved(entity));
-			return opt;
+			return entityCache.remove(entityId).map(this::entityRemoved);
 		});
 	}
 	
 	public List<T> deleteByIds(List<K> ids) {
 		return entityCache.transaction(() ->  {
 			return ids.stream()
-				.map(id -> deleteById(id))
-				.filter(opt -> opt.isPresent())
-				.map(opt -> opt.get())
-				.collect(Collectors.toList());
+					.map(this::deleteById)
+					.filter(Optional::isPresent)
+					.map(Optional::get)
+					.collect(Collectors.toList());
 		});
 	}
 	
@@ -202,60 +198,62 @@ public abstract class EntityService<K, T extends Entity<K>> {
 			var sourceKeyIndex = entityCache.indexGet(INDEX_NAME_SOURCE_KEY, sourceKey);
 			sourceIndex.removeAll(sourceKeyIndex);
 			return sourceIndex.stream()
-				.map(id -> deleteById(id))
-				.filter(opt -> opt.isPresent())
-				.map(opt -> opt.get())
-				.collect(Collectors.toList());
+					.map(this::deleteById)
+					.filter(Optional::isPresent)
+					.map(Optional::get)
+					.collect(Collectors.toList());
 		});
 	}
 	
 	public List<T> findByFields(Map<String, String> fields) {
 		return entityCache.transaction(() -> {
 			return fields.entrySet().stream()
-			.flatMap(k -> entityCache.indexGet(INDEX_NAME_FIELDS, k).stream())
-			.distinct()
-			.map(id -> findById(id))
-			.filter(o -> o.isPresent())
-			.map(o -> o.get())
-			.filter(item -> item.getFields().keySet().containsAll(fields.keySet()))
-			.collect(Collectors.toList());
+					.flatMap(k -> entityCache.indexGet(INDEX_NAME_FIELDS, k).stream())
+					.distinct()
+					.map(this::findById)
+					.filter(Optional::isPresent)
+					.map(Optional::get)
+					.filter(item -> item.getFields().keySet().containsAll(fields.keySet()))
+					.collect(Collectors.toList());
 		});
 	}
+	
 	
 	// And function only
 	public List<T> query(List<Filter> filters) {
 		// TODO error for undefined filters
 		var producers = filters.stream()
-		.filter(f -> queryProducer.containsKey(f.getId()))
-		.collect(Collectors.toList());
+				.filter(f -> queryProducer.containsKey(f.getId()))
+				.collect(Collectors.toList());
 		
 		if(producers.size() == 0) {
 			producers = Collections.singletonList(new Filter(PRODUCER_ID_ALL,""));
 		}
 		
-		var opt = producers.stream().map(f -> {
-			return new HashSet<>(queryProducer.get(f.getId()).apply(f.getValue()));
-		})
-		.reduce((result, el) -> { 
-			result.retainAll(el);
-			return result;
-		});
+		var opt = producers.stream()
+				.map(f -> {
+					return new HashSet<>(queryProducer.get(f.getId()).apply(f.getValue()));
+				})
+				.reduce((result, el) -> { 
+					result.retainAll(el);
+					return result;
+				});
 		
 		if(opt.isEmpty()) {
 			return Collections.emptyList();
 		}
 		
 		var out = opt.get().stream()
-		.map(id -> entityCache.get(id))
-		.filter(o -> o.isPresent())
-		.map(o -> o.get())
-		.collect(Collectors.toList());
+				.map(entityCache::get)
+				.filter(Optional::isPresent)
+				.map(Optional::get)
+				.collect(Collectors.toList());
 		
 		filters.stream()
-		.filter(f -> queryFilter.containsKey(f.getId()))
-		.forEach(f -> {
-			out.removeIf(entity -> !queryFilter.get(f.getId()).apply(entity, f.getValue()));
-		});		
+				.filter(f -> queryFilter.containsKey(f.getId()))
+				.forEach(f -> {
+					out.removeIf(entity -> !queryFilter.get(f.getId()).apply(entity, f.getValue()));
+				});	
 		return out;
 	}
 	
@@ -263,7 +261,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	public void deleteOldScheduled() {
 		entityCache.transaction(() -> {
 			entityCache.indexGetBefore(INDEX_NAME_DELETED_ON, Instant.now().minusSeconds(30)).stream()
-			.forEach(id -> entityCache.remove(id));
+					.forEach(id -> entityCache.remove(id));
 			return null;
 		});
 	}

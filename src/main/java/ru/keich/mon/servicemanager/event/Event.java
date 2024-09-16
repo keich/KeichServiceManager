@@ -1,5 +1,16 @@
 package ru.keich.mon.servicemanager.event;
 
+import java.time.Instant;
+import java.util.Map;
+import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import lombok.Getter;
+import ru.keich.mon.servicemanager.BaseStatus;
+import ru.keich.mon.servicemanager.entity.Entity;
+
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -15,17 +26,6 @@ package ru.keich.mon.servicemanager.event;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import java.time.Instant;
-import java.util.Map;
-import java.util.Set;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import lombok.Getter;
-import ru.keich.mon.servicemanager.BaseStatus;
-import ru.keich.mon.servicemanager.entity.Entity;
 
 @Getter
 public class Event extends Entity<String> {
