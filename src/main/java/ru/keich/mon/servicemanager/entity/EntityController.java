@@ -65,8 +65,8 @@ public class EntityController<K, T extends Entity<K>> {
 	}
 	
 	public ResponseEntity<MappingJacksonValue> find(@RequestParam MultiValueMap<String, String> reqParam) {
-		reqParam.remove(QUERY_PROPERTY);
 		var filters = reqParam.entrySet().stream()
+				.filter(p -> !p.getKey().toLowerCase().equals(QUERY_PROPERTY))
 				.flatMap(param -> {
 					return param.getValue().stream().map(value -> new Filter(param.getKey(),value));
 				}).collect(Collectors.toList());

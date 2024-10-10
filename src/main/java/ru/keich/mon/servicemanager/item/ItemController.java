@@ -129,6 +129,9 @@ public class ItemController extends EntityController<String, Item> {
 	@GetMapping("/item/{id}/parents/tree")
 	@CrossOrigin(origins = "*")
 	ResponseEntity<MappingJacksonValue> findParentsTreeById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
+		if(reqParam.containsKey(QUERY_PROPERTY)) {
+			reqParam.add(QUERY_PROPERTY, QUERY_PARENTS);
+		}
 		return itemService.findById(id)
 				.map(ItemDTO::new)
 				.map(parentDTO -> setParents(parentDTO, new HashSet<String>()))
