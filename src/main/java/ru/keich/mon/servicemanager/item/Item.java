@@ -39,7 +39,7 @@ public class Item extends Entity<String> {
 
 	private final Map<String, ItemFilter> filters;
 
-	private final Set<String> children;
+	private final Set<String> childrenIds;
 
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	private final boolean hasChildren;
@@ -56,7 +56,7 @@ public class Item extends Entity<String> {
 			@JsonProperty("fields") Map<String, String> fields,
 			@JsonProperty("rules") Map<String, ItemRule> rules,
 			@JsonProperty("filters") Map<String, ItemFilter> filters,
-			@JsonProperty("children") Set<String> children,
+			@JsonProperty("childrenIds") Set<String> childrenIds,
 			@JsonProperty("fromHistory") Set<String> fromHistory,
 			@JsonProperty(value = "createdOn", required = false) Instant createdOn,
 			@JsonProperty(value = "updatedOn", required = false) Instant updatedOn,
@@ -67,9 +67,9 @@ public class Item extends Entity<String> {
 		
 		this.rules = Optional.ofNullable(rules).map(Collections::unmodifiableMap).orElse(Collections.emptyMap());
 		this.filters = Optional.ofNullable(filters).map(Collections::unmodifiableMap).orElse(Collections.emptyMap());
-		this.children = Optional.ofNullable(children).map(Collections::unmodifiableSet).orElse(Collections.emptySet());
+		this.childrenIds = Optional.ofNullable(childrenIds).map(Collections::unmodifiableSet).orElse(Collections.emptySet());
 		
-		if(this.children.size() > 0) {
+		if(this.childrenIds.size() > 0) {
 			this.hasChildren = true;
 		}else {
 			this.hasChildren = false;
@@ -123,7 +123,7 @@ public class Item extends Entity<String> {
 	}
 	
 	public static Set<Object> getParentsForIndex(Item item) {
-		return Collections.unmodifiableSet(item.getChildren());
+		return Collections.unmodifiableSet(item.getChildrenIds());
 	}
 	
 	public static Set<Object> getNameUpperCaseForIndex(Entity<?> entity) {

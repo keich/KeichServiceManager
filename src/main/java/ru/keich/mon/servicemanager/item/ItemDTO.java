@@ -69,7 +69,7 @@ public class ItemDTO {
 		this.fields = item.getFields();
 		this.rules = item.getRules();
 		this.filters = item.getFilters();
-		this.childrenIds = item.getChildren();
+		this.childrenIds = item.getChildrenIds();
 		this.hasChildren = item.isHasChildren();
 		this.createdOn = item.getCreatedOn();
 		this.updatedOn = item.getUpdatedOn();

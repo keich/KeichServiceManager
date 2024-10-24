@@ -266,7 +266,7 @@ public class ControllersTest {
 				        "id": "id_itemGetChildren1",
 				        "source": "src_itemGetChildren",
 				        "sourceKey": "src_key_itemGetChildren",
-				        "children": ["id_itemGetChildren2","testid"]
+				        "childrenIds": ["id_itemGetChildren2","testid"]
 				    }
 				""";
 		var itemParent = mapper.readValue(jsonParent, Item.class);
@@ -440,7 +440,7 @@ public class ControllersTest {
 			            "name": "root",
 			            "description": "root"
 			        },
-			        "children": ["id_itemFiltersEventMapping"]
+			        "childrenIds": ["id_itemFiltersEventMapping"]
 			    }
 			""";
 		var itemRoot = mapper.readValue(json, Item.class);
@@ -753,7 +753,7 @@ public class ControllersTest {
 				            "description": "root",
 				            "method": "itemTree"
 				        },
-				        "children": ["id_itemTreeChild"]
+				        "childrenIds": ["id_itemTreeChild"]
 				    }
 				""";
 		var root = mapper.readValue(json, Item.class);

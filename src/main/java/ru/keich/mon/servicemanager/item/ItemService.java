@@ -87,7 +87,7 @@ public class ItemService extends EntityService<String, Item> {
 				item.getFields(),
 				item.getRules(),
 				item.getFilters(),
-				item.getChildren(),
+				item.getChildrenIds(),
 				newFromHistory,
 				item.getCreatedOn(),
 				Instant.now(),
@@ -108,11 +108,11 @@ public class ItemService extends EntityService<String, Item> {
 	}
 
 	private int calculateEntityStatusAsCluster(Item item, ItemRule rule) {
-		var overal = item.getChildren().size();
+		var overal = item.getChildrenIds().size();
 		if (overal <= 0) {
 			return 0;
 		}
-		var listStatus = item.getChildren().stream()
+		var listStatus = item.getChildrenIds().stream()
 				.map(this::findById)
 				.filter(Optional::isPresent)
 				.map(Optional::get)
@@ -134,7 +134,7 @@ public class ItemService extends EntityService<String, Item> {
 	}
 
 	private int calculateEntityStatusDefault(Item item) {
-		return item.getChildren().stream()
+		return item.getChildrenIds().stream()
 				.map(this::findById)
 				.filter(Optional::isPresent)
 				.map(Optional::get)
@@ -216,7 +216,7 @@ public class ItemService extends EntityService<String, Item> {
 						item.getFields(),
 						item.getRules(),
 						item.getFilters(),
-						item.getChildren(),
+						item.getChildrenIds(),
 						newFromHistory,
 						item.getCreatedOn(),
 						item.getUpdatedOn(),
@@ -236,7 +236,7 @@ public class ItemService extends EntityService<String, Item> {
 						item.getFields(),
 						item.getRules(),
 						item.getFilters(),
-						item.getChildren(),
+						item.getChildrenIds(),
 						newFromHistory,
 						old.getCreatedOn(),
 						Instant.now(),
@@ -283,7 +283,7 @@ public class ItemService extends EntityService<String, Item> {
 	}
 
 	public List<Item> findChildren(Item item) {
-		return item.getChildren().stream()
+		return item.getChildrenIds().stream()
 				.distinct()
 				.map(this::findById)
 				.filter(Optional::isPresent)
@@ -321,7 +321,7 @@ public class ItemService extends EntityService<String, Item> {
 		findById(parentId).ifPresent(parent -> {
 			history.add(parentId);
 			out.add(parent);
-			parent.getChildren().forEach(childId -> {
+			parent.getChildrenIds().forEach(childId -> {
 				if (history.contains(childId)) {
 					log.warning("findAllEventsById: circle found from " + parentId + " to " + childId);
 				} else {
