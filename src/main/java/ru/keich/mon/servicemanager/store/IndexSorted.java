@@ -38,12 +38,14 @@ public class IndexSorted<K, T extends BaseEntity<K>> implements Index<K, T> {
 	@Override
 	public Set<K> findByKey(long limit, Predicate<Object> predicate) {
 		synchronized (this) {
-			return objects.entrySet().stream()
+			var stream =  objects.entrySet().stream()
 					.filter(entry -> predicate.test(entry.getKey()))
 					.map(Map.Entry::getValue)
-					.flatMap(Set::stream)
-					.limit(limit)
-					.collect(Collectors.toSet());
+					.flatMap(Set::stream);
+			if(limit > 0) {
+				return stream.limit(limit).collect(Collectors.toSet());
+			}
+			return stream.collect(Collectors.toSet());
 		}
 	}
 

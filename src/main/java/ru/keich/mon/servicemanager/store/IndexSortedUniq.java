@@ -10,6 +10,8 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import lombok.extern.java.Log;
+
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -26,6 +28,7 @@ import java.util.stream.Collectors;
  * limitations under the License.
  */
 
+@Log
 public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> {
 	private final Function<T, Set<Object>> mapper;
 	private final SortedMap<Object, K> objects = new TreeMap<>();
@@ -37,11 +40,13 @@ public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> 
 	@Override
 	public Set<K> findByKey(long limit, Predicate<Object> predicate) {
 		synchronized (this) {
-			return objects.entrySet().stream()
+			var stream =  objects.entrySet().stream()
 					.filter(entry -> predicate.test(entry.getKey()))
-					.map(Map.Entry::getValue)
-					.limit(limit)
-					.collect(Collectors.toSet());
+					.map(Map.Entry::getValue);
+			if(limit > 0) {
+				return stream.limit(limit).collect(Collectors.toSet());
+			}
+			return stream.collect(Collectors.toSet());
 		}
 	}
 	
@@ -78,6 +83,7 @@ public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> 
 	@Override
 	public Set<K> getBefore(Object key) {
 		synchronized (this) {
+			log.info("DEBUG getBefore"+key);
 			return objects.headMap(key).values().stream().collect(Collectors.toSet());
 		}
 	}
