@@ -1,5 +1,6 @@
 package ru.keich.mon.servicemanager.store;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -10,6 +11,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
+import ru.keich.mon.servicemanager.query.predicates.QueryPredicate;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -115,6 +119,37 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 	public <R> R transaction(Supplier<R> supplier) {
 		synchronized (this) {
 			return supplier.get();
+		}
+	}
+	
+	public <V extends Comparable<V>> Set<K> keySet(QueryPredicate<V> predicate, long limit) {
+		var filedName = predicate.getName();
+		if (index.containsKey(filedName)) {
+			switch (predicate.getOperator()) {
+			case EQ:
+				return index.get(filedName).get(predicate.getValue());
+			case NE:
+			case CO:
+			case NC:
+				return index.get(filedName).findByKey(limit, (p) -> predicate.test((V) p));
+			case LT:
+				return index.get(filedName).getBefore(predicate.getValue());
+			case GT:
+				return index.get(filedName).getAfter(predicate.getValue());
+			default:
+				return Collections.emptySet();
+			}
+		} else {
+			var methodName = "get" + filedName.substring(0, 1).toUpperCase() + filedName.substring(1);
+			return cache.entrySet().stream().filter(entry -> {
+				var entity = entry.getValue();
+				try {
+					return predicate.test((V) entry.getValue().getClass().getMethod(methodName).invoke(entity));
+				} catch (Exception e1) {
+					e1.printStackTrace();
+				}
+				return false;
+			}).map(e -> e.getKey()).collect(Collectors.toSet());
 		}
 	}
 	
