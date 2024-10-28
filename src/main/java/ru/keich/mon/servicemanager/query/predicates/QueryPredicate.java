@@ -22,13 +22,13 @@ import ru.keich.mon.servicemanager.query.Operator;
  */
 
 @Getter
-public abstract class QueryPredicate<T extends Comparable<T>> implements Predicate<T> {
+public abstract class QueryPredicate implements Predicate<Object> {
 
 	final String name;
 	final Operator operator;
-	final T value;
+	final Object value;
 
-	public QueryPredicate(String name, Operator operator, T value) {
+	public QueryPredicate(String name, Operator operator, Object value) {
 		this.value = value;
 		this.name = name;
 		this.operator = operator;
@@ -38,8 +38,13 @@ public abstract class QueryPredicate<T extends Comparable<T>> implements Predica
 		return name;
 	}
 
-	public T getValue() {
+	public Object getValue() {
 		return value;
+	}
+
+	@Override
+	public String toString() {
+		return "QueryPredicate [name=" + name + ", operator=" + operator + ", value=" + value + "]";
 	}
 
 }

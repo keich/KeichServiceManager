@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 
-import ru.keich.mon.servicemanager.query.Filter;
+import ru.keich.mon.servicemanager.query.predicates.Predicates;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -68,7 +68,8 @@ public class EntityController<K, T extends Entity<K>> {
 		var filters = reqParam.entrySet().stream()
 				.filter(p -> !p.getKey().toLowerCase().equals(QUERY_PROPERTY))
 				.flatMap(param -> {
-					return param.getValue().stream().map(value -> new Filter(param.getKey(),value));
+					return param.getValue().stream()
+							.map(value -> Predicates.fromParam(param.getKey(), value));
 				}).collect(Collectors.toList());
 		return applyFilter(new MappingJacksonValue(entityService.query(filters)), reqParam);
 	}

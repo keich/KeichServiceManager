@@ -36,7 +36,7 @@ public class IndexEqual<K, T extends BaseEntity<K>> implements Index<K, T> {
 	@Override
 	public Set<K> findByKey(long limit, Predicate<Object> predicate) {
 		synchronized (this) {
-			var stream =  objects.entrySet().stream()
+			var stream = objects.entrySet().stream()
 					.filter(entry -> {
 							return predicate.test(entry.getKey());
 						})

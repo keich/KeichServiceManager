@@ -9,11 +9,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import ru.keich.mon.servicemanager.query.predicates.Predicates;
 import ru.keich.mon.servicemanager.query.predicates.QueryPredicate;
+
 
 /*
  * Copyright 2024 the original author or authors.
@@ -57,27 +58,7 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 			break;		
 		}
 	}
-	
-	public Set<K> indexGet(String name,Object key) {
-		return index.get(name).get(key);
-	}
-	
-	public Set<K> findByKey(String name, long limit, Predicate<Object> predicate) {
-		return index.get(name).findByKey(limit, predicate);
-	}
-	
-	public Set<K> indexGetAfter(String name,Object key) {
-		return index.get(name).getAfter(key);
-	}
-	
-	public Set<K> indexGetAfterFirst(String name,Object key) {
-		return index.get(name).getAfterFirst(key);
-	}
-	
-	public Set<K> indexGetBefore(String name,Object key) {
-		return index.get(name).getBefore(key);
-	}
-	
+		
 	public void put(K entityId, Supplier<T> insertTrigger, Function<T,T> updateTrigger, Consumer<T> after) {
 		synchronized (this) {
 			Optional.ofNullable(cache.get(entityId)).ifPresentOrElse(old -> {
@@ -122,35 +103,54 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 		}
 	}
 	
-	public <V extends Comparable<V>> Set<K> keySet(QueryPredicate<V> predicate, long limit) {
-		var filedName = predicate.getName();
-		if (index.containsKey(filedName)) {
+	private Set<K> findByField(String fieldName, long limit, QueryPredicate predicate) {
+		var methodName = "get" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
+		var stream = cache.entrySet().stream().filter(entry -> {
+			var entity = entry.getValue();
+			try {
+				var v = entry.getValue().getClass().getMethod(methodName).invoke(entity);
+				if (predicate.test(v)) {
+					return true;
+				}
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			}
+			return false;
+		}).map(e -> e.getKey());
+		if(limit > 0) {
+			return stream.limit(limit).collect(Collectors.toSet());
+		}
+		return stream.collect(Collectors.toSet());
+	}
+	
+	public Set<K> keySet(QueryPredicate predicate, long limit) {
+		var fieldName = predicate.getName();
+		if (index.containsKey(fieldName)) {
 			switch (predicate.getOperator()) {
 			case EQ:
-				return index.get(filedName).get(predicate.getValue());
+				return index.get(fieldName).get(predicate.getValue());
 			case NE:
 			case CO:
 			case NC:
-				return index.get(filedName).findByKey(limit, (p) -> predicate.test((V) p));
+				return index.get(fieldName).findByKey(limit, (p) -> predicate.test(p));
 			case LT:
-				return index.get(filedName).getBefore(predicate.getValue());
+				return index.get(fieldName).getBefore(predicate.getValue());
 			case GT:
-				return index.get(filedName).getAfter(predicate.getValue());
+				return index.get(fieldName).getAfter(predicate.getValue());
 			default:
 				return Collections.emptySet();
 			}
 		} else {
-			var methodName = "get" + filedName.substring(0, 1).toUpperCase() + filedName.substring(1);
-			return cache.entrySet().stream().filter(entry -> {
-				var entity = entry.getValue();
-				try {
-					return predicate.test((V) entry.getValue().getClass().getMethod(methodName).invoke(entity));
-				} catch (Exception e1) {
-					e1.printStackTrace();
-				}
-				return false;
-			}).map(e -> e.getKey()).collect(Collectors.toSet());
+			return findByField(fieldName, limit, predicate);
 		}
+	}
+	
+	public Set<K> keySetGreaterEqualFirst(String fieldName, Object value) {
+		if (index.containsKey(fieldName)) {
+			return index.get(fieldName).getAfterFirst(value);
+		}
+		var predicate = Predicates.greaterEqual(fieldName, value);
+		return findByField(fieldName, 1, predicate);
 	}
 	
 }

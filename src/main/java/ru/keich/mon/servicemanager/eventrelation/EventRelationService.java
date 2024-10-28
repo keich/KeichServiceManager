@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.event.Event;
 import ru.keich.mon.servicemanager.item.Item;
+import ru.keich.mon.servicemanager.query.predicates.Predicates;
 import ru.keich.mon.servicemanager.store.IndexedHashMap;
 import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
 
@@ -85,13 +86,15 @@ public class EventRelationService {
 	}
 	
 	public List<String> getItemIds(Event event) {
-		return relationCache.indexGet(INDEX_NAME_RELATIONS_BY_EVENTID, event.getId()).stream()
+		var predicate = Predicates.equal(INDEX_NAME_RELATIONS_BY_EVENTID, event.getId());
+		return relationCache.keySet(predicate, -1).stream()
 				.map(EventRelationId::getItemId)
 				.collect(Collectors.toUnmodifiableList());
 	}
 	
 	public List<String> getEventIds(Item item) {
-		return relationCache.indexGet(INDEX_NAME_RELATIONS_BY_ITEMID, item.getId()).stream()
+		var predicate = Predicates.equal(INDEX_NAME_RELATIONS_BY_ITEMID, item.getId());
+		return relationCache.keySet(predicate, -1).stream()
 				.map(EventRelationId::getEventId)
 				.collect(Collectors.toUnmodifiableList());
 	}
@@ -99,7 +102,7 @@ public class EventRelationService {
 	public BaseStatus getMaxStatus(Item item) {
 		var itemId = item.getId();
 		var searchKey = new EventRelation(new EventRelationId(itemId,""), BaseStatus.CRITICAL);		
-		return relationCache.indexGetAfterFirst(INDEX_NAME_RELATIONS_SORT_STATUS, searchKey).stream()
+		return relationCache.keySetGreaterEqualFirst(INDEX_NAME_RELATIONS_SORT_STATUS, searchKey).stream()
 				.filter(key -> key.getItemId().equals(itemId))
 				.findFirst()
 				.flatMap(key -> relationCache.get(key))

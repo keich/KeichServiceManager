@@ -18,15 +18,19 @@ import ru.keich.mon.servicemanager.query.Operator;
  * limitations under the License.
  */
 
-public class LessThanPredicate<T extends Comparable<T>> extends QueryPredicate<T> {
+public class LessThanPredicate extends QueryPredicate {
 
-	public LessThanPredicate(String name, T value) {
+	public LessThanPredicate(String name, Object value) {
 		super(name, Operator.LT, value);
 	}
 
 	@Override
-	public boolean test(T t) {
-		return value.compareTo(t) > 0;
+	public boolean test(Object t) {
+		if (value instanceof Long) {
+			var v = (Long) value;
+			return v.compareTo((Long) t) > 0;
+		}
+		return false;
 	}
 
 }

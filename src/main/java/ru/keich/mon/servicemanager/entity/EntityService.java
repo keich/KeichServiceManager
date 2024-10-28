@@ -2,23 +2,17 @@ package ru.keich.mon.servicemanager.entity;
 
 import java.time.Instant;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.springframework.scheduling.annotation.Scheduled;
 
-import ru.keich.mon.servicemanager.query.Filter;
-import ru.keich.mon.servicemanager.query.Operator;
-import ru.keich.mon.servicemanager.query.QueryId;
+import ru.keich.mon.servicemanager.query.predicates.Predicates;
+import ru.keich.mon.servicemanager.query.predicates.QueryPredicate;
 import ru.keich.mon.servicemanager.store.IndexedHashMap;
 import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
 
@@ -41,8 +35,6 @@ import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
 public abstract class EntityService<K, T extends Entity<K>> {
 	static public Long VERSION_MIN = 0L;
 	
-	static public QueryId PRODUCER_ID_ALL = new QueryId("", Operator.ALL);
-	
 	private Long incrementVersion = VERSION_MIN + 1;
 	
 	final protected IndexedHashMap<K, T> entityCache;
@@ -54,10 +46,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	static final public String INDEX_NAME_SOURCE_KEY = "source_key";
 	static final public String INDEX_NAME_DELETED_ON = "deleted_on";
 	static final public String INDEX_NAME_FIELDS = "fields";
-	
-	final protected Map<QueryId, Function<String, Set<K>>> queryProducer = new HashMap<QueryId, Function<String, Set<K>>>();
-	final protected Map<QueryId, BiFunction<T, String, Boolean>> queryFilter = new HashMap<QueryId, BiFunction<T, String, Boolean>>();
-	
+
 	public EntityService(String nodeName) {
 		this.nodeName = nodeName;
 		entityCache = new IndexedHashMap<>();
@@ -68,78 +57,6 @@ public abstract class EntityService<K, T extends Entity<K>> {
 		entityCache.createIndex(INDEX_NAME_DELETED_ON, IndexType.SORTED, Entity::getDeletedOnForIndex);
 		
 		entityCache.createIndex(INDEX_NAME_FIELDS, IndexType.EQUAL, Entity::getFieldsForIndex);
-		
-		queryProducer.put(PRODUCER_ID_ALL, value -> {
-			return entityCache.indexGetAfter(INDEX_NAME_VERSION, VERSION_MIN);
-		});
-		
-		queryProducer.put(new QueryId("source", Operator.EQ), source -> {
-			return entityCache.indexGet(INDEX_NAME_SOURCE, source);
-		});
-		
-		queryFilter.put(new QueryId("source", Operator.NE), (entity, value)  -> {
-			return !entity.getSource().equals(value);
-		});
-		
-		queryProducer.put(new QueryId("sourceKey", Operator.EQ), sourceKey -> {
-			return entityCache.indexGet(INDEX_NAME_SOURCE_KEY, sourceKey);
-		});
-		
-		queryFilter.put(new QueryId("sourceKey", Operator.NE), (entity, value)  -> {
-			return !entity.getSourceKey().equals(value);
-		});
-		
-		queryProducer.put(new QueryId("version", Operator.GT), strVersion -> {
-			var version = Long.valueOf(strVersion);
-			return entityCache.indexGetAfter(INDEX_NAME_VERSION, version);
-		});
-		
-		queryProducer.put(new QueryId("version", Operator.LT), strVersion -> {
-			var version = Long.valueOf(strVersion);
-			return entityCache.indexGetBefore(INDEX_NAME_VERSION, version);
-		});
-		
-		queryProducer.put(new QueryId("version", Operator.EQ), strVersion -> {
-			var version = Long.valueOf(strVersion);
-			return entityCache.indexGet(INDEX_NAME_VERSION, version);
-		});
-		
-		queryFilter.put(new QueryId("version", Operator.NE), (entity, strVersion)  -> {
-			var version = Long.valueOf(strVersion);
-			return entity.getVersion() != version;
-		});
-		
-		queryProducer.put(new QueryId("deletedOn", Operator.GT), strDateTime -> {
-			var datetime =  Instant.parse(strDateTime);
-			return entityCache.indexGetAfter(INDEX_NAME_DELETED_ON, datetime);
-		});
-		
-		queryProducer.put(new QueryId("deletedOn", Operator.LT), strDateTime -> {
-			var datetime =  Instant.parse(strDateTime);
-			return entityCache.indexGetBefore(INDEX_NAME_DELETED_ON, datetime);
-		});
-		
-		queryProducer.put(new QueryId("deletedOn", Operator.EQ), strDateTime -> {
-			var datetime =  Instant.parse(strDateTime);
-			return entityCache.indexGet(INDEX_NAME_DELETED_ON, datetime);
-		});
-		
-		queryFilter.put(new QueryId("deletedOn", Operator.NE), (entity, strDateTime)  -> {
-			var createdOn = entity.getCreatedOn();
-			if(Objects.isNull(createdOn)) {
-				return true;
-			}
-			var datetime =  Instant.parse(strDateTime);
-			return createdOn.equals(datetime);
-		});
-		
-		queryFilter.put(new QueryId("fromHistory", Operator.CO), (entity, value)  -> {
-			return entity.getFromHistory().contains(value);
-		});
-		
-		queryFilter.put(new QueryId("fromHistory", Operator.NC), (entity, value)  -> {
-			return !entity.getFromHistory().contains(value);
-		});
 	}
 	
 	protected Long getNextVersion() {
@@ -194,8 +111,10 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	
 	public List<T> deleteBySourceAndSourceKeyNot(String source, String sourceKey) {
 		return entityCache.transaction(() ->  {
-			var sourceIndex = entityCache.indexGet(INDEX_NAME_SOURCE, source);
-			var sourceKeyIndex = entityCache.indexGet(INDEX_NAME_SOURCE_KEY, sourceKey);
+			var predicate = Predicates.equal(INDEX_NAME_SOURCE, source);
+			var sourceIndex = entityCache.keySet(predicate, -1);
+			predicate = Predicates.equal(INDEX_NAME_SOURCE_KEY, sourceKey);
+			var sourceKeyIndex = entityCache.keySet(predicate, -1);
 			sourceIndex.removeAll(sourceKeyIndex);
 			return sourceIndex.stream()
 					.map(this::deleteById)
@@ -204,11 +123,37 @@ public abstract class EntityService<K, T extends Entity<K>> {
 					.collect(Collectors.toList());
 		});
 	}
+
+//	@Getter
+//	public static class CompEntry implements Comparable<CompEntry> {
+//
+//		Map.Entry<String, String> entry;
+//		
+//		public CompEntry(Map.Entry<String, String> entry) {
+//			super();
+//			this.entry = entry;
+//		}
+//
+//		@Override
+//		public int compareTo(CompEntry o) {
+//			return 0;
+//		}
+//
+//		@Override
+//		public boolean equals(Object obj) {
+//			CompEntry other = (CompEntry)obj;
+//			return entry.getKey().equals(other.getEntry().getKey()) 
+//					&& entry.getValue().equals(other.getEntry().getValue());
+//		}
+//		
+//	}
+	
 	
 	public List<T> findByFields(Map<String, String> fields) {
 		return entityCache.transaction(() -> {
 			return fields.entrySet().stream()
-					.flatMap(k -> entityCache.indexGet(INDEX_NAME_FIELDS, k).stream())
+					.map(e -> Predicates.equal(INDEX_NAME_FIELDS, e))
+					.flatMap(p -> entityCache.keySet(p, -1).stream())
 					.distinct()
 					.map(this::findById)
 					.filter(Optional::isPresent)
@@ -218,49 +163,30 @@ public abstract class EntityService<K, T extends Entity<K>> {
 		});
 	}
 	
-	
+
 	// And function only
-	public List<T> query(List<Filter> filters) {
-		// TODO error for undefined filters
-		var producers = filters.stream()
-				.filter(f -> queryProducer.containsKey(f.getId()))
-				.collect(Collectors.toList());
-		
-		if(producers.size() == 0) {
-			producers = Collections.singletonList(new Filter(PRODUCER_ID_ALL,""));
-		}
-		
-		var opt = producers.stream()
-				.map(f -> {
-					return new HashSet<>(queryProducer.get(f.getId()).apply(f.getValue()));
+	public <V extends Comparable<V>> List<T> query(List<QueryPredicate> predicates) {
+		return predicates.stream()
+				.map(p -> {
+					return entityCache.keySet(p, -1);
 				})
 				.reduce((result, el) -> { 
 					result.retainAll(el);
 					return result;
-				});
-		
-		if(opt.isEmpty()) {
-			return Collections.emptyList();
-		}
-		
-		var out = opt.get().stream()
+				})
+				.orElse(Collections.emptySet())
+				.stream()
 				.map(entityCache::get)
 				.filter(Optional::isPresent)
 				.map(Optional::get)
 				.collect(Collectors.toList());
-		
-		filters.stream()
-				.filter(f -> queryFilter.containsKey(f.getId()))
-				.forEach(f -> {
-					out.removeIf(entity -> !queryFilter.get(f.getId()).apply(entity, f.getValue()));
-				});	
-		return out;
 	}
 	
 	@Scheduled(fixedRateString = "${entity.delete.fixedrate:60}", timeUnit = TimeUnit.SECONDS)
 	public void deleteOldScheduled() {
 		entityCache.transaction(() -> {
-			entityCache.indexGetBefore(INDEX_NAME_DELETED_ON, Instant.now().minusSeconds(30)).stream()
+			var predicate = Predicates.lessThan(INDEX_NAME_DELETED_ON, Instant.now().minusSeconds(30));
+			entityCache.keySet(predicate, -1).stream()
 					.forEach(id -> entityCache.remove(id));
 			return null;
 		});

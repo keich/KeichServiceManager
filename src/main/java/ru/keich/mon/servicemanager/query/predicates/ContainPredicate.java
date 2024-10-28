@@ -20,16 +20,16 @@ import ru.keich.mon.servicemanager.query.Operator;
  * limitations under the License.
  */
 
-public class ContainPredicate<T extends Comparable<T>> extends QueryPredicate<T> {
+public class ContainPredicate extends QueryPredicate {
 
-	public ContainPredicate(String name,T value) {
+	public ContainPredicate(String name, Object value) {
 		super(name, Operator.CO, value);
 	}
 
 	@Override
-	public boolean test(T t) {
-		if(t instanceof Set) {
-			var set = (Set)t;
+	public boolean test(Object t) {
+		if (t instanceof Set) {
+			var set = (Set) t;
 			return set.contains(value);
 		}
 		return t.toString().contains(value.toString());

@@ -20,18 +20,18 @@ import ru.keich.mon.servicemanager.query.Operator;
 
 public class Predicates {
 	
-	public static QueryPredicate<?> fromParam(String name, String value) {
+	public static QueryPredicate fromParam(String name, String value) {
 		var arr = value.split(":", 2);
 		if (arr.length == 2) {
+			var operator = Operator.fromString(arr[0]);
 			value = arr[1];
-			var operator = Operator.fromString(value);
 			switch (operator) {
 			case NE:
 				return notEqual(name, value);
 			case LT:
-				return lessThan(name, arr[1]);
+				return lessThan(name, Long.valueOf(arr[1]));
 			case GT:
-				return greaterEqual(name, arr[1]);
+				return greaterEqual(name, Long.valueOf(arr[1]));
 			case CO:
 				return contain(name, arr[1]);
 			case NC:
@@ -44,28 +44,28 @@ public class Predicates {
 		}
 	}
 	
-	public static <T extends Comparable<T>> QueryPredicate<T> equal(String name, T value) {
-		return new EqualPredicate<T>(name, value);
+	public static  QueryPredicate equal(String name, Object value) {
+		return new EqualPredicate(name, value);
 	}
 	
-	public static <T extends Comparable<T>> QueryPredicate<T> notEqual(String name, T value) {
-		return new NotEqualPredicate<T>(name, value);
+	public static QueryPredicate notEqual(String name, Object value) {
+		return new NotEqualPredicate(name, value);
 	}
 	
-	public static <T extends Comparable<T>> QueryPredicate<T> greaterEqual(String name, T value) {
-		return new GreaterEqualPredicate<T>(name, value);
+	public static  QueryPredicate greaterEqual(String name, Object value) {
+		return new GreaterEqualPredicate(name, value);
 	}
 	
-	public static <T extends Comparable<T>> QueryPredicate<T> lessThan(String name, T value) {
-		return new LessThanPredicate<T>(name, value);
+	public static  QueryPredicate lessThan(String name, Object value) {
+		return new LessThanPredicate(name, value);
 	}
 	
-	public static <T extends Comparable<T>> QueryPredicate<T> contain(String name, T value) {
-		return new ContainPredicate<T>(name, value);
+	public static  QueryPredicate contain(String name, Object value) {
+		return new ContainPredicate(name, value);
 	}
 	
-	public static <T extends Comparable<T>> QueryPredicate<T> notContain(String name, T value) {
-		return new NotContainPredicate<T>(name, value);
+	public static QueryPredicate notContain(String name, Object value) {
+		return new NotContainPredicate(name, value);
 	}
 	
 }

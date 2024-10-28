@@ -18,14 +18,14 @@ import ru.keich.mon.servicemanager.query.Operator;
  * limitations under the License.
  */
 
-public class EqualPredicate<T extends Comparable<T>> extends QueryPredicate<T> {
+public class EqualPredicate extends QueryPredicate {
 
-	public EqualPredicate(String name, T value) {
+	public EqualPredicate(String name, Object value) {
 		super(name, Operator.EQ, value);
 	}
 
 	@Override
-	public boolean test(T t) {
+	public boolean test(Object t) {
 		return value.equals(t);
 	}
 

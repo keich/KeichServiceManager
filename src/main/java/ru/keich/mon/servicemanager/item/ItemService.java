@@ -19,8 +19,7 @@ import ru.keich.mon.servicemanager.entity.EntityService;
 import ru.keich.mon.servicemanager.event.Event;
 import ru.keich.mon.servicemanager.event.EventService;
 import ru.keich.mon.servicemanager.eventrelation.EventRelationService;
-import ru.keich.mon.servicemanager.query.Operator;
-import ru.keich.mon.servicemanager.query.QueryId;
+import ru.keich.mon.servicemanager.query.predicates.Predicates;
 import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
 
 /*
@@ -62,12 +61,7 @@ public class ItemService extends EntityService<String, Item> {
 		this.eventService = eventService;
 		this.eventRelationService = eventRelationService;
 		eventService.setItemService(this);
-		
-		queryProducer.put(new QueryId("name", Operator.CO), (value)  -> {
-			var valueUpper = value.toUpperCase();
-			// TODO limit?
-			return entityCache.findByKey(INDEX_NAME_NAME_UPPERCASE, 1000, key -> key.toString().contains(valueUpper));
-		});
+
 	}
 	
 	@Override
@@ -184,7 +178,8 @@ public class ItemService extends EntityService<String, Item> {
 	
 	private List<Map.Entry<Item, ItemFilter>> findFiltersByEqualFields(Map<String, String> fields){
 		return fields.entrySet().stream()
-				.flatMap(k -> entityCache.indexGet(INDEX_NAME_FILTERS_EQL,  k).stream())
+				.map(e -> Predicates.equal(INDEX_NAME_FILTERS_EQL, e))
+				.flatMap(p -> entityCache.keySet(p, -1).stream())
 				.distinct()
 				.map(this::findById)
 				.filter(Optional::isPresent)
@@ -302,7 +297,8 @@ public class ItemService extends EntityService<String, Item> {
 	}
 	
 	public List<Item> findParentsById(String itemId) {
-		return entityCache.indexGet(INDEX_NAME_PARENTS, itemId).stream()
+		var predicate = Predicates.equal(INDEX_NAME_PARENTS, itemId);
+		return entityCache.keySet(predicate, -1).stream()
 				.map(this::findById)
 				.filter(Optional::isPresent)
 				.map(Optional::get)
