@@ -2,6 +2,7 @@ package ru.keich.mon.servicemanager.event;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -85,4 +86,102 @@ public class Event extends Entity<String> {
 				", fields=" + getFields() + "]";
 	}
 
+	public static class Builder {
+		protected final String id;
+		protected Long version;
+		protected String source;
+		protected String sourceKey;
+		protected Instant createdOn;
+		protected Instant updatedOn;
+		protected Instant deletedOn;
+		protected Set<String> fromHistory;
+		protected Map<String, String> fields;
+		protected String node;
+		String summary;
+		EventType type;
+		BaseStatus status;
+
+		public Builder(Event event) {
+			this.id = event.getId();
+			this.version = event.getVersion();
+			this.source = event.getSource();
+			this.sourceKey = event.getSourceKey();
+			this.fields = event.getFields();
+			this.fromHistory = event.getFromHistory();
+			this.createdOn = event.getCreatedOn();
+			this.updatedOn = event.getUpdatedOn();
+			this.deletedOn = event.getDeletedOn();
+			this.summary = event.getSummary();
+			this.type = event.getType();
+			this.status = event.getStatus();
+
+			this.node = event.getNode();
+			if (Objects.isNull(this.node)) {
+				var fieldsNode = event.getFields().get("node");
+				if (Objects.nonNull(fieldsNode)) {
+					this.node = fieldsNode;
+				}
+			}
+
+			this.summary = event.getSummary();
+			if (Objects.isNull(summary)) {
+				var fieldsSummary = event.getFields().get("summary");
+				if (Objects.nonNull(fieldsSummary)) {
+					this.summary = fieldsSummary;
+				}
+			}
+		}
+		
+		public Event build() {
+			return new Event(this.id,
+			this.version,
+			this.source,
+			this.sourceKey,
+			this.node,
+			this.summary,
+			this.type,
+			this.status,
+			this.fields,
+			this.fromHistory,
+			this.createdOn,
+			this.updatedOn,
+			this.deletedOn);
+		}
+
+		public Builder version(Long version) {
+			this.version = version;
+			return this;
+		}
+		
+		public Builder summary(String summary) {
+			this.summary = summary;
+			return this;
+		}
+		
+		public Builder node(String node) {
+			this.node = node;
+			return this;
+		}
+
+		public Builder createdOn(Instant createdOn) {
+			this.createdOn = createdOn;
+			return this;
+		}
+		
+		public Builder updatedOn(Instant updatedOn) {
+			this.updatedOn = updatedOn;
+			return this;
+		}
+
+		public Builder deletedOn(Instant deletedOn) {
+			this.deletedOn = deletedOn;
+			return this;
+		}
+
+		public Builder fromHistory(Set<String> fromHistory) {
+			this.fromHistory = fromHistory;
+			return this;
+		}
+		
+	}
 }

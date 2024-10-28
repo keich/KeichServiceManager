@@ -142,5 +142,78 @@ public class Item extends Entity<String> {
 				+ ", getDeletedOn()=" + getDeletedOn() + ", getFromHistory()=" + getFromHistory() + ", getId()="
 				+ getId() + "]";
 	}
-	
+
+	public static class Builder {
+		protected final String id;
+		protected Long version;
+		protected String source;
+		protected String sourceKey;
+		protected Instant createdOn;
+		protected Instant updatedOn;
+		protected Instant deletedOn;
+		protected Set<String> fromHistory;
+		protected Map<String, String> fields;
+		protected Map<String, ItemRule> rules;
+		protected Map<String, ItemFilter> filters;
+		protected Set<String> childrenIds;
+		protected String name;
+		
+		public Builder(Item item) {
+			this.id = item.getId();
+			this.version = item.getVersion();
+			this.source = item.getSource();
+			this.sourceKey = item.getSourceKey();
+			this.name = item.getName();
+			this.fields = item.getFields();
+			this.rules = item.getRules();
+			this.filters = item.getFilters();
+			this.childrenIds = item.getChildrenIds();
+			this.fromHistory = item.getFromHistory();
+			this.createdOn = item.getCreatedOn();
+			this.updatedOn = item.getUpdatedOn();
+			this.deletedOn = item.getDeletedOn();
+		}
+		
+		public Item build() {
+			return new Item(this.id,
+			this.version,
+			this.source,
+			this.sourceKey,
+			this.name,
+			this.fields,
+			this.rules,
+			this.filters,
+			this.childrenIds,
+			this.fromHistory,
+			this.createdOn,
+			this.updatedOn,
+			this.deletedOn);
+		}
+
+		public Builder version(Long version) {
+			this.version = version;
+			return this;
+		}
+
+		public Builder createdOn(Instant createdOn) {
+			this.createdOn = createdOn;
+			return this;
+		}
+		
+		public Builder updatedOn(Instant updatedOn) {
+			this.updatedOn = updatedOn;
+			return this;
+		}
+
+		public Builder deletedOn(Instant deletedOn) {
+			this.deletedOn = deletedOn;
+			return this;
+		}
+
+		public Builder fromHistory(Set<String> fromHistory) {
+			this.fromHistory = fromHistory;
+			return this;
+		}
+		
+	}
 }

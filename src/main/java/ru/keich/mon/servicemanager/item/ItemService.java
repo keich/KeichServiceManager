@@ -73,19 +73,12 @@ public class ItemService extends EntityService<String, Item> {
 				.forEach(this::calculateStatusStart);
 
 		final var newFromHistory = Collections.singleton(nodeName);
-		var deletedItem = new Item(item.getId(),
-				getNextVersion(),
-				item.getSource(),
-				item.getSourceKey(),
-				item.getName(),
-				item.getFields(),
-				item.getRules(),
-				item.getFilters(),
-				item.getChildrenIds(),
-				newFromHistory,
-				item.getCreatedOn(),
-				Instant.now(),
-				Instant.now());
+		var deletedItem = new Item.Builder(item)
+				.version(getNextVersion())
+				.fromHistory(newFromHistory)
+				.updatedOn(Instant.now())
+				.deletedOn(Instant.now())
+				.build();
 
 		deletedItem.setStatus(BaseStatus.CLEAR);
 		
@@ -203,40 +196,22 @@ public class ItemService extends EntityService<String, Item> {
 			newFromHistory.addAll(item.getFromHistory());
 			newFromHistory.add(nodeName);
 			entityCache.put(item.getId(), () -> {
-				var inseredItem = new Item(item.getId(),
-						getNextVersion(),
-						item.getSource(),
-						item.getSourceKey(),
-						item.getName(),
-						item.getFields(),
-						item.getRules(),
-						item.getFilters(),
-						item.getChildrenIds(),
-						newFromHistory,
-						item.getCreatedOn(),
-						item.getUpdatedOn(),
-						item.getDeletedOn());
+				var inseredItem = new Item.Builder(item)
+						.version(getNextVersion())
+						.fromHistory(newFromHistory)
+						.build();
 				inseredItem.setStatus(BaseStatus.CLEAR);
 				return inseredItem;
-				
 			}, old -> {
 				if (isEntityEqual(old, item)) {
 					return null;
 				}
-				var updatedItem = new Item(item.getId(),
-						getNextVersion(),
-						item.getSource(),
-						item.getSourceKey(),
-						item.getName(),
-						item.getFields(),
-						item.getRules(),
-						item.getFilters(),
-						item.getChildrenIds(),
-						newFromHistory,
-						old.getCreatedOn(),
-						Instant.now(),
-						item.getDeletedOn());
-
+				var updatedItem = new Item.Builder(item)
+						.version(getNextVersion())
+						.fromHistory(newFromHistory)
+						.createdOn(old.getCreatedOn())
+						.updatedOn(Instant.now())
+						.build();
 				updatedItem.setStatus(old.getStatus());
 				return updatedItem;
 			}, addedItem -> {

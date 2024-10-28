@@ -51,51 +51,20 @@ public class EventService extends EntityService<String, Event>{
 			newFromHistory.addAll(event.getFromHistory());
 			newFromHistory.add(nodeName);
 			entityCache.put(event.getId(), () -> {
-				// TODO temporary
-				var summary = event.getSummary();
-				if(Objects.isNull(summary)) {
-					var fieldsSummary = event.getFields().get("summary");
-					if(Objects.nonNull(fieldsSummary)) {
-						summary = fieldsSummary;
-					}
-				}
-				var node = event.getNode();
-				if(Objects.isNull(node)) {
-					var fieldsNode = event.getFields().get("node");
-					if(Objects.nonNull(fieldsNode)) {
-						node = fieldsNode;
-					}
-				}
-				return new Event(event.getId(),
-						getNextVersion(),
-						event.getSource(),
-						event.getSourceKey(),
-						node,
-						summary,
-						event.getType(),
-						event.getStatus(),
-						event.getFields(),
-						newFromHistory,
-						event.getCreatedOn(),
-						event.getUpdatedOn(),
-						event.getDeletedOn());				
+				return new Event.Builder(event)
+						.version(getNextVersion())
+						.fromHistory(newFromHistory)
+						.build();			
 			}, old -> {
 				if (isEntityEqual(old, event)) {
 					return null;
 				}
-				return new Event(event.getId(),
-						getNextVersion(),
-						event.getSource(),
-						event.getSourceKey(),
-						event.getNode(),
-						event.getSummary(),
-						event.getType(),
-						event.getStatus(),
-						event.getFields(),
-						newFromHistory,
-						old.getCreatedOn(),
-						Instant.now(),
-						event.getDeletedOn());
+				return new Event.Builder(event)
+						.version(getNextVersion())
+						.fromHistory(newFromHistory)
+						.createdOn(old.getCreatedOn())
+						.updatedOn(Instant.now())
+						.build();
 			}, addedEvent -> {
 				itemService.eventAdded(addedEvent);
 			});
@@ -110,20 +79,12 @@ public class EventService extends EntityService<String, Event>{
 
 		
 		final var newFromHistory = Collections.singleton(nodeName);
-		var deletedEvent= new Event(event.getId(),
-				getNextVersion(),
-				event.getSource(),
-				event.getSourceKey(),
-				event.getNode(),
-				event.getSummary(),
-				event.getType(),
-				event.getStatus(),
-				event.getFields(),
-				newFromHistory,
-				event.getCreatedOn(),
-				Instant.now(),
-				Instant.now());
-
+		var deletedEvent = new Event.Builder(event)
+				.version(getNextVersion())
+				.fromHistory(newFromHistory)
+				.updatedOn(Instant.now())
+				.deletedOn(Instant.now())
+				.build();
 		entityCache.put(event.getId(), () -> {
 			return deletedEvent;
 		}, old -> {
