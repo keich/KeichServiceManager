@@ -3,7 +3,6 @@ package ru.keich.mon.servicemanager.entity;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -11,6 +10,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.scheduling.annotation.Scheduled;
 
+import ru.keich.mon.servicemanager.QueueThreadReader;
 import ru.keich.mon.servicemanager.query.predicates.Predicates;
 import ru.keich.mon.servicemanager.query.predicates.QueryPredicate;
 import ru.keich.mon.servicemanager.store.IndexedHashMap;
@@ -38,6 +38,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	private Long incrementVersion = VERSION_MIN + 1;
 	
 	final protected IndexedHashMap<K, T> entityCache;
+	final protected QueueThreadReader<K> entityChangedQueue;
 	
 	final public String nodeName;
 	
@@ -50,6 +51,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	public EntityService(String nodeName) {
 		this.nodeName = nodeName;
 		entityCache = new IndexedHashMap<>();
+		entityChangedQueue = new QueueThreadReader<K>(this.getClass().getSimpleName() + "-entityChangedQueue" , 4, this::entityChanged);
 		
 		entityCache.createIndex(INDEX_NAME_VERSION, IndexType.UNIQ_SORTED, Entity::getVersionForIndex);
 		entityCache.createIndex(INDEX_NAME_SOURCE, IndexType.EQUAL, Entity::getSourceForIndex);
@@ -82,89 +84,38 @@ public abstract class EntityService<K, T extends Entity<K>> {
 		}
 		return false;
 	}
-	
-	protected T entityRemoved(T entity) {
-		return entity;
-	}
+
+	protected abstract void entityChanged(K entityId);	
 	
 	public abstract void addOrUpdate(T entity);
+	
+	public abstract Optional<T> deleteById(K entityId);
 	
 	public Optional<T> findById(K id) {
 		return entityCache.get(id);
 	}
 	
-	public Optional<T> deleteById(K entityId) {
-		return entityCache.transaction(() -> {
-			return entityCache.remove(entityId).map(this::entityRemoved);
-		});
-	}
-	
 	public List<T> deleteByIds(List<K> ids) {
-		return entityCache.transaction(() ->  {
-			return ids.stream()
-					.map(this::deleteById)
-					.filter(Optional::isPresent)
-					.map(Optional::get)
-					.collect(Collectors.toList());
-		});
+		return ids.stream()
+				.map(this::deleteById)
+				.filter(Optional::isPresent)
+				.map(Optional::get)
+				.collect(Collectors.toList());
 	}
 	
 	public List<T> deleteBySourceAndSourceKeyNot(String source, String sourceKey) {
-		return entityCache.transaction(() ->  {
-			var predicate = Predicates.equal(INDEX_NAME_SOURCE, source);
-			var sourceIndex = entityCache.keySet(predicate, -1);
-			predicate = Predicates.equal(INDEX_NAME_SOURCE_KEY, sourceKey);
-			var sourceKeyIndex = entityCache.keySet(predicate, -1);
-			sourceIndex.removeAll(sourceKeyIndex);
-			return sourceIndex.stream()
-					.map(this::deleteById)
-					.filter(Optional::isPresent)
-					.map(Optional::get)
-					.collect(Collectors.toList());
-		});
-	}
-
-//	@Getter
-//	public static class CompEntry implements Comparable<CompEntry> {
-//
-//		Map.Entry<String, String> entry;
-//		
-//		public CompEntry(Map.Entry<String, String> entry) {
-//			super();
-//			this.entry = entry;
-//		}
-//
-//		@Override
-//		public int compareTo(CompEntry o) {
-//			return 0;
-//		}
-//
-//		@Override
-//		public boolean equals(Object obj) {
-//			CompEntry other = (CompEntry)obj;
-//			return entry.getKey().equals(other.getEntry().getKey()) 
-//					&& entry.getValue().equals(other.getEntry().getValue());
-//		}
-//		
-//	}
-	
-	
-	public List<T> findByFields(Map<String, String> fields) {
-		return entityCache.transaction(() -> {
-			return fields.entrySet().stream()
-					.map(e -> Predicates.equal(INDEX_NAME_FIELDS, e))
-					.flatMap(p -> entityCache.keySet(p, -1).stream())
-					.distinct()
-					.map(this::findById)
-					.filter(Optional::isPresent)
-					.map(Optional::get)
-					.filter(item -> item.getFields().keySet().containsAll(fields.keySet()))
-					.collect(Collectors.toList());
-		});
+		var predicate = Predicates.equal(INDEX_NAME_SOURCE, source);
+		var sourceIndex = entityCache.keySet(predicate, -1);
+		predicate = Predicates.equal(INDEX_NAME_SOURCE_KEY, sourceKey);
+		var sourceKeyIndex = entityCache.keySet(predicate, -1);
+		sourceIndex.removeAll(sourceKeyIndex);
+		return sourceIndex.stream()
+				.map(this::deleteById)
+				.filter(Optional::isPresent)
+				.map(Optional::get)
+				.collect(Collectors.toList());
 	}
 	
-
-	// And function only
 	public <V extends Comparable<V>> List<T> query(List<QueryPredicate> predicates) {
 		return predicates.stream()
 				.map(p -> {
@@ -184,11 +135,9 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	
 	@Scheduled(fixedRateString = "${entity.delete.fixedrate:60}", timeUnit = TimeUnit.SECONDS)
 	public void deleteOldScheduled() {
-		entityCache.transaction(() -> {
-			var predicate = Predicates.lessThan(INDEX_NAME_DELETED_ON, Instant.now().minusSeconds(30));
-			entityCache.keySet(predicate, -1).stream()
-					.forEach(id -> entityCache.remove(id));
-			return null;
-		});
+		var predicate = Predicates.lessThan(INDEX_NAME_DELETED_ON, Instant.now().minusSeconds(30));
+		entityCache.keySet(predicate, -1).stream()
+				.forEach(id -> entityCache.remove(id));
 	}
+	
 }

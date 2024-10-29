@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import lombok.extern.java.Log;
 import ru.keich.mon.servicemanager.BaseStatus;
+import ru.keich.mon.servicemanager.QueueThreadReader;
 import ru.keich.mon.servicemanager.entity.EntityService;
 import ru.keich.mon.servicemanager.event.Event;
 import ru.keich.mon.servicemanager.event.EventService;
@@ -44,6 +45,7 @@ public class ItemService extends EntityService<String, Item> {
 	
 	private final EventService eventService;
 	private final EventRelationService eventRelationService;
+	final protected QueueThreadReader<String> itemNeedUpdateParentsQueue;
 
 	static final String INDEX_NAME_FILTERS_EQL = "filter_equal";
 	static final String INDEX_NAME_PARENTS = "parents";
@@ -62,36 +64,101 @@ public class ItemService extends EntityService<String, Item> {
 		this.eventRelationService = eventRelationService;
 		eventService.setItemService(this);
 
+		itemNeedUpdateParentsQueue = new QueueThreadReader<String>(this.getClass().getSimpleName() + "-itemNeedUpdateParentsQueue", 4, this::needUpdateParentsChanged);
+	}
+
+	public void addOrUpdate(Item item) {
+		final var newFromHistory = new HashSet<String>();
+		newFromHistory.addAll(item.getFromHistory());
+		newFromHistory.add(nodeName);
+		entityCache.compute(item.getId(), () -> {
+			var inseredItem = new Item.Builder(item)
+					.version(getNextVersion())
+					.fromHistory(newFromHistory)
+					.build();
+			inseredItem.setStatus(BaseStatus.CLEAR);
+			entityChangedQueue.add(item.getId());
+			return inseredItem;
+		}, oldItem -> {
+			if (isEntityEqual(oldItem, item)) {
+				return null;
+			}
+			var updatedItem = new Item.Builder(item)
+					.version(getNextVersion())
+					.fromHistory(newFromHistory)
+					.createdOn(oldItem.getCreatedOn())
+					.updatedOn(Instant.now())
+					.build();
+			updatedItem.setStatus(oldItem.getStatus());
+			entityChangedQueue.add(item.getId());
+			return updatedItem;
+		});
+
+		
 	}
 	
 	@Override
-	protected Item entityRemoved(Item item) {
-		super.entityRemoved(item);
-		eventRelationService.itemRemoved(item);
-		findParents(item).stream()
-				.filter(parent -> Objects.isNull(parent.getDeletedOn()))
-				.forEach(this::calculateStatusStart);
-
-		final var newFromHistory = Collections.singleton(nodeName);
-		var deletedItem = new Item.Builder(item)
-				.version(getNextVersion())
-				.fromHistory(newFromHistory)
-				.updatedOn(Instant.now())
-				.deletedOn(Instant.now())
-				.build();
-
-		deletedItem.setStatus(BaseStatus.CLEAR);
-		
-		entityCache.put(item.getId(), () -> {
-			return deletedItem;
-		}, old -> {
-			if(Objects.nonNull(old.getDeletedOn())) {
+	public Optional<Item> deleteById(String itemId) {
+		return entityCache.computeIfPresent(itemId, oldItem -> {
+			if(Objects.nonNull(oldItem.getDeletedOn())) {
+				entityChangedQueue.add(itemId);
 				return null;
 			}
-			return deletedItem;
-		}, addedItem -> {});
-
-		return item;
+			entityChangedQueue.add(itemId);
+			return new Item.Builder(oldItem)
+					.version(getNextVersion())
+					.fromHistory(Collections.singleton(nodeName))
+					.updatedOn(Instant.now())
+					.deletedOn(Instant.now())
+					.build();
+		});
+	}
+	
+	@Override
+	protected void entityChanged(String itemId) {
+		entityCache.computeIfPresent(itemId, oldItem -> {
+			var item = calculateStatus(oldItem);
+			if (oldItem.getStatus() != item.getStatus()) {
+				itemNeedUpdateParentsQueue.add(itemId);
+				return item;
+			}
+			return oldItem;
+		});
+	}
+	
+	public void needUpdateParentsChanged(String itemId) {
+		entityCache.computeIfPresent(itemId, item -> {
+			findParents(item).stream()
+					.filter(parent -> Objects.isNull(parent.getDeletedOn()))
+					.forEach(parent -> {
+						entityChangedQueue.add(parent.getId());
+					});
+			return item;
+		});
+	}
+	
+	public void eventChanged(Event event) {
+		if(Objects.nonNull(event.getDeletedOn())) {
+			var itemIds = eventRelationService.eventRemoved(event.getId());
+			itemIds.stream()
+					.map(this::findById)
+					.filter(Optional::isPresent)
+					.map(Optional::get)
+					.map(Item::getId)
+					.forEach(entityChangedQueue::add);
+			return;
+		}
+		findFiltersByEqualFields(event.getFields())
+				.forEach(itft -> {
+					var item = itft.getKey();
+					var filter = itft.getValue();
+					var status = event.getStatus();
+					if(filter.isUsingResultStatus()) {
+						status =  filter.getResultStatus();
+					}
+					eventRelationService.add(item, event, status);
+					entityChangedQueue.add(item.getId());
+				});
 	}
 
 	private int calculateEntityStatusAsCluster(Item item, ItemRule rule) {
@@ -143,30 +210,14 @@ public class ItemService extends EntityService<String, Item> {
 		}).max().orElse(calculateEntityStatusDefault(item));
 	}
 	
-	private void calculateStatus(Item item, HashSet<String> history) {//TODO
-		BaseStatus maxStatus = BaseStatus.fromInteger(calculateStatusByChild(item));
+	private Item calculateStatus(Item item) {
+		BaseStatus childStatus = BaseStatus.fromInteger(calculateStatusByChild(item));
 		BaseStatus eventStatusMax = eventRelationService.getMaxStatus(item);
-		maxStatus = maxStatus.max(eventStatusMax);
-		if(maxStatus != item.getStatus()) {
-			history.add(item.getId());
-			item.setStatus(maxStatus);
-			findParents(item).stream()
-					.filter(parent -> Objects.isNull(parent.getDeletedOn()))
-					.forEach(parent ->{
-						if (history.contains(parent.getId())) {
-							log.warning("calculateEntityStatusDeeper: circle found from " + item.getId() + " to "
-									+ parent.getId());
-						}else {
-							calculateStatus(parent, history);
-						}
-					});
-			history.remove(item.getId());
-		}
-	}
-	
-	private void calculateStatusStart(Item item) {
-		var history = new HashSet<String>();
-		calculateStatus(item, history);
+		BaseStatus overalStatus = childStatus.max(eventStatusMax);
+		//log.info("DEBUG calculateStatus "+item.getId() + " eventStatusMax " + eventStatusMax + " childStatus " + childStatus + " overalStatus "+overalStatus);
+		var newItem = new Item.Builder(item).build();
+		newItem.setStatus(overalStatus);
+		return newItem;
 	}
 	
 	private List<Map.Entry<Item, ItemFilter>> findFiltersByEqualFields(Map<String, String> fields){
@@ -187,69 +238,6 @@ public class ItemService extends EntityService<String, Item> {
 				.filter(Optional::isPresent)
 				.map(Optional::get)
 				.collect(Collectors.toList());
-	}
-	
-	public void addOrUpdate(Item item) {
-		
-		entityCache.transaction(() -> {
-			final var newFromHistory = new HashSet<String>();
-			newFromHistory.addAll(item.getFromHistory());
-			newFromHistory.add(nodeName);
-			entityCache.put(item.getId(), () -> {
-				var inseredItem = new Item.Builder(item)
-						.version(getNextVersion())
-						.fromHistory(newFromHistory)
-						.build();
-				inseredItem.setStatus(BaseStatus.CLEAR);
-				return inseredItem;
-			}, old -> {
-				if (isEntityEqual(old, item)) {
-					return null;
-				}
-				var updatedItem = new Item.Builder(item)
-						.version(getNextVersion())
-						.fromHistory(newFromHistory)
-						.createdOn(old.getCreatedOn())
-						.updatedOn(Instant.now())
-						.build();
-				updatedItem.setStatus(old.getStatus());
-				return updatedItem;
-			}, addedItem -> {
-				calculateStatusStart(addedItem);
-			});
-			return null;
-		});
-		
-	}
-	
-	public void eventAdded(Event event) {
-		entityCache.transaction(() -> {
-			findFiltersByEqualFields(event.getFields())
-					.forEach(itft -> {
-						var item = itft.getKey();
-						var filter = itft.getValue();
-						var status = event.getStatus();
-						if(filter.isUsingResultStatus()) {
-							status =  filter.getResultStatus();
-						}
-						eventRelationService.add(item, event, status);
-						calculateStatusStart(item);
-					});
-			return null;
-		});
-	}
-	
-	public void eventRemoved(Event event) {
-		entityCache.transaction(() -> {
-			var itemIds = eventRelationService.getItemIds(event);
-			eventRelationService.eventRemoved(event);
-			itemIds.stream()
-					.map(this::findById)
-					.filter(Optional::isPresent)
-					.map(Optional::get)
-					.forEach(this::calculateStatusStart);
-			return null;
-		});
 	}
 
 	public List<Item> findChildren(Item item) {
@@ -304,14 +292,13 @@ public class ItemService extends EntityService<String, Item> {
 	}
 
 	public List<Event> findAllEventsById(String id) {
-		return entityCache.transaction(() -> {
-			var items = new HashSet<Item>();
-			var history = new HashSet<String>();
-			findAllItemsById(id, items, history);
-			return items.stream().flatMap(item -> findEventsByItem(item).stream())
-					.distinct()
-					.collect(Collectors.toList());
-		});
+		var items = new HashSet<Item>();
+		var history = new HashSet<String>();
+		findAllItemsById(id, items, history);
+		return items.stream().flatMap(item -> findEventsByItem(item).stream())
+				.distinct()
+				.collect(Collectors.toList());
+
 	}
 	
 }

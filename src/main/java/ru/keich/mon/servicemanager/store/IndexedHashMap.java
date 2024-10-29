@@ -7,7 +7,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -59,48 +58,61 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 		}
 	}
 		
-	public void put(K entityId, Supplier<T> insertTrigger, Function<T,T> updateTrigger, Consumer<T> after) {
-		synchronized (this) {
-			Optional.ofNullable(cache.get(entityId)).ifPresentOrElse(old -> {
-				final var entity = updateTrigger.apply(old);
-				if(Objects.nonNull(entity)) {
-					final var oldEntity = cache.put(entityId, entity);
+	public Optional<T> put(T entity) {
+		return compute(entity.getId(), () -> entity, (o) -> null);
+	}
+	
+	public Optional<T> computeIfPresent(K entityId, Function<T,T> updateTrigger) {
+		return Optional.ofNullable(cache.computeIfPresent(entityId, (key, oldEntity) -> {
+			final var newEntity = updateTrigger.apply(oldEntity);
+			if (Objects.nonNull(newEntity) && newEntity != oldEntity) {
+				index.entrySet().forEach(e -> {
+					e.getValue().remove(oldEntity);
+					e.getValue().append(newEntity);
+				});
+				return newEntity;
+			}
+			return oldEntity;
+		}));
+	}
+	
+	public Optional<T> compute(K entityId, Supplier<T> insertTrigger, Function<T,T> updateTrigger) {
+		return Optional.ofNullable(cache.compute(entityId, (key, oldEntity) -> {
+			if (Objects.nonNull(oldEntity)) {
+				final var entity = updateTrigger.apply(oldEntity);
+				if (Objects.nonNull(entity) && entity != oldEntity) {
 					index.entrySet().forEach(e -> {
 						e.getValue().remove(oldEntity);
 						e.getValue().append(entity);
 					});
-					after.accept(entity);
+					return entity;
 				}
-			}, () -> {
+			} else {
 				final var entity = insertTrigger.get();
-				if(Objects.nonNull(entity)) {
-					cache.put(entityId, entity);
+				if (Objects.nonNull(entity)) {
 					index.entrySet().forEach(e -> {
 						e.getValue().append(entity);
 					});
-					after.accept(entity);
+					return entity;
 				}
-			});
-		}
+			}
+			return oldEntity;
+		}));
 	}
-
+	
 	public Optional<T> get(K id) {
 		return Optional.ofNullable(cache.get(id));
 	}
 
 	public Optional<T> remove(K id) {
-		return Optional.ofNullable(cache.remove(id)).map(oldEntity -> {
-			index.entrySet().forEach(e -> {
-				e.getValue().remove(oldEntity);
-			});
-			return oldEntity;
-		});
-	}
-	
-	public <R> R transaction(Supplier<R> supplier) {
-		synchronized (this) {
-			return supplier.get();
-		}
+		return Optional.ofNullable(cache.compute(id, (key, oldEntity) -> {
+			if (Objects.nonNull(oldEntity)) {
+				index.entrySet().forEach(e -> {
+					e.getValue().remove(oldEntity);
+				});	
+			}
+			return null;
+		}));
 	}
 	
 	private Set<K> findByField(String fieldName, long limit, QueryPredicate predicate) {

@@ -30,6 +30,7 @@ import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
 
 @Service
 public class EventRelationService {
+	
 	protected final IndexedHashMap<EventRelationId, EventRelation> relationCache = new IndexedHashMap<>();
 	
 	static final String INDEX_NAME_RELATIONS_BY_EVENTID = "eventToRel";
@@ -44,19 +45,13 @@ public class EventRelationService {
 	
 	public void add(Item item, Event event, BaseStatus status) {
 		final var relation = new EventRelation(item.getId(), event.getId(), status);
-		
-		relationCache.transaction(() -> {
-			relationCache.put(relation.getId(), () -> {
-				return relation;
-			}, old -> {
-				if(old.getStatus() == relation.getStatus()) {
-					return null;
-				}
-				return relation;
-			}, addedRelation -> {
-
-			});
-			return null;
+		relationCache.compute(relation.getId(), () -> {
+			return relation;
+		},  oldRelation -> {
+			if(oldRelation.getStatus() == relation.getStatus()) {
+				return null;
+			}
+			return relation;
 		});
 	}
 	
@@ -67,26 +62,21 @@ public class EventRelationService {
 	
 	public void itemRemoved(Item item) {
 		final var itemId = item.getId();
-		relationCache.transaction(() -> {
-			getEventIds(item).forEach(eventId -> {
-				remove(new EventRelationId(itemId, eventId));
-			});
-			return null;
+		getEventIds(item).forEach(eventId -> {
+			remove(new EventRelationId(itemId, eventId));
 		});
 	}
 	
-	public void eventRemoved(Event event) {
-		final var eventId = event.getId();
-		relationCache.transaction(() -> {
-			getItemIds(event).forEach(itemId ->{
-				remove(new EventRelationId(itemId, eventId));
-			});
-			return null;
+	public List<String> eventRemoved(String eventId) {
+		var ids = getItemIds(eventId);
+		ids.forEach(itemId ->{
+			remove(new EventRelationId(itemId, eventId));
 		});
+		return ids;
 	}
 	
-	public List<String> getItemIds(Event event) {
-		var predicate = Predicates.equal(INDEX_NAME_RELATIONS_BY_EVENTID, event.getId());
+	public List<String> getItemIds(String eventId) {
+		var predicate = Predicates.equal(INDEX_NAME_RELATIONS_BY_EVENTID, eventId);
 		return relationCache.keySet(predicate, -1).stream()
 				.map(EventRelationId::getItemId)
 				.collect(Collectors.toUnmodifiableList());

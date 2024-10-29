@@ -19,16 +19,13 @@ package ru.keich.mon.servicemanager.event;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import ru.keich.mon.servicemanager.entity.EntityService;
-import ru.keich.mon.servicemanager.item.Item;
-import ru.keich.mon.servicemanager.item.ItemFilter;
 import ru.keich.mon.servicemanager.item.ItemService;
 
 @Service
@@ -46,66 +43,52 @@ public class EventService extends EntityService<String, Event>{
 	
 	@Override
 	public void addOrUpdate(Event event) {
-		entityCache.transaction(() -> {
-			final var newFromHistory = new HashSet<String>();
-			newFromHistory.addAll(event.getFromHistory());
-			newFromHistory.add(nodeName);
-			entityCache.put(event.getId(), () -> {
-				return new Event.Builder(event)
-						.version(getNextVersion())
-						.fromHistory(newFromHistory)
-						.build();			
-			}, old -> {
-				if (isEntityEqual(old, event)) {
-					return null;
-				}
-				return new Event.Builder(event)
-						.version(getNextVersion())
-						.fromHistory(newFromHistory)
-						.createdOn(old.getCreatedOn())
-						.updatedOn(Instant.now())
-						.build();
-			}, addedEvent -> {
-				itemService.eventAdded(addedEvent);
-			});
-			return null;
+		final var newFromHistory = new HashSet<String>();
+		newFromHistory.addAll(event.getFromHistory());
+		newFromHistory.add(nodeName);
+		entityCache.compute(event.getId(), () -> {
+			entityChangedQueue.add(event.getId());
+			return new Event.Builder(event)
+					.version(getNextVersion())
+					.fromHistory(newFromHistory)
+					.build();			
+		}, oldEvent -> {
+			if (isEntityEqual(oldEvent, event)) {
+				return null;
+			}
+			entityChangedQueue.add(event.getId());
+			return new Event.Builder(event)
+					.version(getNextVersion())
+					.fromHistory(newFromHistory)
+					.createdOn(oldEvent.getCreatedOn())
+					.updatedOn(Instant.now())
+					.build();
 		});
 	}
 
 	@Override
-	protected Event entityRemoved(Event event) {
-		super.entityRemoved(event);
-		itemService.eventRemoved(event);
-
-		
-		final var newFromHistory = Collections.singleton(nodeName);
-		var deletedEvent = new Event.Builder(event)
-				.version(getNextVersion())
-				.fromHistory(newFromHistory)
-				.updatedOn(Instant.now())
-				.deletedOn(Instant.now())
-				.build();
-		entityCache.put(event.getId(), () -> {
-			return deletedEvent;
-		}, old -> {
-			if(Objects.nonNull(old.getDeletedOn())) {
+	public Optional<Event> deleteById(String eventId) {
+		var opt =  entityCache.computeIfPresent(eventId, oldEvent -> {
+			if(Objects.nonNull(oldEvent.getDeletedOn())) {
 				return null;
 			}
-			return deletedEvent;
-		}, addedItem -> {});
-		
-		return event;
+			entityChangedQueue.add(eventId);
+			return new Event.Builder(oldEvent)
+					.version(getNextVersion())
+					.fromHistory(Collections.singleton(nodeName))
+					.updatedOn(Instant.now())
+					.deletedOn(Instant.now())
+					.build();
+		});
+		return opt;
 	}
 
-	public void itemAdded(Item item){
-		entityCache.transaction(() -> {
-			item.getFilters().entrySet().stream()
-					.map(Map.Entry::getValue)
-					.map(ItemFilter::getEqualFields)
-			  		.map(this::findByFields)
-					.flatMap(List::stream)
-					.forEach(itemService::eventAdded);
+	@Override
+	protected void entityChanged(String eventId) {
+		entityCache.computeIfPresent(eventId, event -> {
+			itemService.eventChanged(event);
 			return null;
 		});
 	}
+	
 }
