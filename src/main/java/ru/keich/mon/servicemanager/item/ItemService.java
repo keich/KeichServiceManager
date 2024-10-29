@@ -75,8 +75,8 @@ public class ItemService extends EntityService<String, Item> {
 			var inseredItem = new Item.Builder(item)
 					.version(getNextVersion())
 					.fromHistory(newFromHistory)
+					.status(BaseStatus.CLEAR)
 					.build();
-			inseredItem.setStatus(BaseStatus.CLEAR);
 			entityChangedQueue.add(item.getId());
 			return inseredItem;
 		}, oldItem -> {
@@ -88,8 +88,8 @@ public class ItemService extends EntityService<String, Item> {
 					.fromHistory(newFromHistory)
 					.createdOn(oldItem.getCreatedOn())
 					.updatedOn(Instant.now())
+					.status(oldItem.getStatus())
 					.build();
-			updatedItem.setStatus(oldItem.getStatus());
 			entityChangedQueue.add(item.getId());
 			return updatedItem;
 		});
@@ -214,9 +214,7 @@ public class ItemService extends EntityService<String, Item> {
 		BaseStatus childStatus = BaseStatus.fromInteger(calculateStatusByChild(item));
 		BaseStatus eventStatusMax = eventRelationService.getMaxStatus(item);
 		BaseStatus overalStatus = childStatus.max(eventStatusMax);
-		//log.info("DEBUG calculateStatus "+item.getId() + " eventStatusMax " + eventStatusMax + " childStatus " + childStatus + " overalStatus "+overalStatus);
-		var newItem = new Item.Builder(item).build();
-		newItem.setStatus(overalStatus);
+		var newItem = new Item.Builder(item).status(overalStatus).build();
 		return newItem;
 	}
 	

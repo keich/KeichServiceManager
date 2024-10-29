@@ -50,8 +50,8 @@ public class StoreTest {
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
 		var entity2 = new TestEntity("id2", 0L, SOURCE_VALUE + "_", "sourceKey2", Collections.emptyMap(),
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
-		store.put(entity1.getId(), () -> entity1, old -> old, added -> {});
-		store.put(entity2.getId(), () -> entity2, old -> old, added -> {});
+		store.put(entity1);
+		store.put(entity2);
 		var repdicate = Predicates.equal(INDEX_NAME_SOURCE, SOURCE_VALUE);
 		var retSet1 = store.keySet(repdicate, limit);
 		assertEquals(1, retSet1.size());
@@ -82,8 +82,8 @@ public class StoreTest {
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
 		var entity2 = new TestEntity("id2", 0L, SOURCE_VALUE2, "sourceKey", Collections.emptyMap(),
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
-		store.put(entity1.getId(), () -> entity1, old -> old, added -> {});
-		store.put(entity2.getId(), () -> entity2, old -> old, added -> {});
+		store.put(entity1);
+		store.put(entity2);
 		var repdicate = Predicates.notEqual(INDEX_NAME_SOURCE, SOURCE_VALUE1);
 		var retSet1 = store.keySet(repdicate, limit);
 		assertEquals(1, retSet1.size());
@@ -115,8 +115,8 @@ public class StoreTest {
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
 		var entity2 = new TestEntity("id2", VERSION2, SOURCE_VALUE, "sourceKey", Collections.emptyMap(),
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
-		store.put(entity1.getId(), () -> entity1, old -> old, added -> {});
-		store.put(entity2.getId(), () -> entity2, old -> old, added -> {});
+		store.put(entity1);
+		store.put(entity2);
 		var repdicate = Predicates.lessThan(INDEX_NAME_VERSION, VERSION2);
 		var retSet1 = store.keySet(repdicate, limit);
 		assertEquals(1, retSet1.size());
@@ -151,9 +151,9 @@ public class StoreTest {
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
 		var entity3 = new TestEntity("id3", VERSION3, SOURCE_VALUE, "sourceKey", Collections.emptyMap(),
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
-		store.put(entity1.getId(), () -> entity1, old -> old, added -> {});
-		store.put(entity2.getId(), () -> entity2, old -> old, added -> {});
-		store.put(entity3.getId(), () -> entity3, old -> old, added -> {});
+		store.put(entity1);
+		store.put(entity2);
+		store.put(entity3);
 		var repdicate = Predicates.greaterEqual(INDEX_NAME_VERSION, VERSION2);
 		var retSet1 = store.keySet(repdicate, limit);
 		assertEquals(2, retSet1.size());
@@ -189,8 +189,8 @@ public class StoreTest {
 		var entity2 = new TestEntity("id2", VERSION2, SOURCE_VALUE, "sourceKey", Collections.emptyMap(),
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
 		entity2.setName(OTHER_NAME);
-		store.put(entity1.getId(), () -> entity1, old -> old, added -> {});
-		store.put(entity2.getId(), () -> entity2, old -> old, added -> {});
+		store.put(entity1);
+		store.put(entity2);
 		var p1 = Predicates.contain(INDEX_NAME_NAME, "Test");
 		var retSet1 = store.keySet(p1, limit);
 		assertEquals(1, retSet1.size());
@@ -226,8 +226,8 @@ public class StoreTest {
 		var entity2 = new TestEntity("id2", VERSION2, SOURCE_VALUE, "sourceKey", Collections.emptyMap(),
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
 		entity2.setName(OTHER_NAME);
-		store.put(entity1.getId(), () -> entity1, old -> old, added -> {});
-		store.put(entity2.getId(), () -> entity2, old -> old, added -> {});
+		store.put(entity1);
+		store.put(entity2);
 		var p1 = Predicates.notContain(INDEX_NAME_NAME, "Test");
 		var retSet1 = store.keySet(p1, limit);
 		assertEquals(1, retSet1.size());

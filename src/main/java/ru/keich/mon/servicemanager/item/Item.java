@@ -33,7 +33,7 @@ import ru.keich.mon.servicemanager.entity.Entity;
 @Getter
 public class Item extends Entity<String> {
 
-	private BaseStatus status = BaseStatus.CLEAR;
+	private final BaseStatus status;
 
 	private final Map<String, ItemRule> rules;
 
@@ -52,6 +52,7 @@ public class Item extends Entity<String> {
 			@JsonProperty(value = "version", required = false) Long version,
 			@JsonProperty(value = "source", required = true) String source,
 			@JsonProperty(value = "sourceKey", required = true) String sourceKey,
+			@JsonProperty("status") BaseStatus status,
 			@JsonProperty("name") String name,
 			@JsonProperty("fields") Map<String, String> fields,
 			@JsonProperty("rules") Map<String, ItemRule> rules,
@@ -64,6 +65,7 @@ public class Item extends Entity<String> {
 		super(id, version, source, sourceKey, fields, fromHistory, createdOn, updatedOn, deletedOn);
 
 		this.name = name;
+		this.status = Optional.ofNullable(status).orElse(BaseStatus.CLEAR);
 		
 		this.rules = Optional.ofNullable(rules).map(Collections::unmodifiableMap).orElse(Collections.emptyMap());
 		this.filters = Optional.ofNullable(filters).map(Collections::unmodifiableMap).orElse(Collections.emptyMap());
@@ -108,10 +110,6 @@ public class Item extends Entity<String> {
 		return super.equals(other) && getFields().equals(other.getFields()) && rules.equals(other.rules)
 				&& filters.equals(other.filters);
 	}	
-	
-	protected void setStatus(BaseStatus status) {
-		this.status = status;
-	}
 
 	public static Set<Object> getFiltersForIndex(Item item) {
 		return item.filters.entrySet().stream()
@@ -148,6 +146,7 @@ public class Item extends Entity<String> {
 		protected Long version;
 		protected String source;
 		protected String sourceKey;
+		protected BaseStatus status;
 		protected Instant createdOn;
 		protected Instant updatedOn;
 		protected Instant deletedOn;
@@ -163,6 +162,7 @@ public class Item extends Entity<String> {
 			this.version = item.getVersion();
 			this.source = item.getSource();
 			this.sourceKey = item.getSourceKey();
+			this.status = item.getStatus();
 			this.name = item.getName();
 			this.fields = item.getFields();
 			this.rules = item.getRules();
@@ -179,6 +179,7 @@ public class Item extends Entity<String> {
 			this.version,
 			this.source,
 			this.sourceKey,
+			this.status,
 			this.name,
 			this.fields,
 			this.rules,
@@ -212,6 +213,11 @@ public class Item extends Entity<String> {
 
 		public Builder fromHistory(Set<String> fromHistory) {
 			this.fromHistory = fromHistory;
+			return this;
+		}
+		
+		public Builder status(BaseStatus status) {
+			this.status = status;
 			return this;
 		}
 		
