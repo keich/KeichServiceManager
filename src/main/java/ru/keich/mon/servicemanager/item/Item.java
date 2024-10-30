@@ -172,6 +172,9 @@ public class Item extends Entity<String> {
 		
 		protected boolean changed = false;
 
+		public Builder(String id) {
+			this.id = id;
+		}
 		
 		public Builder(Item item) {
 			this.id = item.getId();
@@ -209,6 +212,24 @@ public class Item extends Entity<String> {
 			this.eventsStatus);
 		}
 
+		public Builder source(String source) {
+			this.source = source;
+			this.changed = true;
+			return this;
+		}
+		
+		public Builder sourceKey(String sourceKey) {
+			this.sourceKey = sourceKey;
+			this.changed = true;
+			return this;
+		}
+		
+		public Builder name(String name) {
+			this.name = name;
+			this.changed = true;
+			return this;
+		}
+		
 		public Builder version(Long version) {
 			this.version = version;
 			this.changed = true;

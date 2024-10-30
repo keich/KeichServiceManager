@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.entity.Entity;
+import ru.keich.mon.servicemanager.item.Item.Builder;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -101,6 +102,10 @@ public class Event extends Entity<String> {
 		EventType type;
 		BaseStatus status;
 
+		public Builder(String id) {
+			this.id = id;
+		}
+		
 		public Builder(Event event) {
 			this.id = event.getId();
 			this.version = event.getVersion();
@@ -148,6 +153,26 @@ public class Event extends Entity<String> {
 			this.deletedOn);
 		}
 
+		public Builder type(EventType type) {
+			this.type = type;
+			return this;
+		}
+		
+		public Builder status(BaseStatus status) {
+			this.status = status;
+			return this;
+		}
+		
+		public Builder source(String source) {
+			this.source = source;
+			return this;
+		}
+		
+		public Builder sourceKey(String sourceKey) {
+			this.sourceKey = sourceKey;
+			return this;
+		}
+		
 		public Builder version(Long version) {
 			this.version = version;
 			return this;

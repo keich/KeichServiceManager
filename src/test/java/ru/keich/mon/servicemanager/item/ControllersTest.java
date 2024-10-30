@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -292,8 +291,8 @@ public class ControllersTest {
 	public void itemVersionFilter() throws IOException {
 		var items = new ArrayList<Item>();
 		for (int i = 0; i < 10; i++) {
-			var item = new Item("id_itemVersionFilter_" + i, 0L, "src_itemVersionFilter", "src_key_itemVersionFilter", null, "name", null,
-					null, null, null, null,Instant.now(),Instant.now(),null);
+			final var item = new Item.Builder("id_itemVersionFilter_" + i)
+					.source("src_itemVersionFilter").sourceKey("src_key_itemVersionFilter").name("name").build();
 			items.add(item);
 		}
 		entityGetWithVersionFilter("/item", items, Item.class);
@@ -303,10 +302,8 @@ public class ControllersTest {
 	public void itemSourceFilter() throws IOException {
 		final var source = "src_itemSourceFilter";
 		final var sourceKey = "src_key_itemSourceFilter";
-		final var item = new Item("id_itemSourceFilter", 0L, source, sourceKey,null, "name", null,
-				null, null, null, null,Instant.now(),Instant.now(),null);
-		final var item1 = new Item("id_itemSourceFilter1", 0L, source + "1", sourceKey + "1", null, "name", null,
-				null, null, null, null,Instant.now(),Instant.now(),null);
+		final var item = new Item.Builder("id_itemSourceFilter").source(source).sourceKey(sourceKey).name("name");
+		final var item1 = new Item.Builder("id_itemSourceFilter1").source(source + "1").sourceKey(sourceKey + "1").name("name");
 		entityAdd("/item", item);
 		entityAdd("/item", item1);
 		
@@ -326,12 +323,17 @@ public class ControllersTest {
 	
 	@Test
 	public void itemSourceKeyFilter() throws IOException {
+		final var id = "id_itemSourceKeyFilter";
 		final var source = "src_itemSourceKeyFilter";
 		final var sourceKey = "src_key_itemSourceKeyFilter";
-		final var item = new Item("id_itemSourceKeyFilter", 0L, source, sourceKey, null, "name", null,
-				null, null, null, null,Instant.now(),Instant.now(),null);
-		final var item1 = new Item("id_itemSourceKeyFilter1", 0L, source + "1", sourceKey + "1", null, "name", null,
-				null, null, null, null,Instant.now(),Instant.now(),null);
+		final var item = new Item.Builder(id)
+				.source(source)
+				.sourceKey(sourceKey)
+				.name("name").build();
+		final var item1 = new Item.Builder(id + "1")
+				.source(source + "1")
+				.sourceKey(sourceKey + "1")
+				.name("name").build();
 		entityAdd("/item", item);
 		entityAdd("/item", item1);
 		
@@ -398,12 +400,14 @@ public class ControllersTest {
 	
 	@Test
 	public void itemDeleteBySoyrceAndSourceKeyNot() throws IOException {
-		var item1 = new Item("id_itemDeleteBySoyrceAndSourceKeyNot1", 0L, "src_itemDeleteBySoyrceAndSourceKeyNot", 
-				"src_key_itemDeleteBySoyrceAndSourceKeyNot",null, "name", null, null, null, null, null
-				,Instant.now(),Instant.now(), null);
-		var item2 = new Item("id_itemDeleteBySoyrceAndSourceKeyNot2", 0L, "src_itemDeleteBySoyrceAndSourceKeyNot",
-				"src_key_itemDeleteBySoyrceAndSourceKeyNot_new", null, "name", null, null, null, null, null
-				,Instant.now(),Instant.now(), null);
+		final var item1 = new Item.Builder("id_itemDeleteBySoyrceAndSourceKeyNot1")
+				.source("src_itemDeleteBySoyrceAndSourceKeyNot")
+				.sourceKey("src_key_itemDeleteBySoyrceAndSourceKeyNot")
+				.name("name").build();
+		final var item2 = new Item.Builder("id_itemDeleteBySoyrceAndSourceKeyNot2")
+				.source("src_itemDeleteBySoyrceAndSourceKeyNot")
+				.sourceKey("src_key_itemDeleteBySoyrceAndSourceKeyNot_new")
+				.name("name").build();
 		entityDeleteBySoyrceAndSourceKeyNot("/item", item1, item2, Item.class);
 	}
 
@@ -640,8 +644,14 @@ public class ControllersTest {
 	public void eventVersionFilter() throws IOException {
 		var events = new ArrayList<Event>();
 		for (int i = 0; i < 10; i++) {
-			var event = new Event("id_eventVersionFilter_" + i, 0L, "src_eventVersionFilter", "src_key_eventVersionFilter",
-					"node", "summary",EventType.PROBLEM, BaseStatus.WARNING, null, null,Instant.now(),Instant.now(),null);
+			var event = new Event.Builder("id_eventVersionFilter_" + i)
+					.source("src_eventVersionFilter")
+					.sourceKey("src_key_eventVersionFilter")
+					.node("node")
+					.summary("summary")
+					.type(EventType.PROBLEM)
+					.status(BaseStatus.WARNING)
+					.build();
 			events.add(event);
 		}
 		entityGetWithVersionFilter("/event", events, Event.class);
@@ -649,12 +659,25 @@ public class ControllersTest {
 	
 	@Test
 	public void eventSourceFilter() throws IOException {
+		final var id = "id_eventSourceFilter";
 		final var source = "src_eventSourceFilter";
 		final var sourceKey = "src_eventSourceFilter";
-		final var event = new Event("id_eventSourceFilter", 0L, source, sourceKey, "node", "summary",
-				EventType.PROBLEM, BaseStatus.WARNING, null, null,Instant.now(),Instant.now(),null);
-		final var event1 = new Event("id_eventSourceFilter1", 0L, source + "1", sourceKey + "1","node", "summary",
-				EventType.PROBLEM, BaseStatus.WARNING, null, null,Instant.now(),Instant.now(),null);
+		var event = new Event.Builder(id)
+				.source(source)
+				.sourceKey(sourceKey)
+				.node("node")
+				.summary("summary")
+				.type(EventType.PROBLEM)
+				.status(BaseStatus.WARNING)
+				.build();
+		var event1 = new Event.Builder(id + "1")
+				.source(source + "1")
+				.sourceKey(sourceKey + "1")
+				.node("node")
+				.summary("summary")
+				.type(EventType.PROBLEM)
+				.status(BaseStatus.WARNING)
+				.build();
 		entityAdd("/event", event);
 		entityAdd("/event", event1);
 		
@@ -673,12 +696,25 @@ public class ControllersTest {
 	
 	@Test
 	public void eventSourceKeyFilter() throws IOException {
+		final var id = "id_eventSourceKeyFilter";
 		final var source = "src_eventSourceKeyFilter";
 		final var sourceKey = "src_eventSourceKeyFilter";
-		final var event = new Event("id_eventSourceKeyFilter", 0L, source, sourceKey,"node", "summary",
-				EventType.PROBLEM, BaseStatus.WARNING, null,null,Instant.now(),Instant.now(),null);
-		final var event1 = new Event("id_eventSourceKeyFilter1", 0L, source + "1", sourceKey + "1","node", "summary",
-				EventType.PROBLEM, BaseStatus.WARNING, null,null,Instant.now(),Instant.now(),null);
+		var event = new Event.Builder(id)
+				.source(source)
+				.sourceKey(sourceKey)
+				.node("node")
+				.summary("summary")
+				.type(EventType.PROBLEM)
+				.status(BaseStatus.WARNING)
+				.build();
+		var event1 = new Event.Builder(id + "1")
+				.source(source + "1")
+				.sourceKey(sourceKey + "1")
+				.node("node")
+				.summary("summary")
+				.type(EventType.PROBLEM)
+				.status(BaseStatus.WARNING)
+				.build();
 		entityAdd("/event", event);
 		entityAdd("/event", event1);
 		
@@ -732,12 +768,25 @@ public class ControllersTest {
 
 	@Test
 	public void eventDeleteBySoyrceAndSourceKeyNot() throws IOException {
-		var event1 = new Event("id_eventDeleteBySoyrceAndSourceKeyNot1", 0L, "src_eventDeleteBySoyrceAndSourceKeyNot",
-				"src_key_eventDeleteBySoyrceAndSourceKeyNot", "node", "summary", EventType.PROBLEM, BaseStatus.WARNING, null
-				, null,Instant.now(),Instant.now(), null);
-		var event2 = new Event("id_eventDeleteBySoyrceAndSourceKeyNot2", 0L, "src_eventDeleteBySoyrceAndSourceKeyNot",
-				"src_key_eventDeleteBySoyrceAndSourceKeyNotNew", "node", "summary", EventType.PROBLEM, BaseStatus.WARNING, null
-				, null,Instant.now(),Instant.now(), null);
+		final var id = "id_eventDeleteBySoyrceAndSourceKeyNot";
+		final var source = "src_eventDeleteBySoyrceAndSourceKeyNot";
+		final var sourceKey = "src_key_eventDeleteBySoyrceAndSourceKeyNot";
+		var event1 = new Event.Builder(id + "1")
+				.source(source)
+				.sourceKey(sourceKey)
+				.node("node")
+				.summary("summary")
+				.type(EventType.PROBLEM)
+				.status(BaseStatus.WARNING)
+				.build();
+		var event2 = new Event.Builder(id + "2")
+				.source(source)
+				.sourceKey(sourceKey + "New")
+				.node("node")
+				.summary("summary")
+				.type(EventType.PROBLEM)
+				.status(BaseStatus.WARNING)
+				.build();
 		entityDeleteBySoyrceAndSourceKeyNot("/event", event1, event2, Event.class);
 	}
 	
