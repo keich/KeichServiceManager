@@ -103,7 +103,7 @@ public class EntityReplication<K, T extends Entity<K>> {
 		deleted = 0L;
 		
 		webClient.get().uri(uriBuilder -> uriBuilder.scheme("https").host(replicationNeighborHost).port(replicationNeighborPort).path(path)
-				.queryParam("version", "gt:" + fromVersion).queryParam("fromHistory", "nc:" + tmpNodeName).build())
+				.queryParam("version", "gt:" + fromVersion).queryParam("fromHistory", "ni:" + tmpNodeName).build())
 				.accept(MediaType.APPLICATION_JSON).retrieve()
 				.bodyToFlux(elementClass)
 				.onErrorResume(e -> {
