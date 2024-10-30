@@ -149,6 +149,9 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 				var t = index.get(fieldName).get(predicate.getValue());
 				var r = index.get(fieldName).valueSet();
 				r.removeAll(t);
+				if(limit > 0) {
+					return r.stream().limit(limit).collect(Collectors.toSet());
+				}
 				return r;
 			case LT:
 				return index.get(fieldName).getBefore(predicate.getValue());
