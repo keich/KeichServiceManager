@@ -111,7 +111,9 @@ public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> 
 
 	@Override
 	public Set<K> valueSet() {
-		return objects.values().stream().collect(Collectors.toSet());
+		synchronized (this) {
+			return objects.values().stream().collect(Collectors.toSet());
+		}
 	}
 	
 }
