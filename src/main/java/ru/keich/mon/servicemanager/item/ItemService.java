@@ -1,6 +1,7 @@
 package ru.keich.mon.servicemanager.item;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -9,6 +10,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -118,10 +120,10 @@ public class ItemService extends EntityService<String, Item> {
 	@Override
 	protected void entityChanged(String itemId) {
 		entityCache.computeIfPresent(itemId, oldItem -> {
-			var item = calculateStatus(oldItem);
+			var item = calculateStatus(new Item.Builder(oldItem));
 			if (oldItem.getStatus() != item.getStatus()) {
 				itemNeedUpdateParentsQueue.add(itemId);
-				return item;
+				return item.build();
 			}
 			return oldItem;
 		});
@@ -138,21 +140,13 @@ public class ItemService extends EntityService<String, Item> {
 		});
 	}
 	
-	public void eventRemove(String itemId, String eventId) {// TODO optimize?
-		entityCache.computeIfPresent(itemId, item -> {
-			var newEventStatus = new HashMap<String, BaseStatus>(item.getEventsStatus());
-			newEventStatus.remove(eventId);
-			entityChangedQueue.add(itemId);
-			return new Item.Builder(item).eventsStatus(newEventStatus).build();
-		});
-	}
 	
-	public void eventAdd(String itemId, String eventId, BaseStatus status) {// TODO optimize?
+	public void itemUpdateEventsStatus(String itemId, Consumer<Map<String, BaseStatus>> s) {
 		entityCache.computeIfPresent(itemId, item -> {
 			var newEventStatus = new HashMap<String, BaseStatus>(item.getEventsStatus());
-			newEventStatus.put(eventId, status);
-			entityChangedQueue.add(itemId);
-			return new Item.Builder(item).eventsStatus(newEventStatus).build();
+			s.accept(newEventStatus);
+			itemNeedUpdateParentsQueue.add(itemId);
+			return calculateStatus(new Item.Builder(item).eventsStatus(newEventStatus)).build();
 		});
 	}
 	
@@ -160,27 +154,29 @@ public class ItemService extends EntityService<String, Item> {
 		if(Objects.nonNull(event.getDeletedOn())) {
 			var predicate = Predicates.equal(INDEX_NAME_EVENTIDS, event.getId());
 			entityCache.keySet(predicate, -1).stream()
-					.forEach(itemId -> eventRemove(itemId, event.getId()));
+					.forEach(itemId -> itemUpdateEventsStatus(itemId, m -> m.remove(event.getId())));
 			return;
 		}
 		findFiltersByEqualFields(event.getFields())
 				.forEach(itft -> {
 					var item = itft.getKey();
 					var filter = itft.getValue();
-					var status = event.getStatus();
+					BaseStatus status;
 					if(filter.isUsingResultStatus()) {
 						status =  filter.getResultStatus();
+					} else {
+						status = event.getStatus();
 					}
-					eventAdd(item.getId(), event.getId(), status);
+					itemUpdateEventsStatus(item.getId(), m -> m.put(event.getId(), status));
 				});
 	}
 
-	private int calculateEntityStatusAsCluster(Item item, ItemRule rule) {
-		var overal = item.getChildrenIds().size();
+	private int calculateEntityStatusAsCluster(Set<String> childrenIds, ItemRule rule) {
+		var overal = childrenIds.size();
 		if (overal <= 0) {
 			return 0;
 		}
-		var listStatus = item.getChildrenIds().stream()
+		var listStatus = childrenIds.stream()
 				.map(this::findById)
 				.filter(Optional::isPresent)
 				.map(Optional::get)
@@ -201,8 +197,8 @@ public class ItemService extends EntityService<String, Item> {
 		return 0;
 	}
 
-	private int calculateEntityStatusDefault(Item item) {
-		return item.getChildrenIds().stream()
+	private int calculateEntityStatusDefault(Set<String> childrenIds) {
+		return childrenIds.stream()
 				.map(this::findById)
 				.filter(Optional::isPresent)
 				.map(Optional::get)
@@ -211,26 +207,26 @@ public class ItemService extends EntityService<String, Item> {
 				.max().orElse(0);
 	}
 	
-	private int calculateStatusByChild(Item item) {
-		var rules = item.getRules();
-		return rules.entrySet().stream().mapToInt(e -> {
-			var rule = e.getValue();
+	private int calculateStatusByChild(Collection<ItemRule> rules, Set<String> childrenIds) {
+		return rules.stream().mapToInt(rule -> {
 			switch (rule.getType()) {
 			case CLUSTER:
-				return calculateEntityStatusAsCluster(item, rule);
+				return calculateEntityStatusAsCluster(childrenIds, rule);
 			default:
-				return calculateEntityStatusDefault(item);
+				return calculateEntityStatusDefault(childrenIds);
 			}
-		}).max().orElse(calculateEntityStatusDefault(item));
+		}).max().orElse(calculateEntityStatusDefault(childrenIds));
 	}
 	
-	private Item calculateStatus(Item item) {
-		BaseStatus childStatus = BaseStatus.fromInteger(calculateStatusByChild(item));
+	private Item.Builder calculateStatus(Item.Builder item) {
+		var rules = item.getRules().values();
+		var childrenIds = item.getChildrenIds();
+		var childStatus = BaseStatus.fromInteger(calculateStatusByChild(rules, childrenIds));
 		var max = item.getEventsStatus().values().stream().mapToInt(BaseStatus::ordinal).max().orElse(0);
-		BaseStatus eventStatusMax = BaseStatus.fromInteger(max);
-		BaseStatus overalStatus = childStatus.max(eventStatusMax);
-		var newItem = new Item.Builder(item).status(overalStatus).build();
-		return newItem;
+		var eventStatusMax = BaseStatus.fromInteger(max);
+		var overalStatus = childStatus.max(eventStatusMax);
+		item.status(overalStatus);
+		return item;
 	}
 	
 	private List<Map.Entry<Item, ItemFilter>> findFiltersByEqualFields(Map<String, String> fields){

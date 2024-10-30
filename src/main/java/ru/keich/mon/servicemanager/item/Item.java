@@ -152,6 +152,7 @@ public class Item extends Entity<String> {
 				+ getId() + "]";
 	}
 
+	@Getter
 	public static class Builder {
 		protected final String id;
 		protected Long version;
