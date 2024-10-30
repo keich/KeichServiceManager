@@ -25,6 +25,7 @@ public interface Index <K, T> {
 	public Set<K> get(Object key);
 	public Set<K> getBefore(Object key);
 	public Set<K> getAfter(Object key);
+	public Set<K> getAfterEqual(Object key);
 	public Set<K> getAfterFirst(Object key);
 	public Set<K> findByKey(long limit, Predicate<Object> predicate);
 	public Set<K> valueSet();

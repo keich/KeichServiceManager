@@ -90,6 +90,11 @@ public class IndexEqual<K, T extends BaseEntity<K>> implements Index<K, T> {
 	public Set<K> getAfter(Object key) {
 		throw new UnsupportedOperationException("Equal index has't this method");
 	}
+	
+	@Override
+	public Set<K> getAfterEqual(Object key) {
+		throw new UnsupportedOperationException("Equal index has't this method");
+	}
 
 	@Override
 	public Set<K> getAfterFirst(Object key) {

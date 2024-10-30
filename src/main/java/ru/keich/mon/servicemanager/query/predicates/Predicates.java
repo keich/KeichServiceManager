@@ -58,6 +58,10 @@ public class Predicates {
 		return new GreaterEqualPredicate(name, value);
 	}
 	
+	public static  QueryPredicate greaterThan(String name, Object value) {
+		return new GreaterThanPredicate(name, value);
+	}
+	
 	public static  QueryPredicate lessThan(String name, Object value) {
 		return new LessThanPredicate(name, value);
 	}

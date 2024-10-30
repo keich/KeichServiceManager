@@ -157,6 +157,8 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 				return index.get(fieldName).getBefore(predicate.getValue());
 			case GT:
 				return index.get(fieldName).getAfter(predicate.getValue());
+			case GE:
+				return index.get(fieldName).getAfterEqual(predicate.getValue());
 			default:
 				return Collections.emptySet();
 			}

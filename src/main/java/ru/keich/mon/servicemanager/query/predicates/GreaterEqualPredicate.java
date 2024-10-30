@@ -21,7 +21,7 @@ import ru.keich.mon.servicemanager.query.Operator;
 public class GreaterEqualPredicate extends QueryPredicate {
 
 	public GreaterEqualPredicate(String name, Object value) {
-		super(name, Operator.GT, value);
+		super(name, Operator.GE, value);
 	}
 
 	@Override

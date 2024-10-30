@@ -1,4 +1,6 @@
-package ru.keich.mon.servicemanager.query;
+package ru.keich.mon.servicemanager.query.predicates;
+
+import ru.keich.mon.servicemanager.query.Operator;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -16,28 +18,19 @@ package ru.keich.mon.servicemanager.query;
  * limitations under the License.
  */
 
-public enum Operator {
-	NE, EQ, LT, GT, GE, CO, NC, NI, ERROR, ALL;
-	
-	public static Operator fromString(String str) {
-        switch(str.toUpperCase()) {
-        case "NE":
-            return NE;
-        case "EQ":
-            return EQ;
-        case "LT":
-            return LT;
-        case "GT":
-            return GT;
-        case "GE":
-            return GE;
-        case "CO":
-            return CO;
-        case "NC":
-            return NC;
-        case "NI":
-            return NI;
-        }
-        return ERROR;
+public class GreaterThanPredicate extends QueryPredicate {
+
+	public GreaterThanPredicate(String name, Object value) {
+		super(name, Operator.GT, value);
 	}
+
+	@Override
+	public boolean test(Object t) {
+		if (value instanceof Long) {
+			var v = (Long) value;
+			return v.compareTo((Long) t) < 0;
+		}
+		return false;
+	}
+
 }

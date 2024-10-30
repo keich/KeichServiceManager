@@ -87,6 +87,13 @@ public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> 
 	@Override
 	public Set<K> getAfter(Object key) {
 		synchronized (this) {
+			return objects.tailMap(key).values().stream().skip(1).collect(Collectors.toSet());
+		}
+	}
+
+	@Override
+	public Set<K> getAfterEqual(Object key) {
+		synchronized (this) {
 			return objects.tailMap(key).values().stream().collect(Collectors.toSet());
 		}
 	}
