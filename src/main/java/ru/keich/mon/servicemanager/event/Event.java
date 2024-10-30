@@ -11,7 +11,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.entity.Entity;
-import ru.keich.mon.servicemanager.item.Item.Builder;
 
 /*
  * Copyright 2024 the original author or authors.
