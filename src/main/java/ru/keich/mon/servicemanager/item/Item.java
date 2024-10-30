@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.Getter;
@@ -46,6 +47,9 @@ public class Item extends Entity<String> {
 	
 	private final String name;
 	
+	@JsonIgnore
+	private final Map<String, BaseStatus> eventsStatus;
+	
 	@JsonCreator
 	public Item(
 			@JsonProperty(value = "id", required = true) String id,
@@ -61,7 +65,8 @@ public class Item extends Entity<String> {
 			@JsonProperty("fromHistory") Set<String> fromHistory,
 			@JsonProperty(value = "createdOn", required = false) Instant createdOn,
 			@JsonProperty(value = "updatedOn", required = false) Instant updatedOn,
-			@JsonProperty(value = "deletedOn", required = false) Instant deletedOn) {
+			@JsonProperty(value = "deletedOn", required = false) Instant deletedOn,
+			@JsonProperty(value = "eventsStatus") Map<String, BaseStatus> eventsStatus) {
 		super(id, version, source, sourceKey, fields, fromHistory, createdOn, updatedOn, deletedOn);
 
 		this.name = name;
@@ -70,6 +75,8 @@ public class Item extends Entity<String> {
 		this.rules = Optional.ofNullable(rules).map(Collections::unmodifiableMap).orElse(Collections.emptyMap());
 		this.filters = Optional.ofNullable(filters).map(Collections::unmodifiableMap).orElse(Collections.emptyMap());
 		this.childrenIds = Optional.ofNullable(childrenIds).map(Collections::unmodifiableSet).orElse(Collections.emptySet());
+		
+		this.eventsStatus = Optional.ofNullable(eventsStatus).map(Collections::unmodifiableMap).orElse(Collections.emptyMap());
 		
 		if(this.childrenIds.size() > 0) {
 			this.hasChildren = true;
@@ -131,6 +138,10 @@ public class Item extends Entity<String> {
 				.map(s -> Collections.singleton((Object)s))
 				.orElse(Collections.emptySet());
 	}
+	
+	public static Set<Object> getEventsIndex(Item item) {
+		return Collections.unmodifiableSet(item.getEventsStatus().keySet());
+	}
 
 	@Override
 	public String toString() {
@@ -154,8 +165,10 @@ public class Item extends Entity<String> {
 		protected Map<String, String> fields;
 		protected Map<String, ItemRule> rules;
 		protected Map<String, ItemFilter> filters;
+		protected Map<String, BaseStatus> eventsStatus;
 		protected Set<String> childrenIds;
 		protected String name;
+
 		
 		public Builder(Item item) {
 			this.id = item.getId();
@@ -172,6 +185,7 @@ public class Item extends Entity<String> {
 			this.createdOn = item.getCreatedOn();
 			this.updatedOn = item.getUpdatedOn();
 			this.deletedOn = item.getDeletedOn();
+			this.eventsStatus = item.getEventsStatus();
 		}
 		
 		public Item build() {
@@ -188,7 +202,8 @@ public class Item extends Entity<String> {
 			this.fromHistory,
 			this.createdOn,
 			this.updatedOn,
-			this.deletedOn);
+			this.deletedOn,
+			this.eventsStatus);
 		}
 
 		public Builder version(Long version) {
@@ -218,6 +233,11 @@ public class Item extends Entity<String> {
 		
 		public Builder status(BaseStatus status) {
 			this.status = status;
+			return this;
+		}
+		
+		public Builder eventsStatus(Map<String, BaseStatus> eventsStatus) {
+			this.eventsStatus = Collections.unmodifiableMap(eventsStatus);
 			return this;
 		}
 		

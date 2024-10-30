@@ -2,6 +2,7 @@ package ru.keich.mon.servicemanager.item;
 
 import java.time.Instant;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +20,6 @@ import ru.keich.mon.servicemanager.QueueThreadReader;
 import ru.keich.mon.servicemanager.entity.EntityService;
 import ru.keich.mon.servicemanager.event.Event;
 import ru.keich.mon.servicemanager.event.EventService;
-import ru.keich.mon.servicemanager.eventrelation.EventRelationService;
 import ru.keich.mon.servicemanager.query.predicates.Predicates;
 import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
 
@@ -44,24 +44,24 @@ import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
 public class ItemService extends EntityService<String, Item> {
 	
 	private final EventService eventService;
-	private final EventRelationService eventRelationService;
 	final protected QueueThreadReader<String> itemNeedUpdateParentsQueue;
 
 	static final String INDEX_NAME_FILTERS_EQL = "filter_equal";
 	static final String INDEX_NAME_PARENTS = "parents";
 	
 	static final public String INDEX_NAME_NAME_UPPERCASE = "name";
+	static final public String INDEX_NAME_EVENTIDS = "eventIds";
 	
-	public ItemService(@Value("${replication.nodename}") String nodeName, EventService eventService,
-			EventRelationService eventRelationService) {
+	public ItemService(@Value("${replication.nodename}") String nodeName, EventService eventService) {
 		super(nodeName);
 		entityCache.createIndex(INDEX_NAME_FILTERS_EQL, IndexType.EQUAL, Item::getFiltersForIndex);
 		entityCache.createIndex(INDEX_NAME_PARENTS, IndexType.EQUAL, Item::getParentsForIndex);
 		
 		entityCache.createIndex(INDEX_NAME_NAME_UPPERCASE, IndexType.EQUAL, Item::getNameUpperCaseForIndex);
 		
+		entityCache.createIndex(INDEX_NAME_EVENTIDS, IndexType.EQUAL, Item::getEventsIndex);
+		
 		this.eventService = eventService;
-		this.eventRelationService = eventRelationService;
 		eventService.setItemService(this);
 
 		itemNeedUpdateParentsQueue = new QueueThreadReader<String>(this.getClass().getSimpleName() + "-itemNeedUpdateParentsQueue", 4, this::needUpdateParentsChanged);
@@ -89,6 +89,7 @@ public class ItemService extends EntityService<String, Item> {
 					.createdOn(oldItem.getCreatedOn())
 					.updatedOn(Instant.now())
 					.status(oldItem.getStatus())
+					.eventsStatus(oldItem.getEventsStatus())
 					.build();
 			entityChangedQueue.add(item.getId());
 			return updatedItem;
@@ -137,15 +138,29 @@ public class ItemService extends EntityService<String, Item> {
 		});
 	}
 	
+	public void eventRemove(String itemId, String eventId) {// TODO optimize?
+		entityCache.computeIfPresent(itemId, item -> {
+			var newEventStatus = new HashMap<String, BaseStatus>(item.getEventsStatus());
+			newEventStatus.remove(eventId);
+			entityChangedQueue.add(itemId);
+			return new Item.Builder(item).eventsStatus(newEventStatus).build();
+		});
+	}
+	
+	public void eventAdd(String itemId, String eventId, BaseStatus status) {// TODO optimize?
+		entityCache.computeIfPresent(itemId, item -> {
+			var newEventStatus = new HashMap<String, BaseStatus>(item.getEventsStatus());
+			newEventStatus.put(eventId, status);
+			entityChangedQueue.add(itemId);
+			return new Item.Builder(item).eventsStatus(newEventStatus).build();
+		});
+	}
+	
 	public void eventChanged(Event event) {
 		if(Objects.nonNull(event.getDeletedOn())) {
-			var itemIds = eventRelationService.eventRemoved(event.getId());
-			itemIds.stream()
-					.map(this::findById)
-					.filter(Optional::isPresent)
-					.map(Optional::get)
-					.map(Item::getId)
-					.forEach(entityChangedQueue::add);
+			var predicate = Predicates.equal(INDEX_NAME_EVENTIDS, event.getId());
+			entityCache.keySet(predicate, -1).stream()
+					.forEach(itemId -> eventRemove(itemId, event.getId()));
 			return;
 		}
 		findFiltersByEqualFields(event.getFields())
@@ -156,8 +171,7 @@ public class ItemService extends EntityService<String, Item> {
 					if(filter.isUsingResultStatus()) {
 						status =  filter.getResultStatus();
 					}
-					eventRelationService.add(item, event, status);
-					entityChangedQueue.add(item.getId());
+					eventAdd(item.getId(), event.getId(), status);
 				});
 	}
 
@@ -212,7 +226,8 @@ public class ItemService extends EntityService<String, Item> {
 	
 	private Item calculateStatus(Item item) {
 		BaseStatus childStatus = BaseStatus.fromInteger(calculateStatusByChild(item));
-		BaseStatus eventStatusMax = eventRelationService.getMaxStatus(item);
+		var max = item.getEventsStatus().values().stream().mapToInt(BaseStatus::ordinal).max().orElse(0);
+		BaseStatus eventStatusMax = BaseStatus.fromInteger(max);
 		BaseStatus overalStatus = childStatus.max(eventStatusMax);
 		var newItem = new Item.Builder(item).status(overalStatus).build();
 		return newItem;
@@ -266,8 +281,8 @@ public class ItemService extends EntityService<String, Item> {
 				.collect(Collectors.toList());
 	}
 	
-	private List<Event> findEventsByItem(Item item){
-		return eventRelationService.getEventIds(item).stream()
+	private List<Event> findEventsByItem(Item item) {
+		return item.getEventsStatus().keySet().stream()
 				.map(id -> eventService.findById(id))
 				.filter(Optional::isPresent)
 				.map(Optional::get)
