@@ -82,6 +82,10 @@ public class Entity<K> extends BaseEntity<K> {
 		return item.fields.entrySet().stream().collect(Collectors.toSet());
 	}
 	
+	public static Set<Object> getFromHistoryForIndex(Entity<?> item) {
+		return item.getFromHistory().stream().collect(Collectors.toSet());
+	}
+	
 	@Override
 	public int hashCode() {
 		final int prime = 31;

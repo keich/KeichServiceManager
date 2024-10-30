@@ -36,6 +36,8 @@ public class Predicates {
 				return contain(name, arr[1]);
 			case NC:
 				return notContain(name, arr[1]);
+			case NI:
+				return notInclude(name, arr[1]);
 			default:
 				return equal(name, value);
 			}
@@ -66,6 +68,10 @@ public class Predicates {
 	
 	public static QueryPredicate notContain(String name, Object value) {
 		return new NotContainPredicate(name, value);
+	}
+	
+	public static QueryPredicate notInclude(String name, Object value) {
+		return new NotIncludePredicate(name, value);
 	}
 	
 }

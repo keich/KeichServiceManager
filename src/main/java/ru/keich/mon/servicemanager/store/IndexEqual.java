@@ -96,4 +96,9 @@ public class IndexEqual<K, T extends BaseEntity<K>> implements Index<K, T> {
 		throw new UnsupportedOperationException("Equal index has't this method");
 	}
 
+	@Override
+	public Set<K> valueSet() {
+		return objects.values().stream().flatMap(Set::stream).collect(Collectors.toSet());
+	}
+
 }

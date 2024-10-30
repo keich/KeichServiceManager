@@ -145,6 +145,11 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 			case CO:
 			case NC:
 				return index.get(fieldName).findByKey(limit, (p) -> predicate.test(p));
+			case NI:
+				var t = index.get(fieldName).get(predicate.getValue());
+				var r = index.get(fieldName).valueSet();
+				r.removeAll(t);
+				return r;
 			case LT:
 				return index.get(fieldName).getBefore(predicate.getValue());
 			case GT:

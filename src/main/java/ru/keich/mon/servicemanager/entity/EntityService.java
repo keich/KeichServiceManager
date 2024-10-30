@@ -47,6 +47,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	static final public String INDEX_NAME_SOURCE_KEY = "source_key";
 	static final public String INDEX_NAME_DELETED_ON = "deleted_on";
 	static final public String INDEX_NAME_FIELDS = "fields";
+	static final public String INDEX_NAME_FROMHISTORY = "fromHistory";
 
 	public EntityService(String nodeName) {
 		this.nodeName = nodeName;
@@ -59,6 +60,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 		entityCache.createIndex(INDEX_NAME_DELETED_ON, IndexType.SORTED, Entity::getDeletedOnForIndex);
 		
 		entityCache.createIndex(INDEX_NAME_FIELDS, IndexType.EQUAL, Entity::getFieldsForIndex);
+		entityCache.createIndex(INDEX_NAME_FROMHISTORY, IndexType.EQUAL, Entity::getFromHistoryForIndex);
 	}
 	
 	protected Long getNextVersion() {

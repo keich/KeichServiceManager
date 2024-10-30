@@ -106,4 +106,9 @@ public class IndexSorted<K, T extends BaseEntity<K>> implements Index<K, T> {
 		}
 	}
 
+	@Override
+	public Set<K> valueSet() {
+		return objects.values().stream().flatMap(Set::stream).collect(Collectors.toSet());
+	}
+
 }

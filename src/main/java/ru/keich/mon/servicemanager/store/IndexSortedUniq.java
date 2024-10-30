@@ -101,4 +101,10 @@ public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> 
 			return Collections.singleton(objects.get(view.firstKey()));
 		}
 	}
+
+	@Override
+	public Set<K> valueSet() {
+		return objects.values().stream().collect(Collectors.toSet());
+	}
+	
 }

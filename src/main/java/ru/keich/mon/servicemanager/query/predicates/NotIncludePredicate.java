@@ -1,4 +1,8 @@
-package ru.keich.mon.servicemanager.query;
+package ru.keich.mon.servicemanager.query.predicates;
+
+import java.util.Set;
+
+import ru.keich.mon.servicemanager.query.Operator;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -16,26 +20,18 @@ package ru.keich.mon.servicemanager.query;
  * limitations under the License.
  */
 
-public enum Operator {
-	NE, EQ, LT, GT, CO, NC, NI, ERROR, ALL;
-	
-	public static Operator fromString(String str) {
-        switch(str.toUpperCase()) {
-        case "NE":
-            return NE;
-        case "EQ":
-            return EQ;
-        case "LT":
-            return LT;
-        case "GT":
-            return GT;
-        case "CO":
-            return CO;
-        case "NC":
-            return NC;
-        case "NI":
-            return NI;
-        }
-        return ERROR;
+public class NotIncludePredicate extends QueryPredicate {
+
+	public NotIncludePredicate(String name, Object value) {
+		super(name, Operator.NI, value);
+	}
+
+	@Override
+	public boolean test(Object t) {
+		if (t instanceof Set) {
+			var set = (Set) t;
+			return !set.contains(value);
+		}
+		return !t.toString().contains(value.toString());
 	}
 }
