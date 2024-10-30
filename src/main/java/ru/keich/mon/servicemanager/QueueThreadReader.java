@@ -6,8 +6,6 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import lombok.extern.java.Log;
-
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -24,7 +22,6 @@ import lombok.extern.java.Log;
  * limitations under the License.
  */
 
-@Log
 public class QueueThreadReader<K> {
 	
 	static final Integer POOL_SECONDS = 30;
@@ -46,7 +43,7 @@ public class QueueThreadReader<K> {
 					Optional.ofNullable(queue.poll(POOL_SECONDS, TimeUnit.SECONDS)).ifPresent(consumer::accept);
 				}
 			} catch (Exception v) {
-				log.warning(v.toString());
+				v.printStackTrace();
 			}
 		}, name);
 		thread.start();
