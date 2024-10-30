@@ -169,6 +169,8 @@ public class Item extends Entity<String> {
 		protected Map<String, BaseStatus> eventsStatus;
 		protected Set<String> childrenIds;
 		protected String name;
+		
+		protected boolean changed = false;
 
 		
 		public Builder(Item item) {
@@ -209,36 +211,45 @@ public class Item extends Entity<String> {
 
 		public Builder version(Long version) {
 			this.version = version;
+			this.changed = true;
 			return this;
 		}
 
 		public Builder createdOn(Instant createdOn) {
 			this.createdOn = createdOn;
+			this.changed = true;
 			return this;
 		}
 		
 		public Builder updatedOn(Instant updatedOn) {
 			this.updatedOn = updatedOn;
+			this.changed = true;
 			return this;
 		}
 
 		public Builder deletedOn(Instant deletedOn) {
 			this.deletedOn = deletedOn;
+			this.changed = true;
 			return this;
 		}
 
 		public Builder fromHistory(Set<String> fromHistory) {
 			this.fromHistory = fromHistory;
+			this.changed = true;
 			return this;
 		}
 		
 		public Builder status(BaseStatus status) {
-			this.status = status;
+			if(this.status != status) {
+				this.status = status;
+				this.changed = true;
+			}
 			return this;
 		}
 		
 		public Builder eventsStatus(Map<String, BaseStatus> eventsStatus) {
 			this.eventsStatus = Collections.unmodifiableMap(eventsStatus);
+			this.changed = true;
 			return this;
 		}
 		

@@ -121,7 +121,7 @@ public class ItemService extends EntityService<String, Item> {
 	protected void entityChanged(String itemId) {
 		entityCache.computeIfPresent(itemId, oldItem -> {
 			var item = calculateStatus(new Item.Builder(oldItem));
-			if (oldItem.getStatus() != item.getStatus()) {
+			if (item.isChanged()) {
 				itemNeedUpdateParentsQueue.add(itemId);
 				return item.build();
 			}
