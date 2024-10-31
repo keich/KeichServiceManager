@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.scheduling.annotation.Scheduled;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import ru.keich.mon.servicemanager.QueueThreadReader;
 import ru.keich.mon.servicemanager.query.predicates.Predicates;
 import ru.keich.mon.servicemanager.query.predicates.QueryPredicate;
@@ -49,9 +50,9 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	static final public String INDEX_NAME_FIELDS = "fields";
 	static final public String INDEX_NAME_FROMHISTORY = "fromHistory";
 
-	public EntityService(String nodeName) {
+	public EntityService(String nodeName, MeterRegistry registry) {
 		this.nodeName = nodeName;
-		entityCache = new IndexedHashMap<>();
+		entityCache = new IndexedHashMap<>(registry, this.getClass().getSimpleName());
 		entityChangedQueue = new QueueThreadReader<K>(this.getClass().getSimpleName() + "-entityChangedQueue" , 4, this::entityChanged);
 		
 		entityCache.createIndex(INDEX_NAME_VERSION, IndexType.UNIQ_SORTED, Entity::getVersionForIndex);

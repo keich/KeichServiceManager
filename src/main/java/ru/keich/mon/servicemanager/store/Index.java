@@ -1,6 +1,7 @@
 package ru.keich.mon.servicemanager.store;
 
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
 /*
@@ -29,4 +30,5 @@ public interface Index <K, T> {
 	public Set<K> getAfterFirst(Object key);
 	public Set<K> findByKey(long limit, Predicate<Object> predicate);
 	public Set<K> valueSet();
+	public AtomicInteger getMetricObjectsSize();
 }

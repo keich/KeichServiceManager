@@ -25,20 +25,20 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import ru.keich.mon.servicemanager.entity.EntityService;
 import ru.keich.mon.servicemanager.item.ItemService;
 
 @Service
 public class EventService extends EntityService<String, Event>{
-
 	private ItemService itemService;
 	
 	public void setItemService(ItemService itemService) {
 		this.itemService = itemService;
 	}
 
-	public EventService(@Value("${replication.nodename}") String nodeName) {
-		super(nodeName);
+	public EventService(@Value("${replication.nodename}") String nodeName, MeterRegistry registry) {
+		super(nodeName, registry);
 	}
 	
 	@Override

@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> {
 	private final Function<T, Set<Object>> mapper;
 	private final SortedMap<Object, K> objects = new TreeMap<>();
+	private final AtomicInteger metricObjectsSize = new AtomicInteger(0);
 	
 	public IndexSortedUniq(Function<T, Set<Object>> mapper) {
 		this.mapper = mapper;
@@ -56,6 +58,7 @@ public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> 
 				}
 				objects.put(key, entity.getId());
 			});
+			metricObjectsSize.set(objects.size());
 		}
 	}
 
@@ -65,6 +68,7 @@ public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> 
 			mapper.apply(entity).forEach(key -> {
 				objects.remove(key);
 			});
+			metricObjectsSize.set(objects.size());
 		}
 	}
 
@@ -114,6 +118,11 @@ public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> 
 		synchronized (this) {
 			return objects.values().stream().collect(Collectors.toSet());
 		}
+	}
+	
+	@Override
+	public AtomicInteger getMetricObjectsSize() {
+		return metricObjectsSize;
 	}
 	
 }

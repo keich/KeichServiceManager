@@ -7,10 +7,14 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import ru.keich.mon.servicemanager.query.predicates.Predicates;
 import ru.keich.mon.servicemanager.query.predicates.QueryPredicate;
 
@@ -33,6 +37,47 @@ import ru.keich.mon.servicemanager.query.predicates.QueryPredicate;
 
 public class IndexedHashMap<K, T extends BaseEntity<K>> {
 
+	static final public String METRIC_NAME_MAP = "indexedhashmap_";
+	static final public String METRIC_NAME_OPERATION = "operation";
+	static final public String METRIC_NAME_SERVICENAME = "servicename";
+
+	static final public String METRIC_NAME_OBJECTS = "objects_";
+	static final public String METRIC_NAME_SIZE = "size";
+
+	static final public String METRIC_NAME_ADDED = "insered";
+	static final public String METRIC_NAME_UPDATED = "updated";
+	static final public String METRIC_NAME_REMOVED = "removed";
+	static final public String METRIC_NAME_INDEX = "index";
+	
+	private final MeterRegistry registry;
+	private final String serviceName;
+	
+	private Counter metricAdded = EmptyCounter.EMPTY;
+	private Counter metricUpdated = EmptyCounter.EMPTY;
+	private Counter metricRemoved = EmptyCounter.EMPTY;
+	private final AtomicInteger metricObjectsSize = new AtomicInteger(0);
+	
+	public static class EmptyCounter implements Counter {
+
+		public static EmptyCounter EMPTY = new EmptyCounter();
+		
+		@Override
+		public Id getId() {
+			return null;
+		}
+
+		@Override
+		public void increment(double amount) {
+
+		}
+
+		@Override
+		public double count() {
+			return 0;
+		}
+		
+	}
+	
 	public enum IndexType {
 		EQUAL, SORTED, UNIQ_SORTED
 	}
@@ -40,8 +85,25 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 	private Map<K, T> cache = new ConcurrentHashMap<>();
 	private Map<String , Index<K, T>> index =  new HashMap<>(); 
 
-	public IndexedHashMap() {
+	public IndexedHashMap(MeterRegistry registry, String serviceName) {
 		super();
+
+		this.registry = registry;
+		this.serviceName = serviceName;
+
+		if(Objects.nonNull(registry)) {
+			metricAdded = registry.counter(METRIC_NAME_MAP + METRIC_NAME_OPERATION, METRIC_NAME_OPERATION,
+					METRIC_NAME_ADDED, METRIC_NAME_SERVICENAME, serviceName);
+	
+			metricUpdated = registry.counter(METRIC_NAME_MAP + METRIC_NAME_OPERATION, METRIC_NAME_OPERATION,
+					METRIC_NAME_UPDATED, METRIC_NAME_SERVICENAME, serviceName);
+	
+			metricRemoved = registry.counter(METRIC_NAME_MAP + METRIC_NAME_OPERATION, METRIC_NAME_OPERATION,
+					METRIC_NAME_REMOVED, METRIC_NAME_SERVICENAME, serviceName);
+	
+			registry.gauge(METRIC_NAME_MAP + METRIC_NAME_OBJECTS + METRIC_NAME_SIZE,
+					Tags.of(METRIC_NAME_SERVICENAME, serviceName), metricObjectsSize);
+		}
 	}
 	
 	public void createIndex(String name, IndexType type, Function<T, Set<Object>> mapper) {
@@ -55,6 +117,11 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 		case UNIQ_SORTED:
 			index.put(name, new IndexSortedUniq<K,T>(mapper));
 			break;		
+		}
+		if(Objects.nonNull(registry)) {
+			var tags = Tags.of(METRIC_NAME_SERVICENAME, serviceName, METRIC_NAME_INDEX, name.toLowerCase());
+			registry.gauge(METRIC_NAME_MAP + METRIC_NAME_INDEX + "_" + METRIC_NAME_SIZE, tags,
+					index.get(name).getMetricObjectsSize());
 		}
 	}
 		
@@ -70,6 +137,7 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 					e.getValue().remove(oldEntity);
 					e.getValue().append(newEntity);
 				});
+				metricUpdated.increment();
 				return newEntity;
 			}
 			return oldEntity;
@@ -77,6 +145,7 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 	}
 	
 	public Optional<T> compute(K entityId, Supplier<T> insertTrigger, Function<T,T> updateTrigger) {
+		metricObjectsSize.set(cache.size());
 		return Optional.ofNullable(cache.compute(entityId, (key, oldEntity) -> {
 			if (Objects.nonNull(oldEntity)) {
 				final var entity = updateTrigger.apply(oldEntity);
@@ -85,6 +154,7 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 						e.getValue().remove(oldEntity);
 						e.getValue().append(entity);
 					});
+					metricUpdated.increment();
 					return entity;
 				}
 			} else {
@@ -93,6 +163,7 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 					index.entrySet().forEach(e -> {
 						e.getValue().append(entity);
 					});
+					metricAdded.increment();
 					return entity;
 				}
 			}
@@ -105,11 +176,13 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 	}
 
 	public Optional<T> remove(K id) {
+		metricObjectsSize.set(cache.size());
 		return Optional.ofNullable(cache.compute(id, (key, oldEntity) -> {
 			if (Objects.nonNull(oldEntity)) {
 				index.entrySet().forEach(e -> {
 					e.getValue().remove(oldEntity);
 				});	
+				metricRemoved.increment();
 			}
 			return null;
 		}));

@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.java.Log;
 import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.QueueThreadReader;
@@ -54,8 +55,9 @@ public class ItemService extends EntityService<String, Item> {
 	static final public String INDEX_NAME_NAME_UPPERCASE = "name";
 	static final public String INDEX_NAME_EVENTIDS = "eventIds";
 	
-	public ItemService(@Value("${replication.nodename}") String nodeName, EventService eventService) {
-		super(nodeName);
+	public ItemService(@Value("${replication.nodename}") String nodeName, EventService eventService, MeterRegistry registry) {
+		super(nodeName, registry);
+
 		entityCache.createIndex(INDEX_NAME_FILTERS_EQL, IndexType.EQUAL, Item::getFiltersForIndex);
 		entityCache.createIndex(INDEX_NAME_PARENTS, IndexType.EQUAL, Item::getParentsForIndex);
 		
