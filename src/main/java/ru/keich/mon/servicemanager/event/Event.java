@@ -61,25 +61,6 @@ public class Event extends Entity<String> {
 	}
 
 	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = super.hashCode() + prime * getFields().size();
-		result = prime * result + prime * status.hashCode() +  prime * type.hashCode();
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (!super.equals(obj))
-			return false;
-		Event other = (Event) obj;
-		if(getFields().size() != getFields().size()) {
-			return false;
-		}
-		return super.equals(other) && status == other.status && type == other.type && getFields().equals(other.getFields());
-	}
-
-	@Override
 	public String toString() {
 		return "Event [id=" + getId() + ", type=" + type + ", status=" + status +
 				", createdOn=" + getCreatedOn() + ", createdOn=" + getUpdatedOn() + ", deletedOn=" + getDeletedOn() +

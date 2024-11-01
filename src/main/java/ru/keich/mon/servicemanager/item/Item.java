@@ -83,39 +83,6 @@ public class Item extends Entity<String> {
 		}else {
 			this.hasChildren = false;
 		}
-	}
-
-	@Override
-	public int hashCode() {
-		final int prime = 41;
-		int result = super.hashCode();
-
-		result = prime * result + getFields().size();
-
-		result = prime * result + filters.size();
-
-		result = prime * result + rules.size();
-
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (!super.equals(obj))
-			return false;
-		Item other = (Item) obj;
-		if(filters.size() != other.filters.size()) {
-			return false;
-		}
-		if(rules.size() != other.rules.size()) {
-			return false;
-		}
-		if(filters.size() != other.filters.size()) {
-			return false;
-		}
-
-		return super.equals(other) && getFields().equals(other.getFields()) && rules.equals(other.rules)
-				&& filters.equals(other.filters);
 	}	
 
 	public static Set<Object> getFiltersForIndex(Item item) {

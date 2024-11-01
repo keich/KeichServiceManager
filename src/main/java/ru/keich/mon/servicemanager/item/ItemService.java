@@ -84,10 +84,8 @@ public class ItemService extends EntityService<String, Item> {
 			entityChangedQueue.add(item.getId());
 			return inseredItem;
 		}, oldItem -> {
-			if (isEntityEqual(oldItem, item)) {
-				return null;
-			}
-			var updatedItem = new Item.Builder(item)
+			entityChangedQueue.add(item.getId());
+			return new Item.Builder(item)
 					.version(getNextVersion())
 					.fromHistory(newFromHistory)
 					.createdOn(oldItem.getCreatedOn())
@@ -95,8 +93,6 @@ public class ItemService extends EntityService<String, Item> {
 					.status(oldItem.getStatus())
 					.eventsStatus(oldItem.getEventsStatus())
 					.build();
-			entityChangedQueue.add(item.getId());
-			return updatedItem;
 		});
 
 		

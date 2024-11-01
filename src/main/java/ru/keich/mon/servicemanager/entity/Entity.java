@@ -85,22 +85,5 @@ public class Entity<K> extends BaseEntity<K> {
 	public static Set<Object> getFromHistoryForIndex(Entity<?> item) {
 		return item.getFromHistory().stream().collect(Collectors.toSet());
 	}
-	
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = super.hashCode();
-		result = prime * result + source.hashCode();
-		result = prime * result + sourceKey.hashCode();
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (!super.equals(obj))
-			return false;
-		var other = (Entity<?>) obj;
-		return super.equals(other) && source.equals(other.source) && sourceKey.equals(other.sourceKey);
-	}
 
 }

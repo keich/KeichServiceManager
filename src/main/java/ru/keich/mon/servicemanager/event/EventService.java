@@ -53,9 +53,6 @@ public class EventService extends EntityService<String, Event>{
 					.fromHistory(newFromHistory)
 					.build();			
 		}, oldEvent -> {
-			if (isEntityEqual(oldEvent, event)) {
-				return null;
-			}
 			entityChangedQueue.add(event.getId());
 			return new Event.Builder(event)
 					.version(getNextVersion())

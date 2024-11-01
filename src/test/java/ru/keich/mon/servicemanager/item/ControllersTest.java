@@ -206,14 +206,6 @@ public class ControllersTest {
 		assertEquals(entity.getUpdatedOn(), removedEntity.getUpdatedOn());	*/	
 	}
 
-	private <K, T extends Entity<K>> void entityVersionNotChanged(String path, T entity1, T entity2, Class<T> entityType) {
-		entityAdd(path, entity1);
-		var retEntity1 = entityGetById(path, entity1.getId().toString(), entityType);
-		entityAdd(path, entity2);
-		var retEntity2 = entityGetById(path, entity2.getId().toString(), entityType);
-		assertEquals(retEntity1.getVersion(), retEntity2.getVersion());
-	}
-
 	private <K, T extends Entity<K>> void entityDeleteBySoyrceAndSourceKeyNot(String path, T entity1, T entity2,
 			Class<T> entityType) {
 		entityAdd(path, entity1);
@@ -349,53 +341,6 @@ public class ControllersTest {
 			assertNotEquals(item.getId(), i.getId());
 		});
 		
-	}
-
-	@Test
-	public void itemVersionNotChanged() throws IOException {
-		var json = """
-					 {
-				        "id": "id_itemVersionNotChanged",
-				        "source": "src_itemVersionNotChanged",
-				        "sourceKey": "src_key_itemVersionNotChanged",
-				        "fields": {
-				            "name": "Hello",
-				            "description": "World",
-				            "method": "itemVersionNotChanged"
-				        },
-				        "rules": {},
-				        "filters": {
-				            "by_identity": {
-				                "resultStatus": "INDETERMINATE",
-				                "usingResultStatus": false,
-				                "equalFields": { "identity": "68FB40A414A49978832133B9D476E5A" }
-				            }
-				        }
-				    }
-				""";
-		var item1 = mapper.readValue(json, Item.class);
-		json = """
-					 {
-				        "id": "id_itemVersionNotChanged",
-				        "source": "src_itemVersionNotChanged",
-				        "sourceKey": "src_key_itemVersionNotChanged",
-				        "fields": {
-				            "name": "Hello",
-				            "method": "itemVersionNotChanged",
-				            "description": "World"
-				        },
-				        "rules": {},
-				        "filters": {
-				            "by_identity": {
-				                "resultStatus": "INDETERMINATE",
-				                "usingResultStatus": false,
-				                "equalFields": {"identity": "68FB40A414A49978832133B9D476E5A"}
-				            }
-				        }
-				    }
-				""";
-		var item2 = mapper.readValue(json, Item.class);
-		entityVersionNotChanged("/item", item1, item2, Item.class);
 	}
 	
 	@Test
@@ -729,41 +674,6 @@ public class ControllersTest {
 		events.forEach(e -> {
 			assertNotEquals(event.getId(), e.getId());
 		});
-	}
-
-	@Test
-	public void eventVersionNotChanged() throws IOException {
-		var json = """
-				    {
-				    	"id": "id_eventVersionNotChanged",
-				        "type": "PROBLEM",
-				        "status": "WARNING",
-				        "source": "source_eventVersionNotChanged",
-				        "sourceKey": "sourceKey_eventVersionNotChanged",
-				        "fields": {
-				            "server": "localhost",
-				            "summary": "Hello World",
-				            "method": "eventVersionNotChanged"
-				        }
-				    }
-				""";
-		var event1 = mapper.readValue(json, Event.class);
-		json = """
-				    {
-				    	"id": "id_eventVersionNotChanged",
-				        "type": "PROBLEM",
-				        "status": "WARNING",
-				        "source": "source_eventVersionNotChanged",
-				        "sourceKey": "sourceKey_eventVersionNotChanged",
-				        "fields": {
-				            "server": "localhost",
-				            "method": "eventVersionNotChanged",
-				            "summary": "Hello World"
-				        }
-				    }
-				""";
-		var event2 = mapper.readValue(json, Event.class);
-		entityVersionNotChanged("/event", event1, event2, Event.class);
 	}
 
 	@Test
