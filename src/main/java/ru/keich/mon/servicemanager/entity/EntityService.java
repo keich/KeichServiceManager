@@ -3,7 +3,6 @@ package ru.keich.mon.servicemanager.entity;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -70,22 +69,6 @@ public abstract class EntityService<K, T extends Entity<K>> {
 			incrementVersion++;
 			return out;
 		}
-	}
-	
-	protected boolean isEntityEqual(T old, T entity) {
-		if (old.hashCode() == entity.hashCode()) {
-			if (old.equals(entity)) {
-				if(old.getDeletedOn() == entity.getDeletedOn()) {
-					return true;
-				}
-				if(Objects.nonNull(old.getDeletedOn())) {
-					if(old.getDeletedOn().equals(entity.getDeletedOn())) {
-						return true;
-					}
-				}
-			}
-		}
-		return false;
 	}
 
 	protected abstract void entityChanged(K entityId);	
