@@ -18,7 +18,6 @@ package ru.keich.mon.servicemanager.event;
 
 import java.time.Instant;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -43,20 +42,17 @@ public class EventService extends EntityService<String, Event>{
 	
 	@Override
 	public void addOrUpdate(Event event) {
-		final var newFromHistory = new HashSet<String>();
-		newFromHistory.addAll(event.getFromHistory());
-		newFromHistory.add(nodeName);
 		entityCache.compute(event.getId(), () -> {
 			entityChangedQueue.add(event.getId());
 			return new Event.Builder(event)
 					.version(getNextVersion())
-					.fromHistory(newFromHistory)
+					.fromHistoryAdd(nodeName)
 					.build();			
 		}, oldEvent -> {
 			entityChangedQueue.add(event.getId());
 			return new Event.Builder(event)
 					.version(getNextVersion())
-					.fromHistory(newFromHistory)
+					.fromHistoryAdd(nodeName)
 					.createdOn(oldEvent.getCreatedOn())
 					.updatedOn(Instant.now())
 					.build();
@@ -65,7 +61,7 @@ public class EventService extends EntityService<String, Event>{
 
 	@Override
 	public Optional<Event> deleteById(String eventId) {
-		var opt =  entityCache.computeIfPresent(eventId, oldEvent -> {
+		return entityCache.computeIfPresent(eventId, oldEvent -> {
 			if(Objects.nonNull(oldEvent.getDeletedOn())) {
 				return null;
 			}
@@ -77,7 +73,6 @@ public class EventService extends EntityService<String, Event>{
 					.deletedOn(Instant.now())
 					.build();
 		});
-		return opt;
 	}
 
 	@Override

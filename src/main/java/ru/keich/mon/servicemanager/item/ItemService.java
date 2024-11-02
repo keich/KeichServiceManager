@@ -3,7 +3,6 @@ package ru.keich.mon.servicemanager.item;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -72,22 +71,23 @@ public class ItemService extends EntityService<String, Item> {
 	}
 
 	public void addOrUpdate(Item item) {
-		final var newFromHistory = new HashSet<String>();
-		newFromHistory.addAll(item.getFromHistory());
-		newFromHistory.add(nodeName);
+		var t  = new Item.Builder(item)
+				.version(getNextVersion())
+				.fromHistoryAdd(nodeName)
+				.status(BaseStatus.CLEAR);
+		t.build();
 		entityCache.compute(item.getId(), () -> {
-			var inseredItem = new Item.Builder(item)
+			entityChangedQueue.add(item.getId());
+			return new Item.Builder(item)
 					.version(getNextVersion())
-					.fromHistory(newFromHistory)
+					.fromHistoryAdd(nodeName)
 					.status(BaseStatus.CLEAR)
 					.build();
-			entityChangedQueue.add(item.getId());
-			return inseredItem;
 		}, oldItem -> {
 			entityChangedQueue.add(item.getId());
 			return new Item.Builder(item)
 					.version(getNextVersion())
-					.fromHistory(newFromHistory)
+					.fromHistoryAdd(nodeName)
 					.createdOn(oldItem.getCreatedOn())
 					.updatedOn(Instant.now())
 					.status(oldItem.getStatus())
@@ -95,7 +95,6 @@ public class ItemService extends EntityService<String, Item> {
 					.build();
 		});
 
-		
 	}
 	
 	@Override
@@ -128,23 +127,20 @@ public class ItemService extends EntityService<String, Item> {
 	}
 	
 	public void needUpdateParentsChanged(String itemId) {
-		entityCache.computeIfPresent(itemId, item -> {
+		entityCache.get(itemId).ifPresent(item -> {
 			findParents(item).stream()
-					.filter(parent -> Objects.isNull(parent.getDeletedOn()))
-					.forEach(parent -> {
-						entityChangedQueue.add(parent.getId());
-					});
-			return item;
+			.filter(parent -> Objects.isNull(parent.getDeletedOn()))
+			.forEach(parent -> {
+				entityChangedQueue.add(parent.getId());
+			});
 		});
 	}
 	
 	
 	public void itemUpdateEventsStatus(String itemId, Consumer<Map<String, BaseStatus>> s) {
 		entityCache.computeIfPresent(itemId, item -> {
-			var newEventStatus = new HashMap<String, BaseStatus>(item.getEventsStatus());
-			s.accept(newEventStatus);
 			itemNeedUpdateParentsQueue.add(itemId);
-			return calculateStatus(new Item.Builder(item).eventsStatus(newEventStatus)).build();
+			return calculateStatus(new Item.Builder(item).eventsStatusUpdate(s)).build();
 		});
 	}
 	

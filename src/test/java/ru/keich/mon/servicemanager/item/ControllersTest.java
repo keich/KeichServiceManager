@@ -294,8 +294,8 @@ public class ControllersTest {
 	public void itemSourceFilter() throws IOException {
 		final var source = "src_itemSourceFilter";
 		final var sourceKey = "src_key_itemSourceFilter";
-		final var item = new Item.Builder("id_itemSourceFilter").source(source).sourceKey(sourceKey).name("name");
-		final var item1 = new Item.Builder("id_itemSourceFilter1").source(source + "1").sourceKey(sourceKey + "1").name("name");
+		final var item = new Item.Builder("id_itemSourceFilter").source(source).sourceKey(sourceKey).name("name").build();
+		final var item1 = new Item.Builder("id_itemSourceFilter1").source(source + "1").sourceKey(sourceKey + "1").name("name").build();
 		entityAdd("/item", item);
 		entityAdd("/item", item1);
 		
@@ -590,12 +590,12 @@ public class ControllersTest {
 		var events = new ArrayList<Event>();
 		for (int i = 0; i < 10; i++) {
 			var event = new Event.Builder("id_eventVersionFilter_" + i)
-					.source("src_eventVersionFilter")
-					.sourceKey("src_key_eventVersionFilter")
 					.node("node")
 					.summary("summary")
-					.type(EventType.PROBLEM)
 					.status(BaseStatus.WARNING)
+					.type(EventType.PROBLEM)
+					.source("src_eventVersionFilter")
+					.sourceKey("src_key_eventVersionFilter")
 					.build();
 			events.add(event);
 		}
@@ -608,20 +608,20 @@ public class ControllersTest {
 		final var source = "src_eventSourceFilter";
 		final var sourceKey = "src_eventSourceFilter";
 		var event = new Event.Builder(id)
+				.node("node")
+				.summary("summary")
+				.type(EventType.PROBLEM)
+				.status(BaseStatus.WARNING)
 				.source(source)
 				.sourceKey(sourceKey)
-				.node("node")
-				.summary("summary")
-				.type(EventType.PROBLEM)
-				.status(BaseStatus.WARNING)
 				.build();
 		var event1 = new Event.Builder(id + "1")
-				.source(source + "1")
-				.sourceKey(sourceKey + "1")
 				.node("node")
 				.summary("summary")
 				.type(EventType.PROBLEM)
 				.status(BaseStatus.WARNING)
+				.source(source + "1")
+				.sourceKey(sourceKey + "1")
 				.build();
 		entityAdd("/event", event);
 		entityAdd("/event", event1);
@@ -645,20 +645,20 @@ public class ControllersTest {
 		final var source = "src_eventSourceKeyFilter";
 		final var sourceKey = "src_eventSourceKeyFilter";
 		var event = new Event.Builder(id)
+				.node("node")
+				.summary("summary")
+				.type(EventType.PROBLEM)
+				.status(BaseStatus.WARNING)
 				.source(source)
 				.sourceKey(sourceKey)
-				.node("node")
-				.summary("summary")
-				.type(EventType.PROBLEM)
-				.status(BaseStatus.WARNING)
 				.build();
 		var event1 = new Event.Builder(id + "1")
-				.source(source + "1")
-				.sourceKey(sourceKey + "1")
 				.node("node")
 				.summary("summary")
 				.type(EventType.PROBLEM)
 				.status(BaseStatus.WARNING)
+				.source(source + "1")
+				.sourceKey(sourceKey + "1")
 				.build();
 		entityAdd("/event", event);
 		entityAdd("/event", event1);
@@ -682,20 +682,20 @@ public class ControllersTest {
 		final var source = "src_eventDeleteBySoyrceAndSourceKeyNot";
 		final var sourceKey = "src_key_eventDeleteBySoyrceAndSourceKeyNot";
 		var event1 = new Event.Builder(id + "1")
+				.node("node")
+				.summary("summary")
+				.type(EventType.PROBLEM)
+				.status(BaseStatus.WARNING)
 				.source(source)
 				.sourceKey(sourceKey)
-				.node("node")
-				.summary("summary")
-				.type(EventType.PROBLEM)
-				.status(BaseStatus.WARNING)
 				.build();
 		var event2 = new Event.Builder(id + "2")
-				.source(source)
-				.sourceKey(sourceKey + "New")
 				.node("node")
 				.summary("summary")
 				.type(EventType.PROBLEM)
 				.status(BaseStatus.WARNING)
+				.source(source)
+				.sourceKey(sourceKey + "New")
 				.build();
 		entityDeleteBySoyrceAndSourceKeyNot("/event", event1, event2, Event.class);
 	}

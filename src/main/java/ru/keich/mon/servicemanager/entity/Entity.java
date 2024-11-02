@@ -2,6 +2,7 @@ package ru.keich.mon.servicemanager.entity;
 
 import java.time.Instant;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -86,4 +87,77 @@ public class Entity<K> extends BaseEntity<K> {
 		return item.getFromHistory().stream().collect(Collectors.toSet());
 	}
 
+	public static abstract class Builder<K, B extends Entity<K>> {
+		
+		protected final K id;
+		protected Long version;
+		protected String source;
+		protected String sourceKey;
+		protected Instant createdOn;
+		protected Instant updatedOn;
+		protected Instant deletedOn;
+		protected Set<String> fromHistory;
+		protected Map<String, String> fields;
+		
+		public Builder(K id) {
+			this.id = id;
+		}
+		
+		public Builder(B entity) {
+			this.id = entity.getId();
+			this.version = entity.getVersion();
+			this.source = entity.getSource();
+			this.sourceKey = entity.getSourceKey();
+			this.fields = entity.getFields();
+			this.createdOn = entity.getCreatedOn();
+			this.updatedOn = entity.getUpdatedOn();
+			this.deletedOn = entity.getDeletedOn();
+			this.fromHistory = new HashSet<String>(entity.getFromHistory());
+			this.fields = entity.getFields();
+		}
+		
+		public abstract B build();
+		
+		public Builder<K, B> source(String source) {
+			this.source = source;
+			return this;
+		}
+		
+		public  Builder<K, B> sourceKey(String sourceKey) {
+			this.sourceKey = sourceKey;
+			return this;
+		}
+		
+		public Builder<K, B> version(Long version) {
+			this.version = version;
+			return this;
+		}
+
+		public Builder<K, B> createdOn(Instant createdOn) {
+			this.createdOn = createdOn;
+			return this;
+		}
+		
+		public Builder<K, B> updatedOn(Instant updatedOn) {
+			this.updatedOn = updatedOn;
+			return this;
+		}
+
+		public Builder<K, B> deletedOn(Instant deletedOn) {
+			this.deletedOn = deletedOn;
+			return this;
+		}
+
+		public Builder<K, B> fromHistory(Set<String> fromHistory) {
+			this.fromHistory.clear();
+			this.fromHistory.addAll(fromHistory);
+			return this;
+		}
+		
+		public Builder<K, B> fromHistoryAdd(String value) {
+			this.fromHistory.add(value);
+			return this;
+		}
+	}
+	
 }

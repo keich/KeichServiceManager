@@ -66,36 +66,20 @@ public class Event extends Entity<String> {
 				", createdOn=" + getCreatedOn() + ", createdOn=" + getUpdatedOn() + ", deletedOn=" + getDeletedOn() +
 				", fields=" + getFields() + "]";
 	}
-
-	public static class Builder {
-		protected final String id;
-		protected Long version;
-		protected String source;
-		protected String sourceKey;
-		protected Instant createdOn;
-		protected Instant updatedOn;
-		protected Instant deletedOn;
-		protected Set<String> fromHistory;
-		protected Map<String, String> fields;
+	
+	@Getter
+	public static class Builder extends Entity.Builder<String, Event> {
 		protected String node;
-		String summary;
-		EventType type;
-		BaseStatus status;
+		protected String summary;
+		protected EventType type;
+		protected BaseStatus status;
 
 		public Builder(String id) {
-			this.id = id;
+			super(id);
 		}
 		
 		public Builder(Event event) {
-			this.id = event.getId();
-			this.version = event.getVersion();
-			this.source = event.getSource();
-			this.sourceKey = event.getSourceKey();
-			this.fields = event.getFields();
-			this.fromHistory = event.getFromHistory();
-			this.createdOn = event.getCreatedOn();
-			this.updatedOn = event.getUpdatedOn();
-			this.deletedOn = event.getDeletedOn();
+			super(event);
 			this.summary = event.getSummary();
 			this.type = event.getType();
 			this.status = event.getStatus();
@@ -117,6 +101,7 @@ public class Event extends Entity<String> {
 			}
 		}
 		
+		@Override
 		public Event build() {
 			return new Event(this.id,
 			this.version,
@@ -143,21 +128,6 @@ public class Event extends Entity<String> {
 			return this;
 		}
 		
-		public Builder source(String source) {
-			this.source = source;
-			return this;
-		}
-		
-		public Builder sourceKey(String sourceKey) {
-			this.sourceKey = sourceKey;
-			return this;
-		}
-		
-		public Builder version(Long version) {
-			this.version = version;
-			return this;
-		}
-		
 		public Builder summary(String summary) {
 			this.summary = summary;
 			return this;
@@ -165,26 +135,6 @@ public class Event extends Entity<String> {
 		
 		public Builder node(String node) {
 			this.node = node;
-			return this;
-		}
-
-		public Builder createdOn(Instant createdOn) {
-			this.createdOn = createdOn;
-			return this;
-		}
-		
-		public Builder updatedOn(Instant updatedOn) {
-			this.updatedOn = updatedOn;
-			return this;
-		}
-
-		public Builder deletedOn(Instant deletedOn) {
-			this.deletedOn = deletedOn;
-			return this;
-		}
-
-		public Builder fromHistory(Set<String> fromHistory) {
-			this.fromHistory = fromHistory;
 			return this;
 		}
 		

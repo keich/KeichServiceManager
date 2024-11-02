@@ -2,9 +2,11 @@ package ru.keich.mon.servicemanager.item;
 
 import java.time.Instant;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -120,17 +122,8 @@ public class Item extends Entity<String> {
 	}
 
 	@Getter
-	public static class Builder {
-		protected final String id;
-		protected Long version;
-		protected String source;
-		protected String sourceKey;
+	public static class Builder extends Entity.Builder<String, Item>  {
 		protected BaseStatus status;
-		protected Instant createdOn;
-		protected Instant updatedOn;
-		protected Instant deletedOn;
-		protected Set<String> fromHistory;
-		protected Map<String, String> fields;
 		protected Map<String, ItemRule> rules;
 		protected Map<String, ItemFilter> filters;
 		protected Map<String, BaseStatus> eventsStatus;
@@ -140,27 +133,20 @@ public class Item extends Entity<String> {
 		protected boolean changed = false;
 
 		public Builder(String id) {
-			this.id = id;
+			super(id);
 		}
 		
 		public Builder(Item item) {
-			this.id = item.getId();
-			this.version = item.getVersion();
-			this.source = item.getSource();
-			this.sourceKey = item.getSourceKey();
+			super(item);
 			this.status = item.getStatus();
 			this.name = item.getName();
-			this.fields = item.getFields();
 			this.rules = item.getRules();
 			this.filters = item.getFilters();
 			this.childrenIds = item.getChildrenIds();
-			this.fromHistory = item.getFromHistory();
-			this.createdOn = item.getCreatedOn();
-			this.updatedOn = item.getUpdatedOn();
-			this.deletedOn = item.getDeletedOn();
-			this.eventsStatus = item.getEventsStatus();
+			this.eventsStatus = new HashMap<>(item.getEventsStatus());
 		}
 		
+		@Override
 		public Item build() {
 			return new Item(this.id,
 			this.version,
@@ -222,7 +208,14 @@ public class Item extends Entity<String> {
 		}
 
 		public Builder fromHistory(Set<String> fromHistory) {
-			this.fromHistory = fromHistory;
+			this.fromHistory.clear();
+			this.fromHistory.addAll(fromHistory);
+			this.changed = true;
+			return this;
+		}
+		
+		public Builder fromHistoryAdd(String value) {
+			this.fromHistory.add(value);
 			this.changed = true;
 			return this;
 		}
@@ -236,7 +229,14 @@ public class Item extends Entity<String> {
 		}
 		
 		public Builder eventsStatus(Map<String, BaseStatus> eventsStatus) {
-			this.eventsStatus = Collections.unmodifiableMap(eventsStatus);
+			this.eventsStatus.clear();
+			this.eventsStatus.putAll(eventsStatus);
+			this.changed = true;
+			return this;
+		}
+		
+		public Builder eventsStatusUpdate(Consumer<Map<String, BaseStatus>> s) {
+			s.accept(eventsStatus);
 			this.changed = true;
 			return this;
 		}
