@@ -71,11 +71,6 @@ public class ItemService extends EntityService<String, Item> {
 	}
 
 	public void addOrUpdate(Item item) {
-		var t  = new Item.Builder(item)
-				.version(getNextVersion())
-				.fromHistoryAdd(nodeName)
-				.status(BaseStatus.CLEAR);
-		t.build();
 		entityCache.compute(item.getId(), () -> {
 			entityChangedQueue.add(item.getId());
 			return new Item.Builder(item)
