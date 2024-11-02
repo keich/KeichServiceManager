@@ -7,9 +7,11 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.QueueThreadReader;
 import ru.keich.mon.servicemanager.query.predicates.Predicates;
 import ru.keich.mon.servicemanager.query.predicates.QueryPredicate;
@@ -38,7 +40,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	private Long incrementVersion = VERSION_MIN + 1;
 	
 	final protected IndexedHashMap<K, T> entityCache;
-	final protected QueueThreadReader<K> entityChangedQueue;
+	final protected QueueThreadReader<QueueInfo<K>> entityChangedQueue;
 	
 	final public String nodeName;
 	
@@ -49,10 +51,10 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	static final public String INDEX_NAME_FIELDS = "fields";
 	static final public String INDEX_NAME_FROMHISTORY = "fromHistory";
 
-	public EntityService(String nodeName, MeterRegistry registry) {
+	public EntityService(String nodeName, MeterRegistry registry, Integer threadCount) {
 		this.nodeName = nodeName;
 		entityCache = new IndexedHashMap<>(registry, this.getClass().getSimpleName());
-		entityChangedQueue = new QueueThreadReader<K>(this.getClass().getSimpleName() + "-entityChangedQueue" , 4, this::entityChanged);
+		entityChangedQueue = new QueueThreadReader<QueueInfo<K>>(this.getClass().getSimpleName(), threadCount, this::queueRead);
 		
 		entityCache.createIndex(INDEX_NAME_VERSION, IndexType.UNIQ_SORTED, Entity::getVersionForIndex);
 		entityCache.createIndex(INDEX_NAME_SOURCE, IndexType.EQUAL, Entity::getSourceForIndex);
@@ -71,7 +73,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 		}
 	}
 
-	protected abstract void entityChanged(K entityId);	
+	protected abstract void queueRead(QueueInfo<K> info);	
 	
 	public abstract void addOrUpdate(T entity);
 	
@@ -119,9 +121,11 @@ public abstract class EntityService<K, T extends Entity<K>> {
 				.collect(Collectors.toList());
 	}
 	
+	@Value("${entity.delete.secondsold:30}") Long seconds;
+	
 	@Scheduled(fixedRateString = "${entity.delete.fixedrate:60}", timeUnit = TimeUnit.SECONDS)
 	public void deleteOldScheduled() {
-		var predicate = Predicates.lessThan(INDEX_NAME_DELETED_ON, Instant.now().minusSeconds(30));
+		var predicate = Predicates.lessThan(INDEX_NAME_DELETED_ON, Instant.now().minusSeconds(seconds));
 		entityCache.keySet(predicate, -1).stream()
 				.forEach(id -> entityCache.remove(id));
 	}

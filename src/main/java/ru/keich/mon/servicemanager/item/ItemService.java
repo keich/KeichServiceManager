@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.java.Log;
 import ru.keich.mon.servicemanager.BaseStatus;
-import ru.keich.mon.servicemanager.QueueThreadReader;
+import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.entity.EntityService;
 import ru.keich.mon.servicemanager.event.Event;
 import ru.keich.mon.servicemanager.event.EventService;
@@ -46,7 +46,6 @@ import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
 public class ItemService extends EntityService<String, Item> {
 	
 	private final EventService eventService;
-	final protected QueueThreadReader<String> itemNeedUpdateParentsQueue;
 
 	static final String INDEX_NAME_FILTERS_EQL = "filter_equal";
 	static final String INDEX_NAME_PARENTS = "parents";
@@ -54,8 +53,11 @@ public class ItemService extends EntityService<String, Item> {
 	static final public String INDEX_NAME_NAME_UPPERCASE = "name";
 	static final public String INDEX_NAME_EVENTIDS = "eventIds";
 	
-	public ItemService(@Value("${replication.nodename}") String nodeName, EventService eventService, MeterRegistry registry) {
-		super(nodeName, registry);
+	public ItemService(@Value("${replication.nodename}") String nodeName
+			,EventService eventService
+			,MeterRegistry registry
+			,@Value("${item.thread.count:2}") Integer threadCount) {
+		super(nodeName, registry, threadCount);
 
 		entityCache.createIndex(INDEX_NAME_FILTERS_EQL, IndexType.EQUAL, Item::getFiltersForIndex);
 		entityCache.createIndex(INDEX_NAME_PARENTS, IndexType.EQUAL, Item::getParentsForIndex);
@@ -66,20 +68,18 @@ public class ItemService extends EntityService<String, Item> {
 		
 		this.eventService = eventService;
 		eventService.setItemService(this);
-
-		itemNeedUpdateParentsQueue = new QueueThreadReader<String>(this.getClass().getSimpleName() + "-itemNeedUpdateParentsQueue", 4, this::needUpdateParentsChanged);
 	}
 
 	public void addOrUpdate(Item item) {
 		entityCache.compute(item.getId(), () -> {
-			entityChangedQueue.add(item.getId());
+			entityChangedQueue.add(new QueueInfo<String>(item.getId(), QueueInfo.QueueInfoType.UPDATE));
 			return new Item.Builder(item)
 					.version(getNextVersion())
 					.fromHistoryAdd(nodeName)
 					.status(BaseStatus.CLEAR)
 					.build();
 		}, oldItem -> {
-			entityChangedQueue.add(item.getId());
+			entityChangedQueue.add(new QueueInfo<String>(item.getId(), QueueInfo.QueueInfoType.UPDATE));
 			return new Item.Builder(item)
 					.version(getNextVersion())
 					.fromHistoryAdd(nodeName)
@@ -95,11 +95,10 @@ public class ItemService extends EntityService<String, Item> {
 	@Override
 	public Optional<Item> deleteById(String itemId) {
 		return entityCache.computeIfPresent(itemId, oldItem -> {
+			entityChangedQueue.add(new QueueInfo<String>(itemId, QueueInfo.QueueInfoType.REMOVED));
 			if(Objects.nonNull(oldItem.getDeletedOn())) {
-				entityChangedQueue.add(itemId);
 				return null;
 			}
-			entityChangedQueue.add(itemId);
 			return new Item.Builder(oldItem)
 					.version(getNextVersion())
 					.fromHistory(Collections.singleton(nodeName))
@@ -110,42 +109,49 @@ public class ItemService extends EntityService<String, Item> {
 	}
 	
 	@Override
-	protected void entityChanged(String itemId) {
-		entityCache.computeIfPresent(itemId, oldItem -> {
-			var item = calculateStatus(new Item.Builder(oldItem));
-			if (item.isChanged()) {
-				itemNeedUpdateParentsQueue.add(itemId);
-				return item.build();
-			}
-			return oldItem;
-		});
-	}
-	
-	public void needUpdateParentsChanged(String itemId) {
-		entityCache.get(itemId).ifPresent(item -> {
-			findParents(item).stream()
-			.filter(parent -> Objects.isNull(parent.getDeletedOn()))
-			.forEach(parent -> {
-				entityChangedQueue.add(parent.getId());
+	protected void queueRead(QueueInfo<String> info) {
+		switch(info.getType()) {
+		case UPDATE:
+			entityCache.computeIfPresent(info.getId(), oldItem -> {
+				var item = calculateStatus(new Item.Builder(oldItem));
+				if (item.isChanged()) {
+					entityChangedQueue.add(new QueueInfo<String>(info.getId(), QueueInfo.QueueInfoType.UPDATED));
+					return item.build();
+				}
+				return oldItem;
 			});
-		});
+			break;
+		case UPDATED:
+		case REMOVED:
+			entityCache.get(info.getId()).ifPresent(item -> {
+				findParentsById(info.getId()).stream()
+				.filter(parent -> Objects.isNull(parent.getDeletedOn()))
+				.map(Item::getId)
+				.forEach(parentId -> {
+					entityChangedQueue.add(new QueueInfo<String>(parentId, QueueInfo.QueueInfoType.UPDATE));
+				});
+			});
+			break;
+		default:
+			break;
+		}
 	}
-	
 	
 	public void itemUpdateEventsStatus(String itemId, Consumer<Map<String, BaseStatus>> s) {
 		entityCache.computeIfPresent(itemId, item -> {
-			itemNeedUpdateParentsQueue.add(itemId);
+			entityChangedQueue.add(new QueueInfo<String>(itemId, QueueInfo.QueueInfoType.UPDATED));
 			return calculateStatus(new Item.Builder(item).eventsStatusUpdate(s)).build();
 		});
 	}
 	
+	public void eventRemoved(String eventId) {
+		var predicate = Predicates.equal(INDEX_NAME_EVENTIDS, eventId);
+		entityCache.keySet(predicate, -1).stream()
+				.forEach(itemId -> itemUpdateEventsStatus(itemId, m -> m.remove(eventId)));
+		return;
+	}
+	
 	public void eventChanged(Event event) {
-		if(Objects.nonNull(event.getDeletedOn())) {
-			var predicate = Predicates.equal(INDEX_NAME_EVENTIDS, event.getId());
-			entityCache.keySet(predicate, -1).stream()
-					.forEach(itemId -> itemUpdateEventsStatus(itemId, m -> m.remove(event.getId())));
-			return;
-		}
 		findFiltersByEqualFields(event.getFields())
 				.forEach(itft -> {
 					var item = itft.getKey();
@@ -251,10 +257,6 @@ public class ItemService extends EntityService<String, Item> {
 		return findById(id)
 				.map(this::findChildren)
 				.orElse(Collections.emptyList());
-	}
-	
-	public List<Item> findParents(Item item) {
-		return findParentsById(item.getId());
 	}
 	
 	public List<Item> findParentsById(String itemId) {

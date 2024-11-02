@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.entity.EntityService;
 import ru.keich.mon.servicemanager.item.ItemService;
 
@@ -36,20 +37,22 @@ public class EventService extends EntityService<String, Event>{
 		this.itemService = itemService;
 	}
 
-	public EventService(@Value("${replication.nodename}") String nodeName, MeterRegistry registry) {
-		super(nodeName, registry);
+	public EventService(@Value("${replication.nodename}") String nodeName
+			,MeterRegistry registry
+			,@Value("${event.thread.count:2}") Integer threadCount) {
+		super(nodeName, registry, threadCount);
 	}
 	
 	@Override
 	public void addOrUpdate(Event event) {
 		entityCache.compute(event.getId(), () -> {
-			entityChangedQueue.add(event.getId());
+			entityChangedQueue.add(new QueueInfo<String>(event.getId(), QueueInfo.QueueInfoType.UPDATE));
 			return new Event.Builder(event)
 					.version(getNextVersion())
 					.fromHistoryAdd(nodeName)
 					.build();			
 		}, oldEvent -> {
-			entityChangedQueue.add(event.getId());
+			entityChangedQueue.add(new QueueInfo<String>(event.getId(), QueueInfo.QueueInfoType.UPDATE));
 			return new Event.Builder(event)
 					.version(getNextVersion())
 					.fromHistoryAdd(nodeName)
@@ -65,7 +68,7 @@ public class EventService extends EntityService<String, Event>{
 			if(Objects.nonNull(oldEvent.getDeletedOn())) {
 				return null;
 			}
-			entityChangedQueue.add(eventId);
+			entityChangedQueue.add(new QueueInfo<String>(eventId, QueueInfo.QueueInfoType.REMOVED));
 			return new Event.Builder(oldEvent)
 					.version(getNextVersion())
 					.fromHistory(Collections.singleton(nodeName))
@@ -76,11 +79,20 @@ public class EventService extends EntityService<String, Event>{
 	}
 
 	@Override
-	protected void entityChanged(String eventId) {
-		entityCache.computeIfPresent(eventId, event -> {
-			itemService.eventChanged(event);
-			return null;
-		});
+	protected void queueRead(QueueInfo<String> info) {
+		switch(info.getType()) {
+		case UPDATE:
+			entityCache.computeIfPresent(info.getId(), event -> {
+				itemService.eventChanged(event);
+				return null;
+			});
+			break;
+		case REMOVED:
+			itemService.eventRemoved(info.getId());
+			break;
+		default:
+			break;
+		}
 	}
 	
 }
