@@ -3,6 +3,7 @@ package ru.keich.mon.servicemanager.item;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -50,7 +51,12 @@ public class Item extends Entity<String> {
 	private final String name;
 	
 	@JsonIgnore
-	private final Map<String, BaseStatus> eventsStatus;
+	private Map<String, BaseStatus> eventsStatus = Collections.emptyMap();
+	
+	@JsonProperty(value = "children", access = JsonProperty.Access.READ_ONLY)
+	private List<Item> children;
+	@JsonProperty(value = "parents", access = JsonProperty.Access.READ_ONLY)
+	private List<Item> parents;
 	
 	@JsonCreator
 	public Item(
@@ -67,8 +73,7 @@ public class Item extends Entity<String> {
 			@JsonProperty("fromHistory") Set<String> fromHistory,
 			@JsonProperty(value = "createdOn", required = false) Instant createdOn,
 			@JsonProperty(value = "updatedOn", required = false) Instant updatedOn,
-			@JsonProperty(value = "deletedOn", required = false) Instant deletedOn,
-			@JsonProperty(value = "eventsStatus") Map<String, BaseStatus> eventsStatus) {
+			@JsonProperty(value = "deletedOn", required = false) Instant deletedOn) {
 		super(id, version, source, sourceKey, fields, fromHistory, createdOn, updatedOn, deletedOn);
 
 		this.name = name;
@@ -77,15 +82,42 @@ public class Item extends Entity<String> {
 		this.rules = Optional.ofNullable(rules).map(Collections::unmodifiableMap).orElse(Collections.emptyMap());
 		this.filters = Optional.ofNullable(filters).map(Collections::unmodifiableMap).orElse(Collections.emptyMap());
 		this.childrenIds = Optional.ofNullable(childrenIds).map(Collections::unmodifiableSet).orElse(Collections.emptySet());
-		
-		this.eventsStatus = Optional.ofNullable(eventsStatus).map(Collections::unmodifiableMap).orElse(Collections.emptyMap());
-		
+
 		if(this.childrenIds.size() > 0) {
 			this.hasChildren = true;
 		}else {
 			this.hasChildren = false;
-		}
-	}	
+		}		
+	}
+	
+	public Item(
+			String id,
+			Long version,
+			String source,
+			String sourceKey,
+			BaseStatus status,
+			String name,
+			Map<String, String> fields,
+			Map<String, ItemRule> rules,
+			Map<String, ItemFilter> filters,
+			Set<String> childrenIds,
+			Set<String> fromHistory,
+			Instant createdOn,
+			Instant updatedOn,
+			Instant deletedOn,
+			Map<String, BaseStatus> eventsStatus,
+			List<Item> children,
+			List<Item> parents) {
+		this(id, version, source, sourceKey, status, name, fields, rules, filters, childrenIds, fromHistory, createdOn,
+				updatedOn, deletedOn);
+
+		this.eventsStatus = eventsStatus;
+		
+		this.children = children;
+		
+		this.children = children;
+
+	}
 
 	public static Set<Object> getFiltersForIndex(Item item) {
 		return item.filters.entrySet().stream()
@@ -129,6 +161,8 @@ public class Item extends Entity<String> {
 		protected Map<String, BaseStatus> eventsStatus;
 		protected Set<String> childrenIds;
 		protected String name;
+		protected List<Item> children;
+		protected List<Item> parents;
 		
 		protected boolean changed = false;
 
@@ -144,6 +178,8 @@ public class Item extends Entity<String> {
 			this.filters = item.getFilters();
 			this.childrenIds = item.getChildrenIds();
 			this.eventsStatus = new HashMap<>(item.getEventsStatus());
+			this.children = item.getChildren();
+			this.parents = item.getParents();
 		}
 		
 		@Override
@@ -162,7 +198,9 @@ public class Item extends Entity<String> {
 			this.createdOn,
 			this.updatedOn,
 			this.deletedOn,
-			this.eventsStatus);
+			this.eventsStatus,
+			children,
+			parents);
 		}
 
 		public Builder source(String source) {
@@ -241,6 +279,16 @@ public class Item extends Entity<String> {
 			return this;
 		}
 		
+		public Builder setChildren(List<Item> children) {
+			this.children = children;
+			return this;
+		}
+		
+		public Builder setParents(List<Item> parents) {
+			this.parents = parents;
+			return this;
+		}
+			
 	}
 	
 }

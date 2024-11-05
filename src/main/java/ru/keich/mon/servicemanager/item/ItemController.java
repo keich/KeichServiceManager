@@ -3,6 +3,7 @@ package ru.keich.mon.servicemanager.item;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -105,25 +106,30 @@ public class ItemController extends EntityController<String, Item> {
 			reqParam.add(QUERY_PROPERTY, QUERY_CHILDREN);
 		}
 		return itemService.findById(id)
-				.map(ItemDTO::new)
-				.map(parentDTO -> setChildren(parentDTO, new HashSet<String>()))
-				.map(parentDTO -> applyFilter(new MappingJacksonValue(parentDTO), reqParam))
+				.map(parent -> setChildren(parent, new HashSet<String>()))
+				.map(parent -> applyFilter(new MappingJacksonValue(parent), reqParam))
 				.orElse(ResponseEntity.notFound().build());
 	}
 	
-	private ItemDTO setChildren(ItemDTO parent, HashSet<String> history) {
-		var children = itemService.findChildrenById(parent.getId()).stream().map(ItemDTO::new).toList();
-		history.add(parent.getId());
-		children.forEach(child -> {
-			if (history.contains(child.getId())) {
-				log.warning("setChildren: circle found from " + parent.getId() + " to " + child.getId());
-			} else {
-				setChildren(child, history);
-			}
-		});
-		parent.setChildren(children);
-		history.remove(parent.getId());
-		return parent;
+	private Item setChildren(Item parent, HashSet<String> history) {
+		var parentId = parent.getId();
+		history.add(parentId);
+		var outItem = new Item.Builder(parent);
+		var l = parent.getChildrenIds().stream()
+				.filter(childId -> {
+					if (history.contains(childId)) {
+						log.warning("setChildren: circle found from " + parentId + " to " + childId);
+						return false;
+					}
+					return true;
+				})
+				.map(itemService::findById)
+				.filter(Optional::isPresent)
+				.map(opt -> setChildren(opt.get(), history))
+				.toList();
+		outItem.setChildren(l);
+		history.remove(parentId);
+		return outItem.build();
 	}
 	
 	@GetMapping("/item/{id}/parents/tree")
@@ -133,25 +139,30 @@ public class ItemController extends EntityController<String, Item> {
 			reqParam.add(QUERY_PROPERTY, QUERY_PARENTS);
 		}
 		return itemService.findById(id)
-				.map(ItemDTO::new)
-				.map(parentDTO -> setParents(parentDTO, new HashSet<String>()))
-				.map(parentDTO -> applyFilter(new MappingJacksonValue(parentDTO), reqParam))
+				.map(child -> setParents(child, new HashSet<String>()))
+				.map(child -> applyFilter(new MappingJacksonValue(child), reqParam))
 				.orElse(ResponseEntity.notFound().build());
 	}
 	
-	private ItemDTO setParents(ItemDTO child, HashSet<String> history) {
-		var parents = itemService.findParentsById(child.getId()).stream().map(ItemDTO::new).toList();
-		history.add(child.getId());
-		parents.forEach(parent -> {
-			if (history.contains(parent.getId())) {
-				log.warning("setParents: circle found from " + parent.getId() + " to " + child.getId());
-			} else {
-				setParents(parent, history);
-			}
-		});
-		child.setParents(parents);
-		history.remove(child.getId());
-		return child;
+	private Item setParents(Item child, HashSet<String> history) {
+		var childId = child.getId();
+		history.add(childId);
+		var outItem = new Item.Builder(child);
+		var l = itemService.findParentsById(childId).stream()
+				.filter(parentId -> {
+					if (history.contains(parentId)) {
+						log.warning("setParents: circle found from " + parentId + " to " + childId);
+						return false;
+					}
+					return true;
+				})
+				.map(itemService::findById)
+				.filter(Optional::isPresent)
+				.map(opt -> setParents(opt.get(), history))
+				.toList();
+		outItem.setParents(l);
+		history.remove(childId);
+		return outItem.build();
 	}
 	
 }

@@ -125,6 +125,9 @@ public class ItemService extends EntityService<String, Item> {
 		case REMOVED:
 			entityCache.get(info.getId()).ifPresent(item -> {
 				findParentsById(info.getId()).stream()
+				.map(this::findById)
+				.filter(Optional::isPresent)
+				.map(Optional::get)
 				.filter(parent -> Objects.isNull(parent.getDeletedOn()))
 				.map(Item::getId)
 				.forEach(parentId -> {
@@ -243,29 +246,21 @@ public class ItemService extends EntityService<String, Item> {
 				.map(Optional::get)
 				.collect(Collectors.toList());
 	}
-
-	public List<Item> findChildren(Item item) {
-		return item.getChildrenIds().stream()
+	
+	public List<Item> findChildrenById(String id) {
+		return findById(id).stream()
+				.map(Item::getChildrenIds)
+				.flatMap(Set::stream)
 				.distinct()
 				.map(this::findById)
 				.filter(Optional::isPresent)
 				.map(Optional::get)
-				.collect(Collectors.toList());
+				.toList();
 	}
 	
-	public List<Item> findChildrenById(String id) {
-		return findById(id)
-				.map(this::findChildren)
-				.orElse(Collections.emptyList());
-	}
-	
-	public List<Item> findParentsById(String itemId) {
+	public Set<String> findParentsById(String itemId) {
 		var predicate = Predicates.equal(INDEX_NAME_PARENTS, itemId);
-		return entityCache.keySet(predicate, -1).stream()
-				.map(this::findById)
-				.filter(Optional::isPresent)
-				.map(Optional::get)
-				.collect(Collectors.toList());
+		return entityCache.keySet(predicate, -1);
 	}
 	
 	private List<Event> findEventsByItem(Item item) {
