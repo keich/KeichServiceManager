@@ -53,7 +53,6 @@ public class Item extends Entity<String> {
 	@JsonIgnore
 	private Map<String, BaseStatus> eventsStatus = Collections.emptyMap();
 	
-	@JsonProperty(value = "children", access = JsonProperty.Access.READ_ONLY)
 	private List<Item> children;
 	@JsonProperty(value = "parents", access = JsonProperty.Access.READ_ONLY)
 	private List<Item> parents;

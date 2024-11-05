@@ -111,8 +111,8 @@ public class ControllersTest {
 		return result.getBody();
 	}
 	
-	private ItemDTO itemGetTree(String id) {
-		var result = restTemplate.getForEntity("/api/v1/item/" + id + "/tree", ItemDTO.class);
+	private Item itemGetTree(String id) {
+		var result = restTemplate.getForEntity("/api/v1/item/" + id + "/tree", Item.class);
 		assertEquals(HttpStatus.OK, result.getStatusCode());
 		return result.getBody();
 	}
@@ -495,8 +495,8 @@ public class ControllersTest {
 		var json = """
 				 {
 			        "id": "itemEventClearItem",
-			        "source": "src_itemFiltersEventMapping",
-			        "sourceKey": "src_key_itemFiltersEventMapping",
+			        "source": "src_itemEventClear",
+			        "sourceKey": "src_key_itemEventClear",
 			        "fields": {
 			            "name": "Hello",
 			            "description": "World"
@@ -506,7 +506,7 @@ public class ControllersTest {
 			            "by_identity": {
 			                "resultStatus": "INDETERMINATE",
 			                "usingResultStatus": false,
-			                "equalFields": { "identity": "68FB40A414A49978832133B9D476E5A1","manager":"SNMP" }
+			                "equalFields": { "identity": "itemEventClear12046hfy","manager":"SNMP" }
 			            }
 			        }
 			    }
@@ -520,12 +520,12 @@ public class ControllersTest {
 			    	"id": "itemEventClearEvent",
 			        "type": "PROBLEM",
 			        "status": "WARNING",
-			        "source": "source_itemFiltersEventMapping",
-			        "sourceKey": "sourceKey_itemFiltersEventMapping",
+			        "source": "src_itemEventClear",
+			        "sourceKey": "src_key_itemEventClear",
 			        "fields": {
 			            "server": "localhost",
 			            "summary": "Hello World",
-			            "identity": "68FB40A414A49978832133B9D476E5A1",
+			            "identity": "itemEventClear12046hfy",
 			            "manager": "SNMP"
 			        }
 			    }
@@ -543,12 +543,12 @@ public class ControllersTest {
 			    	"id": "itemEventClearEvent",
 			        "type": "PROBLEM",
 			        "status": "CLEAR",
-			        "source": "source_itemFiltersEventMapping",
-			        "sourceKey": "sourceKey_itemFiltersEventMapping",
+			        "source": "src_itemEventClear",
+			        "sourceKey": "srcKey_itemEventClear",
 			        "fields": {
 			            "server": "localhost",
 			            "summary": "Hello World",
-			            "identity": "68FB40A414A49978832133B9D476E5A1",
+			            "identity": "itemEventClear12046hfy",
 			            "manager": "SNMP"
 			        }
 			    }

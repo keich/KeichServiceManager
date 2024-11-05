@@ -87,6 +87,7 @@ public class Entity<K> extends BaseEntity<K> {
 		return item.getFromHistory().stream().collect(Collectors.toSet());
 	}
 
+	@Getter
 	public static abstract class Builder<K, B extends Entity<K>> {
 		
 		protected final K id;
