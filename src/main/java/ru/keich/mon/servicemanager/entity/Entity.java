@@ -159,6 +159,12 @@ public class Entity<K> extends BaseEntity<K> {
 			this.fromHistory.add(value);
 			return this;
 		}
+		
+		public Builder<K, B> fields(Map<String, String> fields) {
+			this.fields = fields;
+			return this;
+		}
+
 	}
 	
 }
