@@ -20,21 +20,29 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.entity.EntityService;
 import ru.keich.mon.servicemanager.item.ItemService;
+import ru.keich.mon.servicemanager.query.predicates.Predicates;
+import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
 
 @Service
 public class EventService extends EntityService<String, Event>{
+	
+	static final public String INDEX_NAME_ENDS_ON = "endson";
+	
 	private ItemService itemService;
 	
 	public void setItemService(ItemService itemService) {
 		this.itemService = itemService;
+		entityCache.createIndex(INDEX_NAME_ENDS_ON, IndexType.SORTED, Event::getEndsOnForIndex);
 	}
 
 	public EventService(@Value("${replication.nodename}") String nodeName
@@ -50,7 +58,7 @@ public class EventService extends EntityService<String, Event>{
 			return new Event.Builder(event)
 					.version(getNextVersion())
 					.fromHistoryAdd(nodeName)
-					.build();			
+					.build();	
 		}, oldEvent -> {
 			entityChangedQueue.add(new QueueInfo<String>(event.getId(), QueueInfo.QueueInfoType.UPDATE));
 			return new Event.Builder(event)
@@ -93,6 +101,17 @@ public class EventService extends EntityService<String, Event>{
 		default:
 			break;
 		}
+	}
+	
+	@Scheduled(fixedRateString = "1", timeUnit = TimeUnit.SECONDS)
+	public void deleteEndsOnScheduled() {
+		var predicate = Predicates.lessThan(INDEX_NAME_ENDS_ON, Instant.now());
+		entityCache.keySet(predicate, -1).stream()
+				.map(entityCache::get)
+				.filter(Optional::isPresent)
+				.map(Optional::get)
+				.filter(event -> Objects.isNull(event.getDeletedOn()))
+				.forEach(event -> addOrUpdate(new Event.Builder(event).deletedOn(Instant.now()).build()));
 	}
 	
 }
