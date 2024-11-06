@@ -1,8 +1,10 @@
 package ru.keich.mon.servicemanager.event;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -38,6 +40,7 @@ public class Event extends Entity<String> {
 	private final BaseStatus status;
 	private final String node;
 	private final String summary;
+	private final Instant endsOn;
 	
 	@JsonCreator
 	public Event(@JsonProperty(value = "id", required = true) String id,
@@ -52,14 +55,20 @@ public class Event extends Entity<String> {
 			@JsonProperty("fromHistory") Set<String> fromHistory,
 			@JsonProperty(value = "createdOn") Instant createdOn,
 			@JsonProperty(value = "updatedOn") Instant updatedOn,
-			@JsonProperty(value = "deletedOn") Instant deletedOn) {
+			@JsonProperty(value = "deletedOn") Instant deletedOn,
+			@JsonProperty(value = "endsOn") Instant endsOn) {
 		super(id, version, source, sourceKey, fields, fromHistory, createdOn, updatedOn, deletedOn);
 		this.type = type;
 		this.status = status;
 		this.node = node;
 		this.summary = summary;
+		this.endsOn = endsOn;
 	}
 
+	public static Set<Object> getEndsOnForIndex(Event event) {
+		return Optional.ofNullable((Object)event.endsOn).map(Collections::singleton).orElse(Collections.emptySet());
+	}
+	
 	@Override
 	public String toString() {
 		return "Event [id=" + getId() + ", type=" + type + ", status=" + status +
@@ -73,6 +82,7 @@ public class Event extends Entity<String> {
 		protected String summary;
 		protected EventType type;
 		protected BaseStatus status;
+		protected Instant endsOn;
 
 		public Builder(String id) {
 			super(id);
@@ -83,6 +93,7 @@ public class Event extends Entity<String> {
 			this.summary = event.getSummary();
 			this.type = event.getType();
 			this.status = event.getStatus();
+			this.endsOn = event.getEndsOn();
 
 			this.node = event.getNode();
 			if (Objects.isNull(this.node)) {
@@ -115,7 +126,8 @@ public class Event extends Entity<String> {
 			this.fromHistory,
 			this.createdOn,
 			this.updatedOn,
-			this.deletedOn);
+			this.deletedOn,
+			this.endsOn);
 		}
 
 		public Builder type(EventType type) {
@@ -135,6 +147,11 @@ public class Event extends Entity<String> {
 		
 		public Builder node(String node) {
 			this.node = node;
+			return this;
+		}
+		
+		public Builder endsOn(Instant endsOn) {
+			this.endsOn = endsOn;
 			return this;
 		}
 		
