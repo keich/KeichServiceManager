@@ -50,6 +50,30 @@ public enum BaseStatus {
         return CRITICAL;
     }
 	
+	public static BaseStatus fromString(String sev) {
+        switch(sev) {
+        case "0":
+        case "clear":
+            return CLEAR;
+        case "1":
+        case "indeterminate":
+            return INDETERMINATE;
+        case "2":
+        case "warning":
+            return INFORMATION;
+        case "3":
+        case "minor":
+            return WARNING;
+        case "4":
+        case "major":
+            return MAJOR;
+        case "5":
+        case "critical":
+            return CRITICAL;
+        }
+        return CRITICAL;
+    }
+	
 	public BaseStatus max(BaseStatus other) {
 		if(Objects.nonNull(other)) {
 			if(this.status < other.status) {
