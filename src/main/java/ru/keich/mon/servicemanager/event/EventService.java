@@ -107,11 +107,7 @@ public class EventService extends EntityService<String, Event>{
 	public void deleteEndsOnScheduled() {
 		var predicate = Predicates.lessThan(INDEX_NAME_ENDS_ON, Instant.now());
 		entityCache.keySet(predicate, -1).stream()
-				.map(entityCache::get)
-				.filter(Optional::isPresent)
-				.map(Optional::get)
-				.filter(event -> Objects.isNull(event.getDeletedOn()))
-				.forEach(event -> addOrUpdate(new Event.Builder(event).deletedOn(Instant.now()).build()));
+				.forEach(this::deleteById);
 	}
 	
 }
