@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 
 import org.junit.jupiter.api.Test;
@@ -60,9 +61,11 @@ public class AlertsTest {
 					}
 				""";
 		Alert alert = mapper.readValue(json, Alert.class);
+		alert.setEndsAt(Instant.now().plusSeconds(60).toString());
 		alertAdd(alert);
 		var event = eventGet("7380901136023483174");
 		assertEquals(BaseStatus.WARNING, event.getStatus());
 		assertNotNull(event.getEndsOn());
 	}
+
 }
