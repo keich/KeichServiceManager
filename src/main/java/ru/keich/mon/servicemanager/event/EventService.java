@@ -92,11 +92,14 @@ public class EventService extends EntityService<String, Event>{
 		case UPDATE:
 			entityCache.computeIfPresent(info.getId(), event -> {
 				itemService.eventChanged(event);
-				return null;
+				return event;
 			});
 			break;
 		case REMOVED:
-			itemService.eventRemoved(info.getId());
+			entityCache.computeIfPresent(info.getId(), event -> {
+				itemService.eventRemoved(info.getId());
+				return event;
+			});
 			break;
 		default:
 			break;
