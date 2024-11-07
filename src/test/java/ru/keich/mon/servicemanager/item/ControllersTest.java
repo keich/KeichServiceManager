@@ -26,6 +26,7 @@ import org.springframework.http.MediaType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import lombok.extern.java.Log;
 import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.entity.Entity;
 import ru.keich.mon.servicemanager.event.Event;
@@ -113,6 +114,12 @@ public class ControllersTest {
 	
 	private Item itemGetTree(String id) {
 		var result = restTemplate.getForEntity("/api/v1/item/" + id + "/tree", Item.class);
+		assertEquals(HttpStatus.OK, result.getStatusCode());
+		return result.getBody();
+	}
+	
+	private Item itemGetParentsTree(String id) {
+		var result = restTemplate.getForEntity("/api/v1/item/" + id + "/parents/tree", Item.class);
 		assertEquals(HttpStatus.OK, result.getStatusCode());
 		return result.getBody();
 	}
@@ -559,6 +566,62 @@ public class ControllersTest {
 		item2= entityGetById("/item", item.getId(), Item.class);
 		assertEquals(BaseStatus.CLEAR, item2.getStatus());
 	}
+	@Test
+	public void itemEventDeleted()  throws IOException, InterruptedException {
+		var json = """
+				 {
+			        "id": "itemEventDeleted",
+			        "source": "src_itemEventDeleted",
+			        "sourceKey": "src_key_itemEventDeleted",
+			        "fields": {
+			            "name": "Hello",
+			            "description": "World"
+			        },
+			        "rules": {},
+			        "filters": {
+			            "by_identity": {
+			                "resultStatus": "INDETERMINATE",
+			                "usingResultStatus": false,
+			                "equalFields": { "identity": "itemEventDeleted12046hfy","manager":"SNMP" }
+			            }
+			        }
+			    }
+			""";
+		var item = mapper.readValue(json, Item.class);
+		entityAdd("/item", item);
+		
+		
+		json = """
+			    {
+			    	"id": "itemEventDeletedEvent",
+			        "type": "PROBLEM",
+			        "status": "WARNING",
+			        "source": "src_itemEventDeleted",
+			        "sourceKey": "src_key_itemEventDeleted",
+			        "fields": {
+			            "server": "localhost",
+			            "summary": "Hello World",
+			            "identity": "itemEventDeleted12046hfy",
+			            "manager": "SNMP"
+			        }
+			    }
+			""";
+		var event1 = mapper.readValue(json, Event.class);
+		entityAdd("/event", event1);
+		
+		
+
+		var item2= entityGetById("/item", item.getId(), Item.class);
+		assertEquals(BaseStatus.WARNING, item2.getStatus());
+		
+		var ids = new ArrayList<String>();
+		ids.add(event1.getId());
+
+		entityRemove("/event", ids);
+		
+		var item3= entityGetById("/item", item.getId(), Item.class);
+		assertEquals(BaseStatus.CLEAR, item3.getStatus());
+	}
 	
 	@Test
 	public void eventAddAndGet() throws IOException {
@@ -748,6 +811,9 @@ public class ControllersTest {
 		var retChild = opt.get();
 		assertEquals(child.getId(), retChild.getId());
 		
+		var childWithParents = itemGetParentsTree(child.getId());
+		assertNotNull(childWithParents.getParents());
+		assertEquals(childWithParents.getParents().size(), 1);
 	}
 	
 	@Test
@@ -818,6 +884,7 @@ public class ControllersTest {
 		var retItem = entityGetById("/item", "item_updateItemAndKeepStatus", Item.class);
 		assertEquals(BaseStatus.WARNING, retItem.getStatus());
 	}
+	
 	
 	// TODO test update not clear internal fields
 	// TODO search test
