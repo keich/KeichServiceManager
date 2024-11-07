@@ -159,13 +159,7 @@ public class ItemService extends EntityService<String, Item> {
 				.forEach(itft -> {
 					var item = itft.getKey();
 					var filter = itft.getValue();
-					BaseStatus status;
-					if(filter.isUsingResultStatus()) {
-						status =  filter.getResultStatus();
-					} else {
-						status = event.getStatus();
-					}
-					itemUpdateEventsStatus(item.getId(), m -> m.put(event.getId(), status));
+					itemUpdateEventsStatus(item.getId(), m -> m.put(event.getId(), filter.getStatus(event)));
 				});
 	}
 

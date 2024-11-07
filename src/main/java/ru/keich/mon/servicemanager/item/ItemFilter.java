@@ -2,6 +2,7 @@ package ru.keich.mon.servicemanager.item;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -9,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.Getter;
 import ru.keich.mon.servicemanager.BaseStatus;
+import ru.keich.mon.servicemanager.event.Event;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -35,6 +37,16 @@ public class ItemFilter {
 	
 	private final Map<String, String> equalFields;
 
+	public BaseStatus getStatus(Event event) {
+		if(Objects.nonNull(event.getDeletedOn())) {
+			return BaseStatus.CLEAR;
+		}
+		if(usingResultStatus) {
+			return resultStatus;
+		}
+		return event.getStatus();
+	}
+	
 	@Override
 	public String toString() {
 		return "ItemFilter [resultStatus=" + resultStatus + ", usingResultStatus="
