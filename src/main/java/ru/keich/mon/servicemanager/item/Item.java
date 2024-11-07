@@ -54,7 +54,6 @@ public class Item extends Entity<String> {
 	private Map<String, BaseStatus> eventsStatus = Collections.emptyMap();
 	
 	private List<Item> children;
-	@JsonProperty(value = "parents", access = JsonProperty.Access.READ_ONLY)
 	private List<Item> parents;
 	
 	@JsonCreator
@@ -114,7 +113,7 @@ public class Item extends Entity<String> {
 		
 		this.children = children;
 		
-		this.children = children;
+		this.parents = parents;
 
 	}
 
@@ -154,6 +153,13 @@ public class Item extends Entity<String> {
 
 	@Getter
 	public static class Builder extends Entity.Builder<String, Item>  {
+		
+		
+		@Override
+		public String toString() {
+			return "Builder [status=" + status + ", eventsStatus=" + eventsStatus + ", getId()=" + getId() + "]";
+		}
+
 		protected BaseStatus status;
 		protected Map<String, ItemRule> rules;
 		protected Map<String, ItemFilter> filters;
