@@ -123,7 +123,7 @@ public class ItemService extends EntityService<String, Item> {
 			break;
 		case UPDATED:
 		case REMOVED:
-			entityCache.get(info.getId()).ifPresent(item -> {
+			entityCache.computeIfPresent(info.getId(), item -> {
 				findParentsById(info.getId()).stream()
 				.map(this::findById)
 				.filter(Optional::isPresent)
@@ -133,6 +133,7 @@ public class ItemService extends EntityService<String, Item> {
 				.forEach(parentId -> {
 					entityChangedQueue.add(new QueueInfo<String>(parentId, QueueInfo.QueueInfoType.UPDATE));
 				});
+				return item;
 			});
 			break;
 		default:
