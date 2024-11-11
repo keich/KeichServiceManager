@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.annotation.JsonFilter;
 
@@ -60,7 +61,9 @@ public class Entity<K> extends BaseEntity<K> {
 		this.createdOn = Optional.ofNullable(createdOn).orElse(Instant.now());
 		this.updatedOn = Optional.ofNullable(updatedOn).orElse(Instant.now());
 		this.deletedOn = Optional.ofNullable(deletedOn).orElse(null);
-		this.fields = Optional.ofNullable(fields).map(Collections::unmodifiableMap).orElse(Collections.emptyMap());
+		this.fields = Stream.ofNullable(fields)
+				.flatMap(f -> f.entrySet().stream())
+				.collect(Collectors.toMap(e -> e.getKey().intern(), e -> e.getValue().intern()));
 	}
 	
 	public static Set<Object> getSourceForIndex(Entity<?> entity) {
