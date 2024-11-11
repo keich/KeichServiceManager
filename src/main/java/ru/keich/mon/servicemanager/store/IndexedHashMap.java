@@ -106,7 +106,7 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 		}
 	}
 	
-	public void createIndex(String name, IndexType type, Function<T, Set<Object>> mapper) {
+	public void addIndex(String name, IndexType type, Function<T, Set<Object>> mapper) {
 		switch(type) {
 		case EQUAL:
 			index.put(name, new IndexEqual<K,T>(mapper));

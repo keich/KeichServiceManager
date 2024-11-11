@@ -56,13 +56,13 @@ public abstract class EntityService<K, T extends Entity<K>> {
 		entityCache = new IndexedHashMap<>(registry, this.getClass().getSimpleName());
 		entityChangedQueue = new QueueThreadReader<QueueInfo<K>>(this.getClass().getSimpleName(), threadCount, this::queueRead);
 		
-		entityCache.createIndex(INDEX_NAME_VERSION, IndexType.UNIQ_SORTED, Entity::getVersionForIndex);
-		entityCache.createIndex(INDEX_NAME_SOURCE, IndexType.EQUAL, Entity::getSourceForIndex);
-		entityCache.createIndex(INDEX_NAME_SOURCE_KEY, IndexType.EQUAL, Entity::getSourceKeyForIndex);
-		entityCache.createIndex(INDEX_NAME_DELETED_ON, IndexType.SORTED, Entity::getDeletedOnForIndex);
+		entityCache.addIndex(INDEX_NAME_VERSION, IndexType.UNIQ_SORTED, Entity::getVersionForIndex);
+		entityCache.addIndex(INDEX_NAME_SOURCE, IndexType.EQUAL, Entity::getSourceForIndex);
+		entityCache.addIndex(INDEX_NAME_SOURCE_KEY, IndexType.EQUAL, Entity::getSourceKeyForIndex);
+		entityCache.addIndex(INDEX_NAME_DELETED_ON, IndexType.SORTED, Entity::getDeletedOnForIndex);
 		
-		entityCache.createIndex(INDEX_NAME_FIELDS, IndexType.EQUAL, Entity::getFieldsForIndex);
-		entityCache.createIndex(INDEX_NAME_FROMHISTORY, IndexType.EQUAL, Entity::getFromHistoryForIndex);
+		entityCache.addIndex(INDEX_NAME_FIELDS, IndexType.EQUAL, Entity::getFieldsForIndex);
+		entityCache.addIndex(INDEX_NAME_FROMHISTORY, IndexType.EQUAL, Entity::getFromHistoryForIndex);
 	}
 	
 	protected Long getNextVersion() {

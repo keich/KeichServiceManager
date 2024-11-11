@@ -85,7 +85,7 @@ public class StoreTest {
 	@Test
 	public void queryEqualByIndex() {
 		var store = new IndexedHashMap<String, TestEntity>(null, this.getClass().getSimpleName());
-		store.createIndex(INDEX_NAME_SOURCE, IndexType.EQUAL, Entity::getSourceForIndex);
+		store.addIndex(INDEX_NAME_SOURCE, IndexType.EQUAL, Entity::getSourceForIndex);
 		queryEqual(store);
 	}
 	
@@ -117,7 +117,7 @@ public class StoreTest {
 	@Test
 	public void queryNotEqualByIndex() {
 		var store = new IndexedHashMap<String, TestEntity>(null, this.getClass().getSimpleName());
-		store.createIndex(INDEX_NAME_SOURCE, IndexType.EQUAL, Entity::getSourceForIndex);
+		store.addIndex(INDEX_NAME_SOURCE, IndexType.EQUAL, Entity::getSourceForIndex);
 		queryNotEqual(store);
 	}
 	
@@ -150,7 +150,7 @@ public class StoreTest {
 	@Test
 	public void queryLessThanByIndex() {
 		var store = new IndexedHashMap<String, TestEntity>(null, this.getClass().getSimpleName());
-		store.createIndex(INDEX_NAME_VERSION, IndexType.UNIQ_SORTED, Entity::getVersionForIndex);
+		store.addIndex(INDEX_NAME_VERSION, IndexType.UNIQ_SORTED, Entity::getVersionForIndex);
 		queryLessThan(store);
 	}
 	
@@ -187,7 +187,7 @@ public class StoreTest {
 	@Test
 	public void queryGreaterEqualByIndex() {
 		var store = new IndexedHashMap<String, TestEntity>(null, this.getClass().getSimpleName());
-		store.createIndex(INDEX_NAME_VERSION, IndexType.UNIQ_SORTED, Entity::getVersionForIndex);
+		store.addIndex(INDEX_NAME_VERSION, IndexType.UNIQ_SORTED, Entity::getVersionForIndex);
 		queryGreaterEqual(store);
 	}
 	
@@ -224,7 +224,7 @@ public class StoreTest {
 	@Test
 	public void queryGreaterThanByIndex() {
 		var store = new IndexedHashMap<String, TestEntity>(null, this.getClass().getSimpleName());
-		store.createIndex(INDEX_NAME_VERSION, IndexType.UNIQ_SORTED, Entity::getVersionForIndex);
+		store.addIndex(INDEX_NAME_VERSION, IndexType.UNIQ_SORTED, Entity::getVersionForIndex);
 		queryGreaterThan(store);
 	}
 	
@@ -261,7 +261,7 @@ public class StoreTest {
 	@Test
 	public void queryContainByIndex() {
 		var store = new IndexedHashMap<String, TestEntity>(null, this.getClass().getSimpleName());
-		store.createIndex(INDEX_NAME_NAME, IndexType.EQUAL, TestEntity::getNameUpperCaseForIndex);
+		store.addIndex(INDEX_NAME_NAME, IndexType.EQUAL, TestEntity::getNameUpperCaseForIndex);
 		queryContainString(store);
 	}
 	
@@ -298,7 +298,7 @@ public class StoreTest {
 	@Test
 	public void queryNotContainByIndex() {
 		var store = new IndexedHashMap<String, TestEntity>(null, this.getClass().getSimpleName());
-		store.createIndex(INDEX_NAME_NAME, IndexType.EQUAL, TestEntity::getNameUpperCaseForIndex);
+		store.addIndex(INDEX_NAME_NAME, IndexType.EQUAL, TestEntity::getNameUpperCaseForIndex);
 		queryNotContainString(store);
 	}
 
@@ -354,7 +354,7 @@ public class StoreTest {
 	@Test
 	public void queryNotIncludeByIndex() {
 		var store = new IndexedHashMap<String, TestEntity>(null, this.getClass().getSimpleName());
-		store.createIndex(INDEX_NAME_SET, IndexType.EQUAL, TestEntity::getSomeSetForIndex);
+		store.addIndex(INDEX_NAME_SET, IndexType.EQUAL, TestEntity::getSomeSetForIndex);
 		queryNotInclude(store);
 	}
 }

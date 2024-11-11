@@ -59,12 +59,12 @@ public class ItemService extends EntityService<String, Item> {
 			,@Value("${item.thread.count:2}") Integer threadCount) {
 		super(nodeName, registry, threadCount);
 
-		entityCache.createIndex(INDEX_NAME_FILTERS_EQL, IndexType.EQUAL, Item::getFiltersForIndex);
-		entityCache.createIndex(INDEX_NAME_PARENTS, IndexType.EQUAL, Item::getParentsForIndex);
+		entityCache.addIndex(INDEX_NAME_FILTERS_EQL, IndexType.EQUAL, Item::getFiltersForIndex);
+		entityCache.addIndex(INDEX_NAME_PARENTS, IndexType.EQUAL, Item::getParentsForIndex);
 		
-		entityCache.createIndex(INDEX_NAME_NAME_UPPERCASE, IndexType.EQUAL, Item::getNameUpperCaseForIndex);
+		entityCache.addIndex(INDEX_NAME_NAME_UPPERCASE, IndexType.EQUAL, Item::getNameUpperCaseForIndex);
 		
-		entityCache.createIndex(INDEX_NAME_EVENTIDS, IndexType.EQUAL, Item::getEventsIndex);
+		entityCache.addIndex(INDEX_NAME_EVENTIDS, IndexType.EQUAL, Item::getEventsIndex);
 		
 		this.eventService = eventService;
 		eventService.setItemService(this);
