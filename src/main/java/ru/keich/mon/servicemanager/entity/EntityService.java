@@ -47,7 +47,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	static final public String INDEX_NAME_VERSION= "version";
 	static final public String INDEX_NAME_SOURCE = "source";
 	static final public String INDEX_NAME_SOURCE_KEY = "source_key";
-	static final public String INDEX_NAME_DELETED_ON = "deleted_on";
+	static final public String INDEX_NAME_DELETED_ON = "deleted_on";// TODO
 	static final public String INDEX_NAME_FIELDS = "fields";
 	static final public String INDEX_NAME_FROMHISTORY = "fromHistory";
 
@@ -106,9 +106,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	
 	public <V extends Comparable<V>> List<T> query(List<QueryPredicate> predicates) {
 		return predicates.stream()
-				.map(p -> {
-					return entityCache.keySet(p, -1);
-				})
+				.map(p -> entityCache.keySet(p, -1))
 				.reduce((result, el) -> { 
 					result.retainAll(el);
 					return result;
@@ -126,7 +124,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	@Scheduled(fixedRateString = "${entity.delete.fixedrate:60}", timeUnit = TimeUnit.SECONDS)
 	public void deleteOldScheduled() {
 		var predicate = Predicates.lessThan(INDEX_NAME_DELETED_ON, Instant.now().minusSeconds(seconds));
-		entityCache.keySet(predicate, -1).stream()
+		entityCache.keySet(predicate, -1)
 				.forEach(id -> entityCache.remove(id));
 	}
 	
