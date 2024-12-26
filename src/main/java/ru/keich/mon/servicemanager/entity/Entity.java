@@ -60,7 +60,7 @@ public class Entity<K> extends BaseEntity<K> {
 		this.fromHistory = Optional.ofNullable(fromHistory).map(Collections::unmodifiableSet).orElse(Collections.emptySet());
 		this.createdOn = Optional.ofNullable(createdOn).orElse(Instant.now());
 		this.updatedOn = Optional.ofNullable(updatedOn).orElse(Instant.now());
-		this.deletedOn = Optional.ofNullable(deletedOn).orElse(null);
+		this.deletedOn = deletedOn;
 		this.fields = Stream.ofNullable(fields)
 				.flatMap(f -> f.entrySet().stream())
 				.collect(Collectors.toMap(e -> e.getKey().intern(), e -> e.getValue().intern()));
