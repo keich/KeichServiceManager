@@ -91,14 +91,7 @@ public class IndexSorted<K, T extends BaseEntity<K>> implements Index<K, T> {
 			return objects.headMap(key).values().stream().flatMap(l -> l.stream()).collect(Collectors.toSet());
 		}
 	}
-
-	@Override
-	public Set<K> getAfter(Object key) {
-		synchronized (this) {
-			return objects.tailMap(key).values().stream().skip(1).flatMap(l -> l.stream()).collect(Collectors.toSet());
-		}
-	}
-
+	
 	@Override
 	public Set<K> getAfterEqual(Object key) {
 		synchronized (this) {

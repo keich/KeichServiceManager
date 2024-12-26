@@ -190,13 +190,13 @@ public class ControllersTest {
 		version = getMaxVersion(retEntities);
 		for (T entity : entities) {
 			entityAdd(path, entity);
-			retEntities = entityGetByVersionGreaterThan(path, version + 1, nodename, entityType);
+			retEntities = entityGetByVersionGreaterThan(path, version, nodename, entityType);
 			assertEquals(1, retEntities.size());
 			var new_version = getMaxVersion(retEntities);
 			assertTrue(new_version > version);
 			version = new_version;
 		}
-		retEntities = entityGetByVersionGreaterThan(path, version + 1, nodename, entityType);
+		retEntities = entityGetByVersionGreaterThan(path, version, nodename, entityType);
 		assertEquals(0, retEntities.size());
 		
 		var entity = entities.get(0);
@@ -491,7 +491,6 @@ public class ControllersTest {
 		
 		item2= entityGetById("/item", item.getId(), Item.class);
 		assertEquals(BaseStatus.CLEAR, item2.getStatus());
-		
 		
 		var item3 = entityGetById("/item", itemRoot.getId(), Item.class);
 		assertEquals(BaseStatus.CLEAR, item3.getStatus());

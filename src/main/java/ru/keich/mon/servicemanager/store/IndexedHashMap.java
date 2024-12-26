@@ -213,11 +213,19 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 		if (index.containsKey(fieldName)) {
 			switch (predicate.getOperator()) {
 			case EQ:
-				return index.get(fieldName).get(predicate.getValue());
+				var r5 = index.get(fieldName).get(predicate.getValue());
+				if(limit > 0) {
+					return r5.stream().limit(limit).collect(Collectors.toSet());
+				}
+				return r5;
 			case NE:
 			case CO:
 			case NC:
-				return index.get(fieldName).findByKey(limit, (p) -> predicate.test(p));
+				var r4 = index.get(fieldName).findByKey(limit, (p) -> predicate.test(p));
+				if(limit > 0) {
+					return r4.stream().limit(limit).collect(Collectors.toSet());
+				}
+				return r4;
 			case NI:
 				var t = index.get(fieldName).get(predicate.getValue());
 				var r = index.get(fieldName).valueSet();
@@ -227,11 +235,25 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 				}
 				return r;
 			case LT:
-				return index.get(fieldName).getBefore(predicate.getValue());
+				var r3 = index.get(fieldName).getBefore(predicate.getValue());
+				if(limit > 0) {
+					return r3.stream().limit(limit).collect(Collectors.toSet());
+				}
+				return r3;
 			case GT:
-				return index.get(fieldName).getAfter(predicate.getValue());
+				var r1 = index.get(fieldName).getAfterEqual(predicate.getValue());
+				var eq = index.get(fieldName).get(predicate.getValue());
+				r1.removeAll(eq);
+				if(limit > 0) {
+					return r1.stream().limit(limit).collect(Collectors.toSet());
+				}
+				return r1;
 			case GE:
-				return index.get(fieldName).getAfterEqual(predicate.getValue());
+				var r2 = index.get(fieldName).getAfterEqual(predicate.getValue());
+				if(limit > 0) {
+					return r2.stream().limit(limit).collect(Collectors.toSet());
+				}
+				return r2;
 			default:
 				return Collections.emptySet();
 			}

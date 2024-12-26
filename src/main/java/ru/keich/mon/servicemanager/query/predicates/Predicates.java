@@ -31,6 +31,8 @@ public class Predicates {
 			case LT:
 				return lessThan(name, Long.valueOf(arr[1]));
 			case GT:
+				return greaterThan(name, Long.valueOf(arr[1]));
+			case GE:
 				return greaterEqual(name, Long.valueOf(arr[1]));
 			case CO:
 				return contain(name, arr[1]);
