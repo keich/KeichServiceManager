@@ -12,8 +12,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import lombok.extern.java.Log;
-import reactor.core.publisher.Mono;
+import reactor.core.publisher.Flux;
 import reactor.netty.http.client.HttpClient;
+import ru.keich.mon.servicemanager.AddResponseHeaderFilter;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -35,36 +36,28 @@ import reactor.netty.http.client.HttpClient;
 public class EntityReplication<K, T extends Entity<K>> {
 
 	private final String nodeName;
-	private final String replicationNeighborHost;
-	private final Integer replicationNeighborPort;
+	private final String replicationNeighbor;
 	private final String path;
 	private final Class<T> elementClass;
 	
 	private final EntityService<K, T> entityService;
 	private final WebClient webClient;
 	
-	private volatile boolean active = false;
-	private volatile boolean first = true;
-	private Long maxVersion = 0L;
-	private Long minVersion = Long.MAX_VALUE;
-	private Long added = 0L;
-	private Long deleted = 0L;
-	private boolean hasEntity = false;
-
+	private final EntityReplicationState state = new EntityReplicationState();
 	
-	public EntityReplication(EntityService<K, T> entityService, String nodeName, String replicationNeighborHost,
-			Integer replicationNeighborPort, String path, Class<T> elementClass) throws SSLException {
+	public EntityReplication(EntityService<K, T> entityService, String nodeName, String replicationNeighbor, String path, Class<T> elementClass) throws SSLException {
 		this.entityService = entityService;
 		this.nodeName = nodeName;
-		this.replicationNeighborHost = replicationNeighborHost;
-		this.replicationNeighborPort = replicationNeighborPort;
+		this.replicationNeighbor = replicationNeighbor;
 		this.path = path;
 		this.elementClass = elementClass;
 		final ExchangeStrategies strategies = ExchangeStrategies.builder()
 				.codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(2621440)).build();
 		var sslContext = SslContextBuilder.forClient().trustManager(InsecureTrustManagerFactory.INSTANCE).build();
 		var httpClient = HttpClient.create().secure(t -> t.sslContext(sslContext));
-		webClient = WebClient.builder().clientConnector(new ReactorClientHttpConnector(httpClient))
+		webClient = WebClient
+				.builder().baseUrl(replicationNeighbor + path)
+				.clientConnector(new ReactorClientHttpConnector(httpClient))
 				.exchangeStrategies(strategies).build();
 	}
 	
@@ -73,74 +66,61 @@ public class EntityReplication<K, T extends Entity<K>> {
 	}
 	
 	public void doReplication(Runnable onFinally) {
-		if ("none".equals(nodeName)) {
+		if ("none".equals(replicationNeighbor)) {
 			return;
 		}
 		
-		if ("none".equals(replicationNeighborHost)) {
+		if(state.isActive()) {
+			log.info("Entity " + path + ". Replication still active. State [ " + state.toString() + " ]");
 			return;
-		}
-		
-		if(active) {
-			log.info("Entity " + path + " replication still active. Version:" + " min=" + minVersion 
-					+ " max=" + maxVersion + " Entity: added=" + added + " deleted=" + deleted);
-			return;
-		}
-		
-		//First load
-		final String tmpNodeName;
-		final Long fromVersion;
-		if(first) {
-			tmpNodeName = "";
-			fromVersion = 0L;
-		} else {
-			tmpNodeName = nodeName;
-			fromVersion = maxVersion + 1L;
 		}
 
-		minVersion = Long.MAX_VALUE;
-		added = 0L;
-		deleted = 0L;
-		
-		webClient.get().uri(uriBuilder -> uriBuilder.scheme("https").host(replicationNeighborHost).port(replicationNeighborPort).path(path)
-				.queryParam("version", "gt:" + fromVersion).queryParam("fromHistory", "ni:" + tmpNodeName).build())
-				.accept(MediaType.APPLICATION_JSON).retrieve()
-				.bodyToFlux(elementClass)
-				.onErrorResume(e -> {
-					log.warning("Entity " + path + " replication client error: "+e.toString());
-					return Mono.empty();
+		state.reset();
+
+		webClient.get()
+				.uri(uriBuilder -> {
+					if(state.isFirstRun()) {
+						return uriBuilder.queryParam("fromHistory", "ni:" + nodeName).build();
+					}
+					return uriBuilder.queryParam("version", "gt:" + state.getMaxVersion())
+					.queryParam("fromHistory", "ni:" + nodeName).build();
+				})
+				.accept(MediaType.APPLICATION_JSON)
+				.exchangeToFlux(response -> {
+					var startTime = response.headers().header(AddResponseHeaderFilter.HEADER_START_TIME).stream()
+							.findFirst().orElse("");
+					if (state.isFirstRun()) {
+						state.setNeighborStartTime(startTime);
+					} else {
+						if (!state.getNeighborStartTime().equals(startTime)) {
+							var exception = new ChangedNeighborStartTimeException(
+									"NeighborStartTime is changed from " + state.getNeighborStartTime() + " to " + startTime);
+							state.setFirstRunTrue();
+							return Flux.error(exception);
+						}
+					}
+					return response.bodyToFlux(elementClass);
 				})
 				.doFirst(() -> {
-					active = true;
-					hasEntity = false;
+					state.setActiveTrue();
+				})
+				.doOnComplete(() -> {
+					state.setFirstRunFalse();
+					log.info("Entity " + path + ". Replication is completed. State [ " + state.toString() + " ]");
 				})
 				.doFinally(s -> {
-					active = false;
-					first = false;
-					if(hasEntity) {
-						log.info("Entity " + path + " replication is completed. Version:" + " min=" + minVersion 
-								+ " max=" + maxVersion + " Entity: added=" + added + " deleted=" + deleted);
-					}
+					state.setActiveFalse();
 					onFinally.run();
 				})
 				.doOnNext(entity -> {
-					hasEntity = true;
 					final var version  = entity.getVersion();
-					if(minVersion > version) {
-						minVersion = version;
-					}
-					if(maxVersion < version) {
-						maxVersion = version;
-					}
+					state.updateVersion(version);
 					if(Objects.nonNull(entity.getDeletedOn())) {
-						deleted++;
+						state.deletedIncrement();
 					}
-					added++;
+					state.addedIncrement();
 					entityService.addOrUpdate(entity);
 				})
-				.doOnError(e -> {
-		            log.info("Entity " + path + " replication error. Message: " + e.getMessage());
-		        })
 				.subscribe();
 	}
 }

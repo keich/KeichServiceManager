@@ -28,9 +28,8 @@ public class ItemReplication extends EntityReplication<String, Item>  {
 
 	public ItemReplication(ItemService itemService, 
 			@Value("${replication.nodename}") String nodeName,
-			@Value("${replication.neighbor.host:none}") String replicationNeighborHost,
-			@Value("${replication.neighbor.port:8443}") Integer replicationNeighborPort) throws SSLException {
-		super(itemService, nodeName, replicationNeighborHost, replicationNeighborPort, "/api/v1/item", Item.class);
+			@Value("${replication.neighbor:none}") String replicationNeighbor) throws SSLException {
+		super(itemService, nodeName, replicationNeighbor, "/api/v1/item", Item.class);
 	}
 
 }

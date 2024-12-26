@@ -27,9 +27,8 @@ import ru.keich.mon.servicemanager.entity.EntityReplication;
 public class EventReplication extends EntityReplication<String, Event> {
 	public EventReplication(EventService eventService, 
 			@Value("${replication.nodename}") String nodeName,
-			@Value("${replication.neighbor.host:none}") String replicationNeighborHost,
-			@Value("${replication.neighbor.port:8443}") Integer replicationNeighborPort) throws SSLException {
-		super(eventService, nodeName, replicationNeighborHost, replicationNeighborPort, "/api/v1/event", Event.class);
+			@Value("${replication.neighbor:none}") String replicationNeighbor) throws SSLException {
+		super(eventService, nodeName, replicationNeighbor, "/api/v1/event", Event.class);
 	}
 
 }

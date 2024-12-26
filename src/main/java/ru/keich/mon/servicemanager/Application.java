@@ -1,5 +1,10 @@
 package ru.keich.mon.servicemanager;
 
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.web.servlet.ServletComponentScan;
+import org.springframework.scheduling.annotation.EnableScheduling;
+
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -16,12 +21,8 @@ package ru.keich.mon.servicemanager;
  * limitations under the License.
  */
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.scheduling.annotation.EnableScheduling;
-
-
 @SpringBootApplication
+@ServletComponentScan
 @EnableScheduling
 public class Application {
 	public static void main(String[] args) {
