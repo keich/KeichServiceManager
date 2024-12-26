@@ -117,8 +117,9 @@ public class EntityReplication<K, T extends Entity<K>> {
 					state.updateVersion(version);
 					if(Objects.nonNull(entity.getDeletedOn())) {
 						state.deletedIncrement();
+					} else {
+						state.addedIncrement();
 					}
-					state.addedIncrement();
 					entityService.addOrUpdate(entity);
 				})
 				.subscribe();
