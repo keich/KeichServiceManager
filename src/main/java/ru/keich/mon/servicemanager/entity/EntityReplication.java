@@ -1,6 +1,6 @@
 package ru.keich.mon.servicemanager.entity;
 
-import java.util.Objects;
+import java.net.URI;
 
 import javax.net.ssl.SSLException;
 
@@ -8,6 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.util.UriBuilder;
 
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
@@ -61,6 +62,14 @@ public class EntityReplication<K, T extends Entity<K>> {
 				.exchangeStrategies(strategies).build();
 	}
 	
+	public URI getUri(UriBuilder uriBuilder) {
+		if(state.isFirstRun()) {
+			return uriBuilder.queryParam("fromHistory", "ni:" + nodeName).build();
+		}
+		return uriBuilder.queryParam("version", "gt:" + state.getMaxVersion())
+		.queryParam("fromHistory", "ni:" + nodeName).build();
+	}
+	
 	public void doReplication() {
 		doReplication(() -> {});
 	}
@@ -78,13 +87,7 @@ public class EntityReplication<K, T extends Entity<K>> {
 		state.reset();
 
 		webClient.get()
-				.uri(uriBuilder -> {
-					if(state.isFirstRun()) {
-						return uriBuilder.queryParam("fromHistory", "ni:" + nodeName).build();
-					}
-					return uriBuilder.queryParam("version", "gt:" + state.getMaxVersion())
-					.queryParam("fromHistory", "ni:" + nodeName).build();
-				})
+				.uri(this::getUri)
 				.accept(MediaType.APPLICATION_JSON)
 				.exchangeToFlux(response -> {
 					var startTime = response.headers().header(AddResponseHeaderFilter.HEADER_START_TIME).stream()
@@ -113,13 +116,8 @@ public class EntityReplication<K, T extends Entity<K>> {
 					onFinally.run();
 				})
 				.doOnNext(entity -> {
-					final var version  = entity.getVersion();
-					state.updateVersion(version);
-					if(Objects.nonNull(entity.getDeletedOn())) {
-						state.deletedIncrement();
-					} else {
-						state.addedIncrement();
-					}
+					state.updateVersion(entity.getVersion());
+					state.incrementCounters(entity.getDeletedOn());
 					entityService.addOrUpdate(entity);
 				})
 				.subscribe();

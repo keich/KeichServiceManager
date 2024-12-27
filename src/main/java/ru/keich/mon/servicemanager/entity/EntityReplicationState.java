@@ -1,5 +1,8 @@
 package ru.keich.mon.servicemanager.entity;
 
+import java.time.Instant;
+import java.util.Optional;
+
 public class EntityReplicationState {
 	private volatile boolean active = false;
 	private volatile boolean first = true;
@@ -74,12 +77,9 @@ public class EntityReplicationState {
 		return deleted;
 	}
 	
-	public void addedIncrement() {
-		added++;
-	}
-	
-	public void deletedIncrement() {
-		deleted++;
+	public void incrementCounters(Instant deletedOn) {
+		Optional.ofNullable(deletedOn)
+		.ifPresentOrElse(d -> deleted++, () -> added++);
 	}
 
 	public void reset() {
