@@ -64,7 +64,7 @@ public class EntityReplication<K, T extends Entity<K>> {
 	
 	public URI getUri(UriBuilder uriBuilder) {
 		if(state.isFirstRun()) {
-			return uriBuilder.queryParam("fromHistory", "ni:" + nodeName).build();
+			return uriBuilder.queryParam("version", "gt:0").build();
 		}
 		return uriBuilder.queryParam("version", "gt:" + state.getMaxVersion())
 		.queryParam("fromHistory", "ni:" + nodeName).build();
