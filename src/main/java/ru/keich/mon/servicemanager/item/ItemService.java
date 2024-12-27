@@ -215,14 +215,16 @@ public class ItemService extends EntityService<String, Item> {
 	}
 	
 	private Item.Builder calculateStatus(Item.Builder item) {
+		if(Objects.nonNull(item.getDeletedOn())) {
+			return item.status(BaseStatus.CLEAR);
+		}
 		var rules = item.getRules().values();
 		var childrenIds = item.getChildrenIds();
 		var childStatus = BaseStatus.fromInteger(calculateStatusByChild(rules, childrenIds));
 		var max = item.getEventsStatus().values().stream().mapToInt(BaseStatus::ordinal).max().orElse(0);
 		var eventStatusMax = BaseStatus.fromInteger(max);
 		var overalStatus = childStatus.max(eventStatusMax);
-		item.status(overalStatus);
-		return item;
+		return item.status(overalStatus);
 	}
 	
 	private List<Map.Entry<Item, ItemFilter>> findFiltersByEqualFields(Map<String, String> fields){
@@ -271,6 +273,9 @@ public class ItemService extends EntityService<String, Item> {
 	
 	private void findAllItemsById(String parentId, Set<Item> out, Set<String> history) {
 		findById(parentId).ifPresent(parent -> {
+			if(Objects.nonNull(parent.getDeletedOn())) {
+				return;
+			}
 			history.add(parentId);
 			out.add(parent);
 			parent.getChildrenIds().forEach(childId -> {
