@@ -14,7 +14,7 @@ public class QueueInfo<K> {
 	}
 	
 	public enum QueueInfoType {
-		UPDATE, UPDATED, REMOVED
+		UPDATE, UPDATED
 	}
 	
 }

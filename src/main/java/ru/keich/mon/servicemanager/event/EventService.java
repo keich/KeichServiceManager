@@ -60,7 +60,7 @@ public class EventService extends EntityService<String, Event>{
 					.fromHistoryAdd(nodeName)
 					.build();	
 		}, oldEvent -> {
-			entityChangedQueue.add(new QueueInfo<String>(event.getId(), QueueInfo.QueueInfoType.UPDATE));
+			entityChangedQueue.add(new QueueInfo<String>(oldEvent.getId(), QueueInfo.QueueInfoType.UPDATE));
 			return new Event.Builder(event)
 					.version(getNextVersion())
 					.fromHistoryAdd(nodeName)
@@ -76,7 +76,7 @@ public class EventService extends EntityService<String, Event>{
 			if(Objects.nonNull(oldEvent.getDeletedOn())) {
 				return null;
 			}
-			entityChangedQueue.add(new QueueInfo<String>(eventId, QueueInfo.QueueInfoType.REMOVED));
+			entityChangedQueue.add(new QueueInfo<String>(eventId, QueueInfo.QueueInfoType.UPDATE));
 			return new Event.Builder(oldEvent)
 					.version(getNextVersion())
 					.fromHistory(Collections.singleton(nodeName))
@@ -92,12 +92,6 @@ public class EventService extends EntityService<String, Event>{
 		case UPDATE:
 			entityCache.computeIfPresent(info.getId(), event -> {
 				itemService.eventChanged(event);
-				return event;
-			});
-			break;
-		case REMOVED:
-			entityCache.computeIfPresent(info.getId(), event -> {
-				itemService.eventRemoved(info.getId());
 				return event;
 			});
 			break;

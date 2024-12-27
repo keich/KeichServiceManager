@@ -95,10 +95,10 @@ public class ItemService extends EntityService<String, Item> {
 	@Override
 	public Optional<Item> deleteById(String itemId) {
 		return entityCache.computeIfPresent(itemId, oldItem -> {
-			entityChangedQueue.add(new QueueInfo<String>(itemId, QueueInfo.QueueInfoType.REMOVED));
 			if(Objects.nonNull(oldItem.getDeletedOn())) {
 				return null;
 			}
+			entityChangedQueue.add(new QueueInfo<String>(itemId, QueueInfo.QueueInfoType.UPDATE));
 			return new Item.Builder(oldItem)
 					.version(getNextVersion())
 					.fromHistory(Collections.singleton(nodeName))
@@ -122,7 +122,6 @@ public class ItemService extends EntityService<String, Item> {
 			});
 			break;
 		case UPDATED:
-		case REMOVED:
 			entityCache.computeIfPresent(info.getId(), item -> {
 				findParentsById(info.getId()).stream()
 				.map(this::findById)
@@ -148,14 +147,18 @@ public class ItemService extends EntityService<String, Item> {
 		});
 	}
 	
-	public void eventRemoved(String eventId) {
-		var predicate = Predicates.equal(INDEX_NAME_EVENTIDS, eventId);
+	private void eventRemoved(Event event) {
+		var predicate = Predicates.equal(INDEX_NAME_EVENTIDS, event.getId());
 		entityCache.keySet(predicate, -1).stream()
-				.forEach(itemId -> itemUpdateEventsStatus(itemId, m -> m.remove(eventId)));
+				.forEach(itemId -> itemUpdateEventsStatus(itemId, m -> m.remove(event.getId())));
 		return;
 	}
 	
 	public void eventChanged(Event event) {
+		if(Objects.nonNull(event.getDeletedOn())) {
+			eventRemoved(event);
+			return;
+		} 
 		findFiltersByEqualFields(event.getFields())
 				.forEach(itft -> {
 					var item = itft.getKey();
