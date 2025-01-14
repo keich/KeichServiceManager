@@ -33,6 +33,11 @@ import ru.keich.mon.servicemanager.store.BaseEntity;
 @Getter
 @JsonFilter("propertiesFilter")
 public class Entity<K> extends BaseEntity<K> {
+	public static final String FIELD_VERSION = "version";
+	public static final String FIELD_CREATEDON = "createdOn";
+	public static final String FIELD_UPDATEDON = "updatedOn";
+	public static final String FIELD_DELETEDON = "deletedOn";
+	
 	private final Long version;
 	private final String source;
 	private final String sourceKey;
@@ -168,6 +173,18 @@ public class Entity<K> extends BaseEntity<K> {
 			return this;
 		}
 
+	}
+	
+	public static Object fieldValueOf(String fieldName, String str) {
+		switch (fieldName) {
+		case FIELD_VERSION:
+			return Long.valueOf(str);
+		case FIELD_CREATEDON:
+		case FIELD_UPDATEDON:
+		case FIELD_DELETEDON:
+			return Instant.parse(str);
+		}
+		return str;
 	}
 	
 }

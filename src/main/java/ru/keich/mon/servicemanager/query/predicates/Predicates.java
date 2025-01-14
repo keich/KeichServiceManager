@@ -1,5 +1,8 @@
 package ru.keich.mon.servicemanager.query.predicates;
 
+import java.util.function.BiFunction;
+import java.util.function.Function;
+
 import ru.keich.mon.servicemanager.query.Operator;
 
 /*
@@ -20,31 +23,31 @@ import ru.keich.mon.servicemanager.query.Operator;
 
 public class Predicates {
 	
-	public static QueryPredicate fromParam(String name, String value) {
+	public static <C> QueryPredicate fromParam(String name, String value, BiFunction<String, String, Object> valueConverter) {
 		var arr = value.split(":", 2);
 		if (arr.length == 2) {
 			var operator = Operator.fromString(arr[0]);
-			value = arr[1];
+			var objValue = valueConverter.apply(name, arr[1]);
 			switch (operator) {
 			case NE:
-				return notEqual(name, value);
+				return notEqual(name, objValue);
 			case LT:
-				return lessThan(name, Long.valueOf(arr[1]));
+				return lessThan(name, objValue);
 			case GT:
-				return greaterThan(name, Long.valueOf(arr[1]));
+				return greaterThan(name, objValue);
 			case GE:
-				return greaterEqual(name, Long.valueOf(arr[1]));
+				return greaterEqual(name, objValue);
 			case CO:
-				return contain(name, arr[1]);
+				return contain(name, objValue);
 			case NC:
-				return notContain(name, arr[1]);
+				return notContain(name, objValue);
 			case NI:
-				return notInclude(name, arr[1]);
+				return notInclude(name, objValue);
 			default:
-				return equal(name, value);
+				return equal(name, objValue);
 			}
 		} else {
-			return equal(name, value);
+			return equal(name, valueConverter.apply(name, value));
 		}
 	}
 	

@@ -53,7 +53,7 @@ public class EventController extends EntityController<String, Event> {
 	@GetMapping("/event")
 	@CrossOrigin(origins = "*")
 	public ResponseEntity<MappingJacksonValue> find(@RequestParam MultiValueMap<String, String> reqParam) {
-		return super.find(reqParam);
+		return super.find(reqParam, Event::fieldValueOf);
 	}
 	
 	@Override

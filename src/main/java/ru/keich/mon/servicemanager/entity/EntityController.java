@@ -2,6 +2,7 @@ package ru.keich.mon.servicemanager.entity;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import org.springframework.http.ResponseEntity;
@@ -65,11 +66,15 @@ public class EntityController<K, T extends Entity<K>> {
 	}
 	
 	public ResponseEntity<MappingJacksonValue> find(@RequestParam MultiValueMap<String, String> reqParam) {
+		return find(reqParam, Entity::fieldValueOf);
+	}
+	
+	public <C> ResponseEntity<MappingJacksonValue> find(MultiValueMap<String, String> reqParam, BiFunction<String, String, Object> valueConverter) {
 		var filters = reqParam.entrySet().stream()
 				.filter(p -> !p.getKey().toLowerCase().equals(QUERY_PROPERTY))
 				.flatMap(param -> {
 					return param.getValue().stream()
-							.map(value -> Predicates.fromParam(param.getKey(), value));
+							.map(value -> Predicates.fromParam(param.getKey(), value, valueConverter));
 				}).collect(Collectors.toList());
 		return applyFilter(new MappingJacksonValue(entityService.query(filters)), reqParam);
 	}

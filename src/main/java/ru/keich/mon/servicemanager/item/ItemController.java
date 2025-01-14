@@ -63,7 +63,7 @@ public class ItemController extends EntityController<String, Item> {
 	@GetMapping("/item")
 	@CrossOrigin(origins = "*")
 	public ResponseEntity<MappingJacksonValue> find(@RequestParam MultiValueMap<String, String> reqParam) {
-		return super.find(reqParam);
+		return super.find(reqParam, Item::fieldValueOf);
 	}
 
 	@Override

@@ -32,6 +32,9 @@ import ru.keich.mon.servicemanager.entity.Entity;
 
 @Getter
 public class Event extends Entity<String> {
+	
+	public static final String FIELD_ENDSON = "endsOn";
+	
 	public enum EventType {
 		NOTSET, PROBLEM, RESOLUTION, INFORMATION
 	}
@@ -156,4 +159,13 @@ public class Event extends Entity<String> {
 		}
 		
 	}
+	
+	public static Object fieldValueOf(String fieldName, String str) {
+		switch (fieldName) {
+		case FIELD_ENDSON:
+			return Instant.parse(str);
+		}
+		return Entity.fieldValueOf(fieldName, str);
+	}
+	
 }
