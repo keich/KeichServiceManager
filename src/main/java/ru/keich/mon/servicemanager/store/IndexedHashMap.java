@@ -262,12 +262,4 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 		}
 	}
 	
-	public Set<K> keySetGreaterEqualFirst(String fieldName, Object value) {
-		if (index.containsKey(fieldName)) {
-			return index.get(fieldName).getAfterFirst(value);
-		}
-		var predicate = Predicates.greaterEqual(fieldName, value);
-		return findByField(fieldName, 1, predicate);
-	}
-	
 }
