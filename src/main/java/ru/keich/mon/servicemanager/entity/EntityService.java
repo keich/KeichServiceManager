@@ -43,26 +43,19 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	final protected QueueThreadReader<QueueInfo<K>> entityChangedQueue;
 	
 	final public String nodeName;
-	
-	static final public String INDEX_NAME_VERSION= "version";
-	static final public String INDEX_NAME_SOURCE = "source";
-	static final public String INDEX_NAME_SOURCE_KEY = "source_key";
-	static final public String INDEX_NAME_DELETED_ON = "deleted_on";// TODO
-	static final public String INDEX_NAME_FIELDS = "fields";
-	static final public String INDEX_NAME_FROMHISTORY = "fromHistory";
 
 	public EntityService(String nodeName, MeterRegistry registry, Integer threadCount) {
 		this.nodeName = nodeName;
 		entityCache = new IndexedHashMap<>(registry, this.getClass().getSimpleName());
 		entityChangedQueue = new QueueThreadReader<QueueInfo<K>>(this.getClass().getSimpleName(), threadCount, this::queueRead);
 		
-		entityCache.addIndex(INDEX_NAME_VERSION, IndexType.UNIQ_SORTED, Entity::getVersionForIndex);
-		entityCache.addIndex(INDEX_NAME_SOURCE, IndexType.EQUAL, Entity::getSourceForIndex);
-		entityCache.addIndex(INDEX_NAME_SOURCE_KEY, IndexType.EQUAL, Entity::getSourceKeyForIndex);
-		entityCache.addIndex(INDEX_NAME_DELETED_ON, IndexType.SORTED, Entity::getDeletedOnForIndex);
+		entityCache.addIndex(Entity.FIELD_VERSION, IndexType.UNIQ_SORTED, Entity::getVersionForIndex);
+		entityCache.addIndex(Entity.FIELD_SOURCE, IndexType.EQUAL, Entity::getSourceForIndex);
+		entityCache.addIndex(Entity.FIELD_SOURCEKEY, IndexType.EQUAL, Entity::getSourceKeyForIndex);
+		entityCache.addIndex(Entity.FIELD_DELETEDON, IndexType.SORTED, Entity::getDeletedOnForIndex);
 		
-		entityCache.addIndex(INDEX_NAME_FIELDS, IndexType.EQUAL, Entity::getFieldsForIndex);
-		entityCache.addIndex(INDEX_NAME_FROMHISTORY, IndexType.EQUAL, Entity::getFromHistoryForIndex);
+		entityCache.addIndex(Entity.FIELD_FIELDS, IndexType.EQUAL, Entity::getFieldsForIndex);
+		entityCache.addIndex(Entity.FIELD_FROMHISTORY, IndexType.EQUAL, Entity::getFromHistoryForIndex);
 	}
 	
 	protected Long getNextVersion() {
@@ -92,9 +85,9 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	}
 	
 	public List<T> deleteBySourceAndSourceKeyNot(String source, String sourceKey) {
-		var predicate = Predicates.equal(INDEX_NAME_SOURCE, source);
+		var predicate = Predicates.equal(Entity.FIELD_SOURCE, source);
 		var sourceIndex = entityCache.keySet(predicate, -1);
-		predicate = Predicates.equal(INDEX_NAME_SOURCE_KEY, sourceKey);
+		predicate = Predicates.equal(Entity.FIELD_SOURCEKEY, sourceKey);
 		var sourceKeyIndex = entityCache.keySet(predicate, -1);
 		sourceIndex.removeAll(sourceKeyIndex);
 		return sourceIndex.stream()
@@ -123,7 +116,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	
 	@Scheduled(fixedRateString = "${entity.delete.fixedrate:60}", timeUnit = TimeUnit.SECONDS)
 	public void deleteOldScheduled() {
-		var predicate = Predicates.lessThan(INDEX_NAME_DELETED_ON, Instant.now().minusSeconds(seconds));
+		var predicate = Predicates.lessThan(Entity.FIELD_DELETEDON, Instant.now().minusSeconds(seconds));
 		entityCache.keySet(predicate, -1)
 				.forEach(id -> entityCache.remove(id));
 	}

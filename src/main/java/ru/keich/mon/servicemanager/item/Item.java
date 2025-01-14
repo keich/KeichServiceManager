@@ -17,6 +17,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.entity.Entity;
+import ru.keich.mon.servicemanager.query.predicates.QueryPredicate;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -37,6 +38,8 @@ import ru.keich.mon.servicemanager.entity.Entity;
 @Getter
 public class Item extends Entity<String> {
 
+	public static final String FIELD_NAME = "name";
+	
 	private final BaseStatus status;
 
 	private final Map<String, ItemRule> rules;
@@ -142,6 +145,16 @@ public class Item extends Entity<String> {
 		return Collections.unmodifiableSet(item.getEventsStatus().keySet());
 	}
 
+	@Override
+	public boolean testQueryPredicate(QueryPredicate predicate) {
+		var fieldName = predicate.getName();
+		switch (fieldName) {
+		case FIELD_NAME:
+			return predicate.test(name);
+		}
+		return super.testQueryPredicate(predicate);
+	}
+	
 	@Override
 	public String toString() {
 		return "Item [name=" + name + ", status=" + status + ", fields=" + getFields() + ", rules=" + rules + ", filters=" + filters

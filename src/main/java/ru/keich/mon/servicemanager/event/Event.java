@@ -13,6 +13,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.entity.Entity;
+import ru.keich.mon.servicemanager.query.predicates.QueryPredicate;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -34,6 +35,8 @@ import ru.keich.mon.servicemanager.entity.Entity;
 public class Event extends Entity<String> {
 	
 	public static final String FIELD_ENDSON = "endsOn";
+	public static final String FIELD_NODE = "node";
+	public static final String FIELD_SUMMARY = "summary";
 	
 	public enum EventType {
 		NOTSET, PROBLEM, RESOLUTION, INFORMATION
@@ -70,6 +73,20 @@ public class Event extends Entity<String> {
 
 	public static Set<Object> getEndsOnForIndex(Event event) {
 		return Optional.ofNullable((Object)event.endsOn).map(Collections::singleton).orElse(Collections.emptySet());
+	}
+	
+	@Override
+	public boolean testQueryPredicate(QueryPredicate predicate) {
+		var fieldName = predicate.getName();
+		switch (fieldName) {
+		case FIELD_ENDSON:
+			return predicate.test(endsOn);
+		case FIELD_NODE:
+			return predicate.test(node);
+		case FIELD_SUMMARY:
+			return predicate.test(summary);
+		}
+		return super.testQueryPredicate(predicate);
 	}
 	
 	@Override
@@ -167,5 +184,6 @@ public class Event extends Entity<String> {
 		}
 		return Entity.fieldValueOf(fieldName, str);
 	}
+	
 	
 }

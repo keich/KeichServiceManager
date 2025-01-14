@@ -12,6 +12,7 @@ import java.util.stream.Stream;
 import com.fasterxml.jackson.annotation.JsonFilter;
 
 import lombok.Getter;
+import ru.keich.mon.servicemanager.query.predicates.QueryPredicate;
 import ru.keich.mon.servicemanager.store.BaseEntity;
 
 /*
@@ -33,10 +34,15 @@ import ru.keich.mon.servicemanager.store.BaseEntity;
 @Getter
 @JsonFilter("propertiesFilter")
 public class Entity<K> extends BaseEntity<K> {
+	
 	public static final String FIELD_VERSION = "version";
 	public static final String FIELD_CREATEDON = "createdOn";
 	public static final String FIELD_UPDATEDON = "updatedOn";
 	public static final String FIELD_DELETEDON = "deletedOn";
+	public static final String FIELD_SOURCE = "source";
+	public static final String FIELD_SOURCEKEY = "sourceKey";
+	public static final String FIELD_FIELDS = "fields";
+	public static final String FIELD_FROMHISTORY = "fromHistory";
 	
 	private final Long version;
 	private final String source;
@@ -185,6 +191,26 @@ public class Entity<K> extends BaseEntity<K> {
 			return Instant.parse(str);
 		}
 		return str;
+	}
+
+	@Override
+	public boolean testQueryPredicate(QueryPredicate predicate) {
+		var fieldName = predicate.getName();
+		switch (fieldName) {
+		case FIELD_VERSION:
+			return predicate.test(version);
+		case FIELD_CREATEDON:
+			return predicate.test(createdOn);
+		case FIELD_UPDATEDON:
+			return predicate.test(updatedOn);
+		case FIELD_DELETEDON:
+			return predicate.test(deletedOn);
+		case FIELD_SOURCE:
+			return predicate.test(source);
+		case FIELD_SOURCEKEY:
+			return predicate.test(sourceKey);
+		}
+		return super.testQueryPredicate(predicate);
 	}
 	
 }

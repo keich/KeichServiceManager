@@ -18,6 +18,7 @@ import lombok.Setter;
 
 import ru.keich.mon.servicemanager.entity.Entity;
 import ru.keich.mon.servicemanager.query.predicates.Predicates;
+import ru.keich.mon.servicemanager.query.predicates.QueryPredicate;
 import ru.keich.mon.servicemanager.store.IndexedHashMap;
 import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
 
@@ -26,6 +27,9 @@ public class StoreTest {
 	@Getter
 	@Setter
 	static public class TestEntity extends Entity<String> {
+		
+		public static final String FIELD_NAME = "name";
+		public static final String FIELD_SOMESET = "someSet";
 
 		public TestEntity(String id, Long version, String source, String sourceKey, Map<String, String> fields,
 				Set<String> fromHistory, Instant createdOn, Instant updatedOn, Instant deletedOn) {
@@ -47,16 +51,23 @@ public class StoreTest {
 		}
 
 		@Override
+		public boolean testQueryPredicate(QueryPredicate predicate) {
+			var fieldName = predicate.getName();
+			switch (fieldName) {
+			case FIELD_NAME:
+				return predicate.test(name);
+			case FIELD_SOMESET:
+				return predicate.test(someSet);
+			}
+			return super.testQueryPredicate(predicate);
+		}
+		
+		@Override
 		public String toString() {
 			return "TestEntity [name=" + name + ", someSet=" + someSet + "]";
 		}
 		
 	}
-
-	final String INDEX_NAME_SOURCE = "source";
-	final String INDEX_NAME_VERSION = "version";
-	final String INDEX_NAME_NAME = "name";
-	static final public String INDEX_NAME_SET= "someSet";
 
 	public void queryEqual(IndexedHashMap<String, TestEntity> store) {
 		final long limit = -1;
@@ -67,7 +78,7 @@ public class StoreTest {
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
 		store.put(entity1);
 		store.put(entity2);
-		var repdicate = Predicates.equal(INDEX_NAME_SOURCE, SOURCE_VALUE);
+		var repdicate = Predicates.equal(Entity.FIELD_SOURCE, SOURCE_VALUE);
 		var retSet1 = store.keySet(repdicate, limit);
 		assertEquals(1, retSet1.size());
 		retSet1.stream().forEach(id -> {
@@ -85,7 +96,7 @@ public class StoreTest {
 	@Test
 	public void queryEqualByIndex() {
 		var store = new IndexedHashMap<String, TestEntity>(null, this.getClass().getSimpleName());
-		store.addIndex(INDEX_NAME_SOURCE, IndexType.EQUAL, Entity::getSourceForIndex);
+		store.addIndex(Entity.FIELD_SOURCE, IndexType.EQUAL, Entity::getSourceForIndex);
 		queryEqual(store);
 	}
 	
@@ -99,7 +110,7 @@ public class StoreTest {
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
 		store.put(entity1);
 		store.put(entity2);
-		var repdicate = Predicates.notEqual(INDEX_NAME_SOURCE, SOURCE_VALUE1);
+		var repdicate = Predicates.notEqual(Entity.FIELD_SOURCE, SOURCE_VALUE1);
 		var retSet1 = store.keySet(repdicate, limit);
 		assertEquals(1, retSet1.size());
 		retSet1.stream().forEach(id -> {
@@ -117,7 +128,7 @@ public class StoreTest {
 	@Test
 	public void queryNotEqualByIndex() {
 		var store = new IndexedHashMap<String, TestEntity>(null, this.getClass().getSimpleName());
-		store.addIndex(INDEX_NAME_SOURCE, IndexType.EQUAL, Entity::getSourceForIndex);
+		store.addIndex(Entity.FIELD_SOURCE, IndexType.EQUAL, Entity::getSourceForIndex);
 		queryNotEqual(store);
 	}
 	
@@ -132,7 +143,7 @@ public class StoreTest {
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
 		store.put(entity1);
 		store.put(entity2);
-		var repdicate = Predicates.lessThan(INDEX_NAME_VERSION, VERSION2);
+		var repdicate = Predicates.lessThan(Entity.FIELD_VERSION, VERSION2);
 		var retSet1 = store.keySet(repdicate, limit);
 		assertEquals(1, retSet1.size());
 		retSet1.stream().forEach(id -> {
@@ -150,7 +161,7 @@ public class StoreTest {
 	@Test
 	public void queryLessThanByIndex() {
 		var store = new IndexedHashMap<String, TestEntity>(null, this.getClass().getSimpleName());
-		store.addIndex(INDEX_NAME_VERSION, IndexType.UNIQ_SORTED, Entity::getVersionForIndex);
+		store.addIndex(Entity.FIELD_VERSION, IndexType.UNIQ_SORTED, Entity::getVersionForIndex);
 		queryLessThan(store);
 	}
 	
@@ -169,7 +180,7 @@ public class StoreTest {
 		store.put(entity1);
 		store.put(entity2);
 		store.put(entity3);
-		var repdicate = Predicates.greaterEqual(INDEX_NAME_VERSION, VERSION2);
+		var repdicate = Predicates.greaterEqual(Entity.FIELD_VERSION, VERSION2);
 		var retSet1 = store.keySet(repdicate, limit);
 		assertEquals(2, retSet1.size());
 		retSet1.stream().forEach(id -> {
@@ -187,7 +198,7 @@ public class StoreTest {
 	@Test
 	public void queryGreaterEqualByIndex() {
 		var store = new IndexedHashMap<String, TestEntity>(null, this.getClass().getSimpleName());
-		store.addIndex(INDEX_NAME_VERSION, IndexType.UNIQ_SORTED, Entity::getVersionForIndex);
+		store.addIndex(Entity.FIELD_VERSION, IndexType.UNIQ_SORTED, Entity::getVersionForIndex);
 		queryGreaterEqual(store);
 	}
 	
@@ -206,7 +217,7 @@ public class StoreTest {
 		store.put(entity1);
 		store.put(entity2);
 		store.put(entity3);
-		var repdicate = Predicates.greaterThan(INDEX_NAME_VERSION, VERSION2);
+		var repdicate = Predicates.greaterThan(Entity.FIELD_VERSION, VERSION2);
 		var retSet1 = store.keySet(repdicate, limit);
 		assertEquals(1, retSet1.size());
 		retSet1.stream().forEach(id -> {
@@ -224,7 +235,7 @@ public class StoreTest {
 	@Test
 	public void queryGreaterThanByIndex() {
 		var store = new IndexedHashMap<String, TestEntity>(null, this.getClass().getSimpleName());
-		store.addIndex(INDEX_NAME_VERSION, IndexType.UNIQ_SORTED, Entity::getVersionForIndex);
+		store.addIndex(Entity.FIELD_VERSION, IndexType.UNIQ_SORTED, Entity::getVersionForIndex);
 		queryGreaterThan(store);
 	}
 	
@@ -243,7 +254,7 @@ public class StoreTest {
 		entity2.setName(OTHER_NAME);
 		store.put(entity1);
 		store.put(entity2);
-		var p1 = Predicates.contain(INDEX_NAME_NAME, "Test");
+		var p1 = Predicates.contain(TestEntity.FIELD_NAME, "Test");
 		var retSet1 = store.keySet(p1, limit);
 		assertEquals(1, retSet1.size());
 		retSet1.stream().forEach(id -> {
@@ -261,7 +272,7 @@ public class StoreTest {
 	@Test
 	public void queryContainByIndex() {
 		var store = new IndexedHashMap<String, TestEntity>(null, this.getClass().getSimpleName());
-		store.addIndex(INDEX_NAME_NAME, IndexType.EQUAL, TestEntity::getNameUpperCaseForIndex);
+		store.addIndex(TestEntity.FIELD_NAME, IndexType.EQUAL, TestEntity::getNameUpperCaseForIndex);
 		queryContainString(store);
 	}
 	
@@ -280,7 +291,7 @@ public class StoreTest {
 		entity2.setName(OTHER_NAME);
 		store.put(entity1);
 		store.put(entity2);
-		var p1 = Predicates.notContain(INDEX_NAME_NAME, "Test");
+		var p1 = Predicates.notContain(TestEntity.FIELD_NAME, "Test");
 		var retSet1 = store.keySet(p1, limit);
 		assertEquals(1, retSet1.size());
 		retSet1.stream().forEach(id -> {
@@ -298,7 +309,7 @@ public class StoreTest {
 	@Test
 	public void queryNotContainByIndex() {
 		var store = new IndexedHashMap<String, TestEntity>(null, this.getClass().getSimpleName());
-		store.addIndex(INDEX_NAME_NAME, IndexType.EQUAL, TestEntity::getNameUpperCaseForIndex);
+		store.addIndex(TestEntity.FIELD_NAME, IndexType.EQUAL, TestEntity::getNameUpperCaseForIndex);
 		queryNotContainString(store);
 	}
 
@@ -337,7 +348,7 @@ public class StoreTest {
 		store.put(entity1);
 		store.put(entity2);
 		store.put(entity3);
-		var p1 = Predicates.notInclude(INDEX_NAME_SET, "Test4");
+		var p1 = Predicates.notInclude(TestEntity.FIELD_SOMESET, "Test4");
 		var retSet1 = store.keySet(p1, limit);
 
 		assertEquals(2, retSet1.size());
@@ -354,7 +365,7 @@ public class StoreTest {
 	@Test
 	public void queryNotIncludeByIndex() {
 		var store = new IndexedHashMap<String, TestEntity>(null, this.getClass().getSimpleName());
-		store.addIndex(INDEX_NAME_SET, IndexType.EQUAL, TestEntity::getSomeSetForIndex);
+		store.addIndex(TestEntity.FIELD_SOMESET, IndexType.EQUAL, TestEntity::getSomeSetForIndex);
 		queryNotInclude(store);
 	}
 }

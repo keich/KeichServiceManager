@@ -189,23 +189,13 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 	}
 	
 	private Set<K> findByField(String fieldName, long limit, QueryPredicate predicate) {
-		var methodName = "get" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
-		var stream = cache.entrySet().stream().filter(entry -> {
-			var entity = entry.getValue();
-			try {
-				var v = entry.getValue().getClass().getMethod(methodName).invoke(entity);
-				if (predicate.test(v)) {
-					return true;
-				}
-			} catch (Exception e1) {
-				e1.printStackTrace();
-			}
-			return false;
-		}).map(e -> e.getKey());
+		var s = cache.entrySet().stream()
+				.filter(entry -> entry.getValue().testQueryPredicate(predicate))
+				.map(e -> e.getKey());
 		if(limit > 0) {
-			return stream.limit(limit).collect(Collectors.toSet());
+			return s.limit(limit).collect(Collectors.toSet());
 		}
-		return stream.collect(Collectors.toSet());
+		return s.collect(Collectors.toSet());
 	}
 	
 	public Set<K> keySet(QueryPredicate predicate, long limit) {

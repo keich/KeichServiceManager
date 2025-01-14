@@ -36,13 +36,11 @@ import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
 @Service
 public class EventService extends EntityService<String, Event>{
 	
-	static final public String INDEX_NAME_ENDS_ON = "endson";
-	
 	private ItemService itemService;
 	
 	public void setItemService(ItemService itemService) {
 		this.itemService = itemService;
-		entityCache.addIndex(INDEX_NAME_ENDS_ON, IndexType.SORTED, Event::getEndsOnForIndex);
+		entityCache.addIndex(Event.FIELD_ENDSON, IndexType.SORTED, Event::getEndsOnForIndex);
 	}
 
 	public EventService(@Value("${replication.nodename}") String nodeName
@@ -102,7 +100,7 @@ public class EventService extends EntityService<String, Event>{
 	
 	@Scheduled(fixedRateString = "1", timeUnit = TimeUnit.SECONDS)
 	public void deleteEndsOnScheduled() {
-		var predicate = Predicates.lessThan(INDEX_NAME_ENDS_ON, Instant.now());
+		var predicate = Predicates.lessThan(Event.FIELD_ENDSON, Instant.now());
 		entityCache.keySet(predicate, -1).stream()
 				.forEach(this::deleteById);
 	}

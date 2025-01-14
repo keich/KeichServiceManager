@@ -3,6 +3,8 @@ package ru.keich.mon.servicemanager.store;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import ru.keich.mon.servicemanager.query.predicates.QueryPredicate;
+
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -20,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 
 public class BaseEntity<K> {
+	public static final String FIELD_ID = "id";
 	private final K id;
 
 	@JsonCreator
@@ -30,6 +33,15 @@ public class BaseEntity<K> {
 
 	public K getId() {
 		return id;
+	}
+	
+	public boolean testQueryPredicate(QueryPredicate predicate) {
+		var fieldName = predicate.getName();
+		switch(fieldName) {
+		case FIELD_ID:
+			return predicate.test(id);
+		}
+		return false;
 	}
 
 	@Override
