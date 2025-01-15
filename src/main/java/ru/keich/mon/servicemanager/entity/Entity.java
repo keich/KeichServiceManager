@@ -12,7 +12,6 @@ import java.util.stream.Stream;
 import com.fasterxml.jackson.annotation.JsonFilter;
 
 import lombok.Getter;
-import ru.keich.mon.servicemanager.query.predicates.QueryPredicate;
 import ru.keich.mon.servicemanager.store.BaseEntity;
 
 /*

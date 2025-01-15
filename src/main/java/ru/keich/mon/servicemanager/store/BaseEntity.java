@@ -3,8 +3,6 @@ package ru.keich.mon.servicemanager.store;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import ru.keich.mon.servicemanager.query.predicates.QueryPredicate;
-
 /*
  * Copyright 2024 the original author or authors.
  *
