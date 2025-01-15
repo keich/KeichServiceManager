@@ -92,6 +92,14 @@ public class Entity<K> extends BaseEntity<K> {
 		return Optional.ofNullable((Object)entity.deletedOn).map(Collections::singleton).orElse(Collections.emptySet());
 	}
 	
+	public static Set<Object> getUpdatedOnForIndex(Entity<?> entity) {
+		return Optional.ofNullable((Object)entity.updatedOn).map(Collections::singleton).orElse(Collections.emptySet());
+	}
+	
+	public static Set<Object> getCreatedOnForIndex(Entity<?> entity) {
+		return Optional.ofNullable((Object)entity.createdOn).map(Collections::singleton).orElse(Collections.emptySet());
+	}
+	
 	public static Set<Object> getFieldsForIndex(Entity<?> item) {
 		return item.fields.entrySet().stream().collect(Collectors.toSet());
 	}
