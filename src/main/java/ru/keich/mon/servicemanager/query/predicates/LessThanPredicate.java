@@ -26,11 +26,8 @@ public class LessThanPredicate extends QueryPredicate {
 
 	@Override
 	public boolean test(Object t) {
-		if (value instanceof Long) {
-			var v = (Long) value;
-			return v.compareTo((Long) t) > 0;
-		}
-		return false;
+		var v = (Comparable) value;
+		return v.compareTo(t) > 0;
 	}
 
 }

@@ -38,6 +38,9 @@ import ru.keich.mon.servicemanager.entity.Entity;
 public class Item extends Entity<String> {
 
 	public static final String FIELD_NAME = "name";
+	public static final String FIELD_EVENTIDS = "events";
+	public static final String FIELD_PARENTS = "parents";
+	public static final String FIELD_FILTERS_EQL = "filters_equal";
 	
 	private final BaseStatus status;
 
@@ -132,7 +135,7 @@ public class Item extends Entity<String> {
 		return Collections.unmodifiableSet(item.getChildrenIds());
 	}
 	
-	public static Set<Object> getNameUpperCaseForIndex(Entity<?> entity) {
+	public static Set<Object> getNameForIndex(Entity<?> entity) {
 		Item item = (Item)entity;
 		return  Optional.ofNullable(item.getName())
 				.map(String::toUpperCase)
@@ -140,7 +143,7 @@ public class Item extends Entity<String> {
 				.orElse(Collections.emptySet());
 	}
 	
-	public static Set<Object> getEventsIndex(Item item) {
+	public static Set<Object> getEventsIdsForIndex(Item item) {
 		return Collections.unmodifiableSet(item.getEventsStatus().keySet());
 	}
 	

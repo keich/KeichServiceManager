@@ -46,12 +46,6 @@ import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
 public class ItemService extends EntityService<String, Item> {
 	
 	private final EventService eventService;
-
-	static final String INDEX_NAME_FILTERS_EQL = "filter_equal";
-	static final String INDEX_NAME_PARENTS = "parents";
-	
-	static final public String INDEX_NAME_NAME_UPPERCASE = "name";
-	static final public String INDEX_NAME_EVENTIDS = "eventIds";
 	
 	public ItemService(@Value("${replication.nodename}") String nodeName
 			,EventService eventService
@@ -59,12 +53,12 @@ public class ItemService extends EntityService<String, Item> {
 			,@Value("${item.thread.count:2}") Integer threadCount) {
 		super(nodeName, registry, threadCount);
 
-		entityCache.addIndex(INDEX_NAME_FILTERS_EQL, IndexType.EQUAL, Item::getFiltersForIndex);
-		entityCache.addIndex(INDEX_NAME_PARENTS, IndexType.EQUAL, Item::getParentsForIndex);
+		entityCache.addIndex(Item.FIELD_FILTERS_EQL, IndexType.EQUAL, Item::getFiltersForIndex);
+		entityCache.addIndex(Item.FIELD_PARENTS, IndexType.EQUAL, Item::getParentsForIndex);
 		
-		entityCache.addIndex(INDEX_NAME_NAME_UPPERCASE, IndexType.EQUAL, Item::getNameUpperCaseForIndex);
+		entityCache.addIndex(Item.FIELD_NAME, IndexType.EQUAL, Item::getNameForIndex);
 		
-		entityCache.addIndex(INDEX_NAME_EVENTIDS, IndexType.EQUAL, Item::getEventsIndex);
+		entityCache.addIndex(Item.FIELD_EVENTIDS, IndexType.EQUAL, Item::getEventsIdsForIndex);
 		
 		this.eventService = eventService;
 		eventService.setItemService(this);
@@ -148,7 +142,7 @@ public class ItemService extends EntityService<String, Item> {
 	}
 	
 	private void eventRemoved(Event event) {
-		var predicate = Predicates.equal(INDEX_NAME_EVENTIDS, event.getId());
+		var predicate = Predicates.equal(Item.FIELD_EVENTIDS, event.getId());
 		entityCache.keySet(predicate, -1).stream()
 				.forEach(itemId -> itemUpdateEventsStatus(itemId, m -> m.remove(event.getId())));
 		return;
@@ -229,7 +223,7 @@ public class ItemService extends EntityService<String, Item> {
 	
 	private List<Map.Entry<Item, ItemFilter>> findFiltersByEqualFields(Map<String, String> fields){
 		return fields.entrySet().stream()
-				.map(e -> Predicates.equal(INDEX_NAME_FILTERS_EQL, e))
+				.map(e -> Predicates.equal(Item.FIELD_FILTERS_EQL, e))
 				.flatMap(p -> entityCache.keySet(p, -1).stream())
 				.distinct()
 				.map(this::findById)
@@ -259,7 +253,7 @@ public class ItemService extends EntityService<String, Item> {
 	}
 	
 	public Set<String> findParentsById(String itemId) {
-		var predicate = Predicates.equal(INDEX_NAME_PARENTS, itemId);
+		var predicate = Predicates.equal(Item.FIELD_PARENTS, itemId);
 		return entityCache.keySet(predicate, -1);
 	}
 	
