@@ -38,18 +38,15 @@ public class IndexEqual<K, T extends BaseEntity<K>> implements Index<K, T> {
 	}
 
 	@Override
-	public Set<K> findByKey(long limit, Predicate<Object> predicate) {
-		var stream = objects.entrySet().stream()
+	public Set<K> findByKey( Predicate<Object> predicate) {
+		return objects.entrySet().stream()
 				.filter(entry -> {
 						return predicate.test(entry.getKey());
 					})
 				.map(Map.Entry::getValue)
 				.map(Map::keySet)
-				.flatMap(Set::stream);
-		if(limit > 0) {
-			return stream.limit(limit).collect(Collectors.toSet());
-		}
-		return stream.collect(Collectors.toSet());
+				.flatMap(Set::stream)
+				.collect(Collectors.toSet());
 	}
 
 	@Override

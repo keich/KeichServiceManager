@@ -76,20 +76,6 @@ public class Event extends Entity<String> {
 	}
 	
 	@Override
-	public boolean testQueryPredicate(QueryPredicate predicate) {
-		var fieldName = predicate.getName();
-		switch (fieldName) {
-		case FIELD_ENDSON:
-			return predicate.test(endsOn);
-		case FIELD_NODE:
-			return predicate.test(node);
-		case FIELD_SUMMARY:
-			return predicate.test(summary);
-		}
-		return super.testQueryPredicate(predicate);
-	}
-	
-	@Override
 	public String toString() {
 		return "Event [id=" + getId() + ", type=" + type + ", status=" + status +
 				", createdOn=" + getCreatedOn() + ", createdOn=" + getUpdatedOn() + ", deletedOn=" + getDeletedOn() +

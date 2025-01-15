@@ -144,16 +144,6 @@ public class Item extends Entity<String> {
 	public static Set<Object> getEventsIndex(Item item) {
 		return Collections.unmodifiableSet(item.getEventsStatus().keySet());
 	}
-
-	@Override
-	public boolean testQueryPredicate(QueryPredicate predicate) {
-		var fieldName = predicate.getName();
-		switch (fieldName) {
-		case FIELD_NAME:
-			return predicate.test(name);
-		}
-		return super.testQueryPredicate(predicate);
-	}
 	
 	@Override
 	public String toString() {

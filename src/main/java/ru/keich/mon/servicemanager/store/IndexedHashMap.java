@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -84,6 +85,7 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 	
 	private Map<K, T> cache = new ConcurrentHashMap<>();
 	private Map<String , Index<K, T>> index =  new HashMap<>(); 
+	private Map<String , BiFunction<T, QueryPredicate, Boolean>> query =  new HashMap<>(); 
 
 	public IndexedHashMap(MeterRegistry registry, String serviceName) {
 		super();
@@ -123,6 +125,10 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 			registry.gauge(METRIC_NAME_MAP + METRIC_NAME_INDEX + "_" + METRIC_NAME_SIZE, tags,
 					index.get(name).getMetricObjectsSize());
 		}
+	}
+	
+	public void addQueryField(String name, BiFunction<T, QueryPredicate, Boolean> test) {
+		query.put(name, test);
 	}
 		
 	public Optional<T> put(T entity) {
@@ -188,68 +194,57 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 		}));
 	}
 	
-	private Set<K> findByField(String fieldName, long limit, QueryPredicate predicate) {
-		var s = cache.entrySet().stream()
-				.filter(entry -> entry.getValue().testQueryPredicate(predicate))
-				.map(e -> e.getKey());
-		if(limit > 0) {
-			return s.limit(limit).collect(Collectors.toSet());
+	private Set<K> findByQuery(QueryPredicate predicate) {
+		var fieldName = predicate.getName();
+		var test = query.get(fieldName);
+		return cache.entrySet().stream()
+				.filter(entry -> test.apply(entry.getValue(), predicate))
+				.map(e -> e.getKey())
+				.collect(Collectors.toSet());
+	}
+	
+	private Set<K> findByIndex(QueryPredicate predicate) {
+		var fieldName = predicate.getName();
+		switch (predicate.getOperator()) {
+		case EQ:
+			return index.get(fieldName).get(predicate.getValue());
+		case NE:
+		case CO:
+		case NC:
+			return index.get(fieldName).findByKey((p) -> predicate.test(p));
+		case NI:
+			var t = index.get(fieldName).get(predicate.getValue());
+			var r = index.get(fieldName).valueSet();
+			r.removeAll(t);
+			return r;
+		case LT:
+			return index.get(fieldName).getBefore(predicate.getValue());
+		case GT:
+			var r1 = index.get(fieldName).getAfterEqual(predicate.getValue());
+			var eq = index.get(fieldName).get(predicate.getValue());
+			r1.removeAll(eq);
+			return r1;
+		case GE:
+			return index.get(fieldName).getAfterEqual(predicate.getValue());
+		default:
+			return Collections.emptySet();
 		}
-		return s.collect(Collectors.toSet());
 	}
 	
 	public Set<K> keySet(QueryPredicate predicate, long limit) {
 		var fieldName = predicate.getName();
+		Set<K> ret;
 		if (index.containsKey(fieldName)) {
-			switch (predicate.getOperator()) {
-			case EQ:
-				var r5 = index.get(fieldName).get(predicate.getValue());
-				if(limit > 0) {
-					return r5.stream().limit(limit).collect(Collectors.toSet());
-				}
-				return r5;
-			case NE:
-			case CO:
-			case NC:
-				var r4 = index.get(fieldName).findByKey(limit, (p) -> predicate.test(p));
-				if(limit > 0) {
-					return r4.stream().limit(limit).collect(Collectors.toSet());
-				}
-				return r4;
-			case NI:
-				var t = index.get(fieldName).get(predicate.getValue());
-				var r = index.get(fieldName).valueSet();
-				r.removeAll(t);
-				if(limit > 0) {
-					return r.stream().limit(limit).collect(Collectors.toSet());
-				}
-				return r;
-			case LT:
-				var r3 = index.get(fieldName).getBefore(predicate.getValue());
-				if(limit > 0) {
-					return r3.stream().limit(limit).collect(Collectors.toSet());
-				}
-				return r3;
-			case GT:
-				var r1 = index.get(fieldName).getAfterEqual(predicate.getValue());
-				var eq = index.get(fieldName).get(predicate.getValue());
-				r1.removeAll(eq);
-				if(limit > 0) {
-					return r1.stream().limit(limit).collect(Collectors.toSet());
-				}
-				return r1;
-			case GE:
-				var r2 = index.get(fieldName).getAfterEqual(predicate.getValue());
-				if(limit > 0) {
-					return r2.stream().limit(limit).collect(Collectors.toSet());
-				}
-				return r2;
-			default:
-				return Collections.emptySet();
-			}
+			ret = findByIndex(predicate);
+		} else if(query.containsKey(fieldName)) {
+			ret = findByQuery(predicate);
 		} else {
-			return findByField(fieldName, limit, predicate);
+			throw new RuntimeException("Can't query by field \"" + fieldName + "\"");
 		}
+		if (limit > 0) {
+			ret = ret.stream().limit(limit).collect(Collectors.toSet());
+		}
+		return ret;
 	}
 	
 }

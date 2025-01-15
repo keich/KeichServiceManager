@@ -192,25 +192,5 @@ public class Entity<K> extends BaseEntity<K> {
 		}
 		return str;
 	}
-
-	@Override
-	public boolean testQueryPredicate(QueryPredicate predicate) {
-		var fieldName = predicate.getName();
-		switch (fieldName) {
-		case FIELD_VERSION:
-			return predicate.test(version);
-		case FIELD_CREATEDON:
-			return predicate.test(createdOn);
-		case FIELD_UPDATEDON:
-			return predicate.test(updatedOn);
-		case FIELD_DELETEDON:
-			return predicate.test(deletedOn);
-		case FIELD_SOURCE:
-			return predicate.test(source);
-		case FIELD_SOURCEKEY:
-			return predicate.test(sourceKey);
-		}
-		return super.testQueryPredicate(predicate);
-	}
 	
 }

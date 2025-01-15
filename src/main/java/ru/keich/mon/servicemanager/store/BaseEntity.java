@@ -34,15 +34,6 @@ public class BaseEntity<K> {
 	public K getId() {
 		return id;
 	}
-	
-	public boolean testQueryPredicate(QueryPredicate predicate) {
-		var fieldName = predicate.getName();
-		switch(fieldName) {
-		case FIELD_ID:
-			return predicate.test(id);
-		}
-		return false;
-	}
 
 	@Override
 	public int hashCode() {
