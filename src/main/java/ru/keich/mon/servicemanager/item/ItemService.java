@@ -117,7 +117,7 @@ public class ItemService extends EntityService<String, Item> {
 					entityChangedQueue.add(new QueueInfo<String>(info.getId(), QueueInfo.QueueInfoType.UPDATED));
 					return item.build();
 				}
-				return oldItem;
+				return null;
 			});
 			break;
 		case UPDATED:
@@ -131,7 +131,7 @@ public class ItemService extends EntityService<String, Item> {
 				.forEach(parentId -> {
 					entityChangedQueue.add(new QueueInfo<String>(parentId, QueueInfo.QueueInfoType.UPDATE));
 				});
-				return item;
+				return null;
 			});
 			break;
 		default:
