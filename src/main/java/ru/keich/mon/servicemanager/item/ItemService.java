@@ -141,8 +141,8 @@ public class ItemService extends EntityService<String, Item> {
 	
 	public void itemUpdateEventsStatus(String itemId, Consumer<Map<String, BaseStatus>> s) {
 		entityCache.computeIfPresent(itemId, item -> {
-			entityChangedQueue.add(new QueueInfo<String>(itemId, QueueInfo.QueueInfoType.UPDATED));
-			return calculateStatus(new Item.Builder(item).eventsStatusUpdate(s)).build();
+			entityChangedQueue.add(new QueueInfo<String>(itemId, QueueInfo.QueueInfoType.UPDATE));
+			return new Item.Builder(item).eventsStatusUpdate(s).build();
 		});
 	}
 	
