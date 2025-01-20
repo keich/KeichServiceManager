@@ -92,16 +92,10 @@ public class EventService extends EntityService<String, Event>{
 
 	@Override
 	protected void queueRead(QueueInfo<String> info) {
-		switch(info.getType()) {
-		case UPDATE:
-			entityCache.computeIfPresent(info.getId(), event -> {
-				itemService.eventChanged(event);
-				return event;
-			});
-			break;
-		default:
-			break;
-		}
+		entityCache.computeIfPresent(info.getId(), event -> {
+			itemService.eventChanged(event);
+			return event;
+		});
 	}
 	
 	@Scheduled(fixedRateString = "1", timeUnit = TimeUnit.SECONDS)
