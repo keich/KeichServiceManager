@@ -167,10 +167,6 @@ public class ItemService extends EntityService<String, Item> {
 	}
 
 	private int calculateEntityStatusAsCluster(Set<String> childrenIds, ItemRule rule) {
-		var overal = childrenIds.size();
-		if (overal <= 0) {
-			return 0;
-		}
 		var listStatus = childrenIds.stream()
 				.map(this::findById)
 				.filter(Optional::isPresent)
@@ -180,7 +176,7 @@ public class ItemService extends EntityService<String, Item> {
 				.boxed()
 				.filter(i -> i >= rule.getStatusThreshold().ordinal())
 				.toList();
-		var percent = 100 * listStatus.size() / overal;
+		var percent = 100 * listStatus.size() / childrenIds.size();
 		if (percent >= rule.getValueThreshold()) {
 			if (rule.isUsingResultStatus()) {
 				return rule.getResultStatus().ordinal();
@@ -219,11 +215,9 @@ public class ItemService extends EntityService<String, Item> {
 		}
 		var rules = item.getRules().values();
 		var childrenIds = item.getChildrenIds();
-		var childStatus = BaseStatus.fromInteger(calculateStatusByChild(rules, childrenIds));
-		var max = item.getEventsStatus().values().stream().mapToInt(BaseStatus::ordinal).max().orElse(0);
-		var eventStatusMax = BaseStatus.fromInteger(max);
-		var overalStatus = childStatus.max(eventStatusMax);
-		return item.status(overalStatus);
+		var statusByChild = childrenIds.isEmpty() ? BaseStatus.CLEAR : BaseStatus.fromInteger(calculateStatusByChild(rules, childrenIds));
+		var statusByEvents = item.getEventsStatus().values().stream().mapToInt(BaseStatus::ordinal).max().orElse(0);
+		return item.status(statusByChild.max(BaseStatus.fromInteger(statusByEvents)));
 	}
 	
 	private List<Map.Entry<Item, ItemFilter>> findFiltersByEqualFields(Map<String, String> fields){
