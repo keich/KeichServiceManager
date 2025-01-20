@@ -74,6 +74,10 @@ public class Event extends Entity<String> {
 		return Optional.ofNullable((Object)event.endsOn).map(Collections::singleton).orElse(Collections.emptySet());
 	}
 	
+	public static Set<Object> getNodeForIndex(Event event) {
+		return Optional.ofNullable((Object)event.node).map(Collections::singleton).orElse(Collections.emptySet());
+	}
+	
 	@Override
 	public String toString() {
 		return "Event [id=" + getId() + ", type=" + type + ", status=" + status +
