@@ -56,14 +56,19 @@ public class EventService extends EntityService<String, Event>{
 			return new Event.Builder(event)
 					.version(getNextVersion())
 					.fromHistoryAdd(nodeName)
+					.deletedOn(Objects.nonNull(event.getDeletedOn()) ? Instant.now() : null)
 					.build();	
 		}, oldEvent -> {
+			if(Objects.nonNull(event.getDeletedOn()) && Objects.nonNull(oldEvent.getDeletedOn())) {
+				return null;
+			}
 			entityChangedQueue.add(new QueueInfo<String>(oldEvent.getId(), QueueInfo.QueueInfoType.UPDATE));
 			return new Event.Builder(event)
 					.version(getNextVersion())
 					.fromHistoryAdd(nodeName)
 					.createdOn(oldEvent.getCreatedOn())
 					.updatedOn(Instant.now())
+					.deletedOn(Objects.nonNull(event.getDeletedOn())? Instant.now() : null)
 					.build();
 		});
 	}

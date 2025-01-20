@@ -71,14 +71,19 @@ public class ItemService extends EntityService<String, Item> {
 					.version(getNextVersion())
 					.fromHistoryAdd(nodeName)
 					.status(BaseStatus.CLEAR)
+					.deletedOn(Objects.nonNull(item.getDeletedOn()) ? Instant.now() : null)
 					.build();
 		}, oldItem -> {
+			if(Objects.nonNull(item.getDeletedOn()) && Objects.nonNull(oldItem.getDeletedOn())) {
+				return null;
+			}
 			entityChangedQueue.add(new QueueInfo<String>(item.getId(), QueueInfo.QueueInfoType.UPDATE));
 			return new Item.Builder(item)
 					.version(getNextVersion())
 					.fromHistoryAdd(nodeName)
 					.createdOn(oldItem.getCreatedOn())
 					.updatedOn(Instant.now())
+					.deletedOn(Objects.nonNull(item.getDeletedOn()) ? Instant.now() : null)
 					.status(oldItem.getStatus())
 					.eventsStatus(oldItem.getEventsStatus())
 					.build();
