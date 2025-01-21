@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.Getter;
 import ru.keich.mon.servicemanager.BaseStatus;
+import ru.keich.mon.servicemanager.SourceType;
 import ru.keich.mon.servicemanager.entity.Entity;
 
 /*
@@ -52,6 +53,7 @@ public class Event extends Entity<String> {
 			@JsonProperty(value = "version", required = false) Long version,
 			@JsonProperty(value = "source", required = true) String source,
 			@JsonProperty(value = "sourceKey", required = true) String sourceKey,
+			@JsonProperty(value = "sourceType", required = false) SourceType sourceType,
 			@JsonProperty(value = "node") String node,
 			@JsonProperty(value = "summary") String summary,
 			@JsonProperty(value = "type", required = true) EventType type,
@@ -62,7 +64,7 @@ public class Event extends Entity<String> {
 			@JsonProperty(value = "updatedOn") Instant updatedOn,
 			@JsonProperty(value = "deletedOn") Instant deletedOn,
 			@JsonProperty(value = "endsOn") Instant endsOn) {
-		super(id, version, source, sourceKey, fields, fromHistory, createdOn, updatedOn, deletedOn);
+		super(id, version, source, sourceKey, sourceType, fields, fromHistory, createdOn, updatedOn, deletedOn);
 		this.type = type;
 		this.status = status;
 		this.node = node;
@@ -127,6 +129,7 @@ public class Event extends Entity<String> {
 			this.version,
 			this.source,
 			this.sourceKey,
+			this.sourceType,
 			this.node,
 			this.summary,
 			this.type,

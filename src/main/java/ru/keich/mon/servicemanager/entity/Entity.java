@@ -12,6 +12,7 @@ import java.util.stream.Stream;
 import com.fasterxml.jackson.annotation.JsonFilter;
 
 import lombok.Getter;
+import ru.keich.mon.servicemanager.SourceType;
 import ru.keich.mon.servicemanager.store.BaseEntity;
 
 /*
@@ -40,12 +41,14 @@ public class Entity<K> extends BaseEntity<K> {
 	public static final String FIELD_DELETEDON = "deletedOn";
 	public static final String FIELD_SOURCE = "source";
 	public static final String FIELD_SOURCEKEY = "sourceKey";
+	public static final String FIELD_SOURCETYPE = "sourceType";
 	public static final String FIELD_FIELDS = "fields";
 	public static final String FIELD_FROMHISTORY = "fromHistory";
 	
 	private final Long version;
 	private final String source;
 	private final String sourceKey;
+	private final SourceType sourceType;
 
 	private final Instant createdOn;
 	private final Instant updatedOn;
@@ -58,6 +61,7 @@ public class Entity<K> extends BaseEntity<K> {
 			Long version,
 			String source,
 			String sourceKey,
+			SourceType sourceType,
 			Map<String, String> fields,
 			Set<String> fromHistory,
 			Instant createdOn,
@@ -67,6 +71,7 @@ public class Entity<K> extends BaseEntity<K> {
 		this.version = version;
 		this.source = source;
 		this.sourceKey = sourceKey;
+		this.sourceType = Optional.ofNullable(sourceType).orElse(SourceType.OTHER);
 		this.fromHistory = Optional.ofNullable(fromHistory).map(Collections::unmodifiableSet).orElse(Collections.emptySet());
 		this.createdOn = Optional.ofNullable(createdOn).orElse(Instant.now());
 		this.updatedOn = Optional.ofNullable(updatedOn).orElse(Instant.now());
@@ -115,6 +120,7 @@ public class Entity<K> extends BaseEntity<K> {
 		protected Long version;
 		protected String source;
 		protected String sourceKey;
+		protected SourceType sourceType;
 		protected Instant createdOn;
 		protected Instant updatedOn;
 		protected Instant deletedOn;
@@ -130,6 +136,7 @@ public class Entity<K> extends BaseEntity<K> {
 			this.version = entity.getVersion();
 			this.source = entity.getSource();
 			this.sourceKey = entity.getSourceKey();
+			this.sourceType = entity.getSourceType();
 			this.fields = entity.getFields();
 			this.createdOn = entity.getCreatedOn();
 			this.updatedOn = entity.getUpdatedOn();
@@ -147,6 +154,11 @@ public class Entity<K> extends BaseEntity<K> {
 		
 		public  Builder<K, B> sourceKey(String sourceKey) {
 			this.sourceKey = sourceKey;
+			return this;
+		}
+		
+		public  Builder<K, B> sourceType(SourceType sourceType) {
+			this.sourceType = sourceType;
 			return this;
 		}
 		

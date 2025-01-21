@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import lombok.Getter;
 import lombok.Setter;
-
+import ru.keich.mon.servicemanager.SourceType;
 import ru.keich.mon.servicemanager.entity.Entity;
 import ru.keich.mon.servicemanager.query.predicates.Predicates;
 import ru.keich.mon.servicemanager.query.predicates.QueryPredicate;
@@ -23,17 +23,19 @@ import ru.keich.mon.servicemanager.store.IndexedHashMap;
 import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
 
 public class StoreTest {
-
+	public static final SourceType SOURCETYPE = SourceType.OTHER;
+	
 	@Getter
 	@Setter
 	static public class TestEntity extends Entity<String> {
 		
+		
 		public static final String FIELD_NAME = "name";
 		public static final String FIELD_SOMESET = "someSet";
 
-		public TestEntity(String id, Long version, String source, String sourceKey, Map<String, String> fields,
+		public TestEntity(String id, Long version, String source, String sourceKey, SourceType sourceType, Map<String, String> fields,
 				Set<String> fromHistory, Instant createdOn, Instant updatedOn, Instant deletedOn) {
-			super(id, version, source, sourceKey, fields, fromHistory, createdOn, updatedOn, deletedOn);
+			super(id, version, source, sourceKey, sourceType, fields, fromHistory, createdOn, updatedOn, deletedOn);
 		}
 
 		String name;
@@ -80,9 +82,9 @@ public class StoreTest {
 	public void queryEqual(IndexedHashMap<String, TestEntity> store) {
 		final long limit = -1;
 		final var SOURCE_VALUE = "source1";
-		var entity1 = new TestEntity("id1", 0L, SOURCE_VALUE, "sourceKey1", Collections.emptyMap(),
+		var entity1 = new TestEntity("id1", 0L, SOURCE_VALUE, "sourceKey1", SOURCETYPE, Collections.emptyMap(),
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
-		var entity2 = new TestEntity("id2", 0L, SOURCE_VALUE + "_", "sourceKey2", Collections.emptyMap(),
+		var entity2 = new TestEntity("id2", 0L, SOURCE_VALUE + "_", "sourceKey2", SOURCETYPE, Collections.emptyMap(),
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
 		store.put(entity1);
 		store.put(entity2);
@@ -113,9 +115,9 @@ public class StoreTest {
 		final long limit = -1;
 		final var SOURCE_VALUE1 = "source1";
 		final var SOURCE_VALUE2 = "source2";
-		var entity1 = new TestEntity("id1", 0L, SOURCE_VALUE1, "sourceKey", Collections.emptyMap(),
+		var entity1 = new TestEntity("id1", 0L, SOURCE_VALUE1, "sourceKey", SOURCETYPE, Collections.emptyMap(),
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
-		var entity2 = new TestEntity("id2", 0L, SOURCE_VALUE2, "sourceKey", Collections.emptyMap(),
+		var entity2 = new TestEntity("id2", 0L, SOURCE_VALUE2, "sourceKey", SOURCETYPE, Collections.emptyMap(),
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
 		store.put(entity1);
 		store.put(entity2);
@@ -147,9 +149,9 @@ public class StoreTest {
 		final var SOURCE_VALUE = "source";
 		final Long VERSION1 = 1L;
 		final Long VERSION2 = 2L;
-		var entity1 = new TestEntity("id1", VERSION1, SOURCE_VALUE, "sourceKey", Collections.emptyMap(),
+		var entity1 = new TestEntity("id1", VERSION1, SOURCE_VALUE, "sourceKey", SOURCETYPE, Collections.emptyMap(),
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
-		var entity2 = new TestEntity("id2", VERSION2, SOURCE_VALUE, "sourceKey", Collections.emptyMap(),
+		var entity2 = new TestEntity("id2", VERSION2, SOURCE_VALUE, "sourceKey", SOURCETYPE, Collections.emptyMap(),
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
 		store.put(entity1);
 		store.put(entity2);
@@ -182,11 +184,11 @@ public class StoreTest {
 		final Long VERSION1 = 1L;
 		final Long VERSION2 = 2L;
 		final Long VERSION3 = 3L;
-		var entity1 = new TestEntity("id1", VERSION1, SOURCE_VALUE, "sourceKey", Collections.emptyMap(),
+		var entity1 = new TestEntity("id1", VERSION1, SOURCE_VALUE, "sourceKey", SOURCETYPE, Collections.emptyMap(),
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
-		var entity2 = new TestEntity("id2", VERSION2, SOURCE_VALUE, "sourceKey", Collections.emptyMap(),
+		var entity2 = new TestEntity("id2", VERSION2, SOURCE_VALUE, "sourceKey", SOURCETYPE, Collections.emptyMap(),
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
-		var entity3 = new TestEntity("id3", VERSION3, SOURCE_VALUE, "sourceKey", Collections.emptyMap(),
+		var entity3 = new TestEntity("id3", VERSION3, SOURCE_VALUE, "sourceKey", SOURCETYPE, Collections.emptyMap(),
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
 		store.put(entity1);
 		store.put(entity2);
@@ -220,11 +222,11 @@ public class StoreTest {
 		final Long VERSION1 = 1L;
 		final Long VERSION2 = 2L;
 		final Long VERSION3 = 3L;
-		var entity1 = new TestEntity("id1", VERSION1, SOURCE_VALUE, "sourceKey", Collections.emptyMap(),
+		var entity1 = new TestEntity("id1", VERSION1, SOURCE_VALUE, "sourceKey", SOURCETYPE, Collections.emptyMap(),
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
-		var entity2 = new TestEntity("id2", VERSION2, SOURCE_VALUE, "sourceKey", Collections.emptyMap(),
+		var entity2 = new TestEntity("id2", VERSION2, SOURCE_VALUE, "sourceKey", SOURCETYPE, Collections.emptyMap(),
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
-		var entity3 = new TestEntity("id3", VERSION3, SOURCE_VALUE, "sourceKey", Collections.emptyMap(),
+		var entity3 = new TestEntity("id3", VERSION3, SOURCE_VALUE, "sourceKey", SOURCETYPE, Collections.emptyMap(),
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
 		store.put(entity1);
 		store.put(entity2);
@@ -259,10 +261,10 @@ public class StoreTest {
 		final var OTHER_NAME = "OtherName";
 		final Long VERSION1 = 1L;
 		final Long VERSION2 = 2L;
-		var entity1 = new TestEntity("id1", VERSION1, SOURCE_VALUE, "sourceKey", Collections.emptyMap(),
+		var entity1 = new TestEntity("id1", VERSION1, SOURCE_VALUE, "sourceKey", SOURCETYPE, Collections.emptyMap(),
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
 		entity1.setName(TEST_NAME);
-		var entity2 = new TestEntity("id2", VERSION2, SOURCE_VALUE, "sourceKey", Collections.emptyMap(),
+		var entity2 = new TestEntity("id2", VERSION2, SOURCE_VALUE, "sourceKey", SOURCETYPE, Collections.emptyMap(),
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
 		entity2.setName(OTHER_NAME);
 		store.put(entity1);
@@ -297,10 +299,10 @@ public class StoreTest {
 		final var OTHER_NAME = "OtherName";
 		final Long VERSION1 = 1L;
 		final Long VERSION2 = 2L;
-		var entity1 = new TestEntity("id1", VERSION1, SOURCE_VALUE, "sourceKey", Collections.emptyMap(),
+		var entity1 = new TestEntity("id1", VERSION1, SOURCE_VALUE, "sourceKey", SOURCETYPE, Collections.emptyMap(),
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
 		entity1.setName(TEST_NAME);
-		var entity2 = new TestEntity("id2", VERSION2, SOURCE_VALUE, "sourceKey", Collections.emptyMap(),
+		var entity2 = new TestEntity("id2", VERSION2, SOURCE_VALUE, "sourceKey", SOURCETYPE, Collections.emptyMap(),
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
 		entity2.setName(OTHER_NAME);
 		store.put(entity1);
@@ -335,7 +337,7 @@ public class StoreTest {
 		final var OTHER_NAME = "OtherName";
 		final Long VERSION1 = 1L;
 		final Long VERSION2 = 2L;
-		var entity1 = new TestEntity("id1", VERSION1, SOURCE_VALUE, "sourceKey", Collections.emptyMap(),
+		var entity1 = new TestEntity("id1", VERSION1, SOURCE_VALUE, "sourceKey", SOURCETYPE, Collections.emptyMap(),
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
 		var s1 = new HashSet<String>();
 		s1.add("Test1");
@@ -344,7 +346,7 @@ public class StoreTest {
 		entity1.setName(TEST_NAME);
 		entity1.setSomeSet(s1);
 
-		var entity2 = new TestEntity("id2", VERSION2, SOURCE_VALUE, "sourceKey", Collections.emptyMap(),
+		var entity2 = new TestEntity("id2", VERSION2, SOURCE_VALUE, "sourceKey", SOURCETYPE, Collections.emptyMap(),
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
 		var s2 = new HashSet<String>();
 		s2.add("Test4");
@@ -352,7 +354,7 @@ public class StoreTest {
 		s2.add("Test6");
 		entity2.setSomeSet(s2);
 		entity2.setName(OTHER_NAME);
-		var entity3 = new TestEntity("id3", VERSION2, SOURCE_VALUE, "sourceKey", Collections.emptyMap(),
+		var entity3 = new TestEntity("id3", VERSION2, SOURCE_VALUE, "sourceKey", SOURCETYPE, Collections.emptyMap(),
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
 		var s3 = new HashSet<String>();
 		s3.add("Test7");

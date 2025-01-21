@@ -16,6 +16,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.Getter;
 import ru.keich.mon.servicemanager.BaseStatus;
+import ru.keich.mon.servicemanager.SourceType;
 import ru.keich.mon.servicemanager.entity.Entity;
 
 /*
@@ -67,6 +68,7 @@ public class Item extends Entity<String> {
 			@JsonProperty(value = "version", required = false) Long version,
 			@JsonProperty(value = "source", required = true) String source,
 			@JsonProperty(value = "sourceKey", required = true) String sourceKey,
+			@JsonProperty(value = "sourceType", required = false) SourceType sourceType,
 			@JsonProperty("status") BaseStatus status,
 			@JsonProperty("name") String name,
 			@JsonProperty("fields") Map<String, String> fields,
@@ -77,7 +79,7 @@ public class Item extends Entity<String> {
 			@JsonProperty(value = "createdOn", required = false) Instant createdOn,
 			@JsonProperty(value = "updatedOn", required = false) Instant updatedOn,
 			@JsonProperty(value = "deletedOn", required = false) Instant deletedOn) {
-		super(id, version, source, sourceKey, fields, fromHistory, createdOn, updatedOn, deletedOn);
+		super(id, version, source, sourceKey, sourceType, fields, fromHistory, createdOn, updatedOn, deletedOn);
 
 		this.name = name;
 		this.status = Optional.ofNullable(status).orElse(BaseStatus.CLEAR);
@@ -98,6 +100,7 @@ public class Item extends Entity<String> {
 			Long version,
 			String source,
 			String sourceKey,
+			SourceType sourceType,
 			BaseStatus status,
 			String name,
 			Map<String, String> fields,
@@ -111,7 +114,7 @@ public class Item extends Entity<String> {
 			Map<String, BaseStatus> eventsStatus,
 			List<Item> children,
 			List<Item> parents) {
-		this(id, version, source, sourceKey, status, name, fields, rules, filters, childrenIds, fromHistory, createdOn,
+		this(id, version, source, sourceKey, sourceType, status, name, fields, rules, filters, childrenIds, fromHistory, createdOn,
 				updatedOn, deletedOn);
 
 		this.eventsStatus = eventsStatus;
@@ -156,7 +159,8 @@ public class Item extends Entity<String> {
 				+ getId() + "]";
 	}
 
-	@Getter
+	// TODO move 'changed' to Entity.Builder
+	@Getter 
 	public static class Builder extends Entity.Builder<String, Item>  {
 		
 		
@@ -198,6 +202,7 @@ public class Item extends Entity<String> {
 			this.version,
 			this.source,
 			this.sourceKey,
+			this.sourceType,
 			this.status,
 			this.name,
 			this.fields,
@@ -221,6 +226,12 @@ public class Item extends Entity<String> {
 		
 		public Builder sourceKey(String sourceKey) {
 			this.sourceKey = sourceKey;
+			this.changed = true;
+			return this;
+		}
+		
+		public Builder sourceType(SourceType sourceType) {
+			this.sourceType = sourceType;
 			this.changed = true;
 			return this;
 		}
