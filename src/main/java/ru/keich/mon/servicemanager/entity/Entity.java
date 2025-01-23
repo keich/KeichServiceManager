@@ -116,6 +116,8 @@ public class Entity<K> extends BaseEntity<K> {
 	@Getter
 	public static abstract class Builder<K, B extends Entity<K>> {
 		
+		protected boolean changed = false;
+		
 		protected final K id;
 		protected Long version;
 		protected String source;
@@ -149,52 +151,62 @@ public class Entity<K> extends BaseEntity<K> {
 		
 		public Builder<K, B> source(String source) {
 			this.source = source;
+			this.changed = true;
 			return this;
 		}
 		
 		public  Builder<K, B> sourceKey(String sourceKey) {
 			this.sourceKey = sourceKey;
+			this.changed = true;
 			return this;
 		}
 		
 		public  Builder<K, B> sourceType(SourceType sourceType) {
 			this.sourceType = sourceType;
+			this.changed = true;
 			return this;
 		}
 		
 		public Builder<K, B> version(Long version) {
 			this.version = version;
+			this.changed = true;
 			return this;
 		}
 
 		public Builder<K, B> createdOn(Instant createdOn) {
 			this.createdOn = createdOn;
+			this.changed = true;
 			return this;
 		}
 		
 		public Builder<K, B> updatedOn(Instant updatedOn) {
 			this.updatedOn = updatedOn;
+			this.changed = true;
 			return this;
 		}
 
 		public Builder<K, B> deletedOn(Instant deletedOn) {
 			this.deletedOn = deletedOn;
+			this.changed = true;
 			return this;
 		}
 
 		public Builder<K, B> fromHistory(Set<String> fromHistory) {
 			this.fromHistory.clear();
 			this.fromHistory.addAll(fromHistory);
+			this.changed = true;
 			return this;
 		}
 		
 		public Builder<K, B> fromHistoryAdd(String value) {
 			this.fromHistory.add(value);
+			this.changed = true;
 			return this;
 		}
 		
 		public Builder<K, B> fields(Map<String, String> fields) {
 			this.fields = fields;
+			this.changed = true;
 			return this;
 		}
 

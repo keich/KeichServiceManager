@@ -70,9 +70,9 @@ public class ItemService extends EntityService<String, Item> {
 		entityCache.compute(item.getId(), () -> {
 			entityChangedQueue.add(new QueueInfo<String>(item.getId(), QueueInfo.QueueInfoType.UPDATE));
 			return new Item.Builder(item)
+					.status(BaseStatus.CLEAR)
 					.version(getNextVersion())
 					.fromHistoryAdd(nodeName)
-					.status(BaseStatus.CLEAR)
 					.deletedOn(Objects.nonNull(item.getDeletedOn()) ? Instant.now() : null)
 					.build();
 		}, oldItem -> {
@@ -81,14 +81,14 @@ public class ItemService extends EntityService<String, Item> {
 			}
 			entityChangedQueue.add(new QueueInfo<String>(item.getId(), QueueInfo.QueueInfoType.UPDATE));
 			return new Item.Builder(item)
+					.status(oldItem.getStatus())
+					.aggStatus(oldItem.getAggStatus())
+					.eventsStatus(oldItem.getEventsStatus())
 					.version(getNextVersion())
 					.fromHistoryAdd(nodeName)
 					.createdOn(oldItem.getCreatedOn())
 					.updatedOn(Instant.now())
 					.deletedOn(Objects.nonNull(item.getDeletedOn()) ? Instant.now() : null)
-					.status(oldItem.getStatus())
-					.historyStatus(oldItem.getAggStatus())
-					.eventsStatus(oldItem.getEventsStatus())
 					.build();
 		});
 

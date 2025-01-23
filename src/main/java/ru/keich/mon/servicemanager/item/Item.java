@@ -180,7 +180,6 @@ public class Item extends Entity<String> {
 				+ getId() + "]";
 	}
 
-	// TODO move 'changed' to Entity.Builder
 	@Getter 
 	public static class Builder extends Entity.Builder<String, Item>  {
 		
@@ -200,7 +199,7 @@ public class Item extends Entity<String> {
 		protected List<Item> children;
 		protected List<Item> parents;
 		
-		protected boolean changed = false;
+		
 
 		public Builder(String id) {
 			super(id);
@@ -241,64 +240,9 @@ public class Item extends Entity<String> {
 			children,
 			parents);
 		}
-
-		public Builder source(String source) {
-			this.source = source;
-			this.changed = true;
-			return this;
-		}
-		
-		public Builder sourceKey(String sourceKey) {
-			this.sourceKey = sourceKey;
-			this.changed = true;
-			return this;
-		}
-		
-		public Builder sourceType(SourceType sourceType) {
-			this.sourceType = sourceType;
-			this.changed = true;
-			return this;
-		}
 		
 		public Builder name(String name) {
 			this.name = name;
-			this.changed = true;
-			return this;
-		}
-		
-		public Builder version(Long version) {
-			this.version = version;
-			this.changed = true;
-			return this;
-		}
-
-		public Builder createdOn(Instant createdOn) {
-			this.createdOn = createdOn;
-			this.changed = true;
-			return this;
-		}
-		
-		public Builder updatedOn(Instant updatedOn) {
-			this.updatedOn = updatedOn;
-			this.changed = true;
-			return this;
-		}
-
-		public Builder deletedOn(Instant deletedOn) {
-			this.deletedOn = deletedOn;
-			this.changed = true;
-			return this;
-		}
-
-		public Builder fromHistory(Set<String> fromHistory) {
-			this.fromHistory.clear();
-			this.fromHistory.addAll(fromHistory);
-			this.changed = true;
-			return this;
-		}
-		
-		public Builder fromHistoryAdd(String value) {
-			this.fromHistory.add(value);
 			this.changed = true;
 			return this;
 		}
@@ -312,7 +256,7 @@ public class Item extends Entity<String> {
 			return this;
 		}
 		
-		public Builder historyStatus(AggregateStatus aggStatus) {
+		public Builder aggStatus(AggregateStatus aggStatus) {
 			this.aggStatus = new AggregateStatus(aggStatus);
 			this.changed = true;
 			return this;

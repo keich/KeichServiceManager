@@ -144,26 +144,31 @@ public class Event extends Entity<String> {
 
 		public Builder type(EventType type) {
 			this.type = type;
+			this.changed = true;
 			return this;
 		}
 		
 		public Builder status(BaseStatus status) {
 			this.status = status;
+			this.changed = true;
 			return this;
 		}
 		
 		public Builder summary(String summary) {
 			this.summary = summary;
+			this.changed = true;
 			return this;
 		}
 		
 		public Builder node(String node) {
 			this.node = node;
+			this.changed = true;
 			return this;
 		}
 		
 		public Builder endsOn(Instant endsOn) {
 			this.endsOn = endsOn;
+			this.changed = true;
 			return this;
 		}
 		
