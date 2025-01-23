@@ -54,24 +54,30 @@ public enum BaseStatus {
         switch(sev) {
         case "0":
         case "clear":
+        case "CLEAR":
             return CLEAR;
         case "1":
         case "indeterminate":
+        case "INDETERMINATE":
             return INDETERMINATE;
         case "2":
-        case "warning":
+        case "information":
+        case "INFORMATION":
             return INFORMATION;
         case "3":
-        case "minor":
+        case "warning":
+        case "WARNING":
             return WARNING;
         case "4":
         case "major":
+        case "MAJOR":
             return MAJOR;
         case "5":
         case "critical":
+        case "CRITICAL":
             return CRITICAL;
         }
-        return CRITICAL;
+        return CLEAR; // TODO
     }
 	
 	public BaseStatus max(BaseStatus other) {
