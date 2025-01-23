@@ -19,6 +19,7 @@ import lombok.Getter;
 import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.SourceType;
 import ru.keich.mon.servicemanager.entity.Entity;
+import ru.keich.mon.servicemanager.query.predicates.QueryPredicate;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -161,8 +162,8 @@ public class Item extends Entity<String> {
 		return Collections.unmodifiableSet(item.getEventsStatus().keySet());
 	}
 	
-	public static Set<Object> getAggStatusForIndex(Item item) {
-		return Collections.singleton(item.getAggStatus().getMax());
+	public static boolean getAggStatusForQuery(Item item, QueryPredicate predicate) {
+		return predicate.test(item.getAggStatus().getMax());
 	}
 	
 	public static Set<Object> getStatusForIndex(Item item) {

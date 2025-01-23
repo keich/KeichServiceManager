@@ -60,7 +60,7 @@ public class ItemService extends EntityService<String, Item> {
 		
 		entityCache.addIndex(Item.FIELD_EVENTIDS, IndexType.EQUAL, Item::getEventsIdsForIndex);
 		
-		entityCache.addIndex(Item.FIELD_AGGSTATUS, IndexType.SORTED, Item::getAggStatusForIndex);
+		entityCache.addQueryField(Item.FIELD_AGGSTATUS, Item::getAggStatusForQuery);
 		entityCache.addIndex(Item.FIELD_STATUS, IndexType.SORTED, Item::getStatusForIndex);
 		
 		this.eventService = eventService;
