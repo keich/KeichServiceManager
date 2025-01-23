@@ -24,37 +24,37 @@ import ru.keich.mon.servicemanager.BaseStatus;
 @Getter
 public class AggregateStatus {
 	protected Instant[] statuses = new Instant[BaseStatus.length];
+	int lastStatus = 0;
 
 	public AggregateStatus(AggregateStatus obj) {
 		for (int i = 0; i < BaseStatus.length; i++) {
 			statuses[i] = obj.statuses[i];
 		}
+		lastStatus = obj.lastStatus;
 	}
 
 	public AggregateStatus() {
-
+		statuses[lastStatus] = Instant.now();
 	}
 
 	public void set(BaseStatus status) {
-		statuses[status.ordinal()] = Instant.now();
+		lastStatus = status.ordinal();
+		statuses[lastStatus] = Instant.now();
 	}
 
 	public BaseStatus getMax() {
-		Instant now = Instant.now().minusSeconds(60 * 5); // TODO parametr
+		Instant now = Instant.now().minusSeconds(10); // TODO parametr
 		int maxStatus = 0;
 		for (int i = 0; i < BaseStatus.length; i++) {
 			var val = statuses[i];
 			if (val == null) {
 				continue;
 			}
-			if (val.compareTo(now) < 0) {
-				continue;
-			}
-			if (maxStatus < i) {
+			if (val.compareTo(now) >= 0 && maxStatus < i) {
 				maxStatus = i;
 			}
 		}
-		return BaseStatus.fromInteger(maxStatus);
+		return BaseStatus.fromInteger(maxStatus > lastStatus ? maxStatus : lastStatus);
 	}
 
 }
