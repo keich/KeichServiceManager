@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import lombok.Getter;
 import ru.keich.mon.servicemanager.BaseStatus;
@@ -42,6 +43,7 @@ public class Item extends Entity<String> {
 	public static final String FIELD_EVENTIDS = "events";
 	public static final String FIELD_PARENTS = "parents";
 	public static final String FIELD_FILTERS_EQL = "filters_equal";
+	public static final String FIELD_AGGSTATUS = "aggStatus";
 	
 	private final BaseStatus status;
 
@@ -58,6 +60,10 @@ public class Item extends Entity<String> {
 	
 	@JsonIgnore
 	private Map<String, BaseStatus> eventsStatus = Collections.emptyMap();
+	
+	@JsonSerialize(using = AggregateStatusSerializer.class)
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	private AggregateStatus aggStatus = new AggregateStatus(); 
 	
 	private List<Item> children;
 	private List<Item> parents;
@@ -92,7 +98,8 @@ public class Item extends Entity<String> {
 			this.hasChildren = true;
 		}else {
 			this.hasChildren = false;
-		}		
+		}
+		
 	}
 	
 	public Item(
@@ -112,6 +119,7 @@ public class Item extends Entity<String> {
 			Instant updatedOn,
 			Instant deletedOn,
 			Map<String, BaseStatus> eventsStatus,
+			AggregateStatus aggStatus,
 			List<Item> children,
 			List<Item> parents) {
 		this(id, version, source, sourceKey, sourceType, status, name, fields, rules, filters, childrenIds, fromHistory, createdOn,
@@ -122,6 +130,8 @@ public class Item extends Entity<String> {
 		this.children = children;
 		
 		this.parents = parents;
+		
+		this.aggStatus = Optional.ofNullable(aggStatus).orElse(new AggregateStatus());
 
 	}
 
@@ -150,6 +160,17 @@ public class Item extends Entity<String> {
 		return Collections.unmodifiableSet(item.getEventsStatus().keySet());
 	}
 	
+	public static Set<Object> getAggStatusForIndex(Item item) {
+		return Collections.singleton(item.getAggStatus().getMax());
+	}
+	
+	public static Object fieldValueOf(String fieldName, String str) {
+		switch (fieldName) {
+		case FIELD_AGGSTATUS:
+			return BaseStatus.fromString(str);
+		}
+		return Entity.fieldValueOf(fieldName, str);
+	}
 	@Override
 	public String toString() {
 		return "Item [name=" + name + ", status=" + status + ", fields=" + getFields() + ", rules=" + rules + ", filters=" + filters
@@ -173,6 +194,7 @@ public class Item extends Entity<String> {
 		protected Map<String, ItemRule> rules;
 		protected Map<String, ItemFilter> filters;
 		protected Map<String, BaseStatus> eventsStatus;
+		protected AggregateStatus aggStatus;
 		protected Set<String> childrenIds;
 		protected String name;
 		protected List<Item> children;
@@ -192,6 +214,7 @@ public class Item extends Entity<String> {
 			this.filters = item.getFilters();
 			this.childrenIds = item.getChildrenIds();
 			this.eventsStatus = new HashMap<>(item.getEventsStatus());
+			this.aggStatus = new AggregateStatus(item.getAggStatus());
 			this.children = item.getChildren();
 			this.parents = item.getParents();
 		}
@@ -214,6 +237,7 @@ public class Item extends Entity<String> {
 			this.updatedOn,
 			this.deletedOn,
 			this.eventsStatus,
+			this.aggStatus,
 			children,
 			parents);
 		}
@@ -283,7 +307,14 @@ public class Item extends Entity<String> {
 			if(this.status != status) {
 				this.status = status;
 				this.changed = true;
+				aggStatus.set(status);
 			}
+			return this;
+		}
+		
+		public Builder historyStatus(AggregateStatus aggStatus) {
+			this.aggStatus = new AggregateStatus(aggStatus);
+			this.changed = true;
 			return this;
 		}
 		

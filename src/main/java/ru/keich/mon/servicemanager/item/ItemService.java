@@ -60,6 +60,8 @@ public class ItemService extends EntityService<String, Item> {
 		
 		entityCache.addIndex(Item.FIELD_EVENTIDS, IndexType.EQUAL, Item::getEventsIdsForIndex);
 		
+		entityCache.addIndex(Item.FIELD_AGGSTATUS, IndexType.SORTED, Item::getAggStatusForIndex);
+		
 		this.eventService = eventService;
 		eventService.setItemService(this);
 	}
@@ -85,6 +87,7 @@ public class ItemService extends EntityService<String, Item> {
 					.updatedOn(Instant.now())
 					.deletedOn(Objects.nonNull(item.getDeletedOn()) ? Instant.now() : null)
 					.status(oldItem.getStatus())
+					.historyStatus(oldItem.getAggStatus())
 					.eventsStatus(oldItem.getEventsStatus())
 					.build();
 		});
