@@ -172,6 +172,8 @@ public class Item extends Entity<String> {
 	
 	public static Object fieldValueOf(String fieldName, String str) {
 		switch (fieldName) {
+		case FIELD_NAME:
+			return str.toUpperCase();
 		case FIELD_STATUS:
 		case FIELD_AGGSTATUS:
 			return BaseStatus.fromString(str);
