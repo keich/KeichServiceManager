@@ -43,6 +43,7 @@ public class Item extends Entity<String> {
 	public static final String FIELD_EVENTIDS = "events";
 	public static final String FIELD_PARENTS = "parents";
 	public static final String FIELD_FILTERS_EQL = "filters_equal";
+	public static final String FIELD_STATUS = "status";
 	public static final String FIELD_AGGSTATUS = "aggStatus";
 	
 	private final BaseStatus status;
@@ -164,8 +165,13 @@ public class Item extends Entity<String> {
 		return Collections.singleton(item.getAggStatus().getMax());
 	}
 	
+	public static Set<Object> getStatusForIndex(Item item) {
+		return Collections.singleton(item.getStatus());
+	}
+	
 	public static Object fieldValueOf(String fieldName, String str) {
 		switch (fieldName) {
+		case FIELD_STATUS:
 		case FIELD_AGGSTATUS:
 			return BaseStatus.fromString(str);
 		}

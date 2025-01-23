@@ -29,6 +29,7 @@ import org.springframework.stereotype.Service;
 import io.micrometer.core.instrument.MeterRegistry;
 import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.entity.EntityService;
+import ru.keich.mon.servicemanager.item.Item;
 import ru.keich.mon.servicemanager.item.ItemService;
 import ru.keich.mon.servicemanager.query.predicates.Predicates;
 import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
@@ -42,6 +43,7 @@ public class EventService extends EntityService<String, Event>{
 		this.itemService = itemService;
 		entityCache.addIndex(Event.FIELD_ENDSON, IndexType.SORTED, Event::getEndsOnForIndex);
 		entityCache.addIndex(Event.FIELD_NODE, IndexType.EQUAL, Event::getEndsOnForIndex);
+		entityCache.addIndex(Item.FIELD_STATUS, IndexType.SORTED, Event::getStatusForIndex);
 	}
 
 	public EventService(@Value("${replication.nodename}") String nodeName
