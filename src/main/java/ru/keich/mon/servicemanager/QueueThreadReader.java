@@ -1,10 +1,15 @@
 package ru.keich.mon.servicemanager;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import ru.keich.mon.servicemanager.store.IndexedHashMap.EmptyCounter;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -24,12 +29,26 @@ import java.util.function.Consumer;
 
 public class QueueThreadReader<K> {
 	
-	static final Integer POOL_SECONDS = 30;
+	static final public String METRIC_NAME_QUEUE = "queueThreadReader_";
+	static final public String METRIC_NAME_OPERATION = "operation";
+	static final public String METRIC_NAME_SERVICENAME = "servicename";
+	static final public String METRIC_NAME_ADDED = "added";
+	static final public String METRIC_NAME_REMOVED = "removed";
+	static final Integer POLL_SECONDS = 30;
 	private final Consumer<K> consumer;
 	private BlockingQueue<K> queue = new LinkedBlockingDeque<K>();
+	private Counter metricAdded = EmptyCounter.EMPTY;
+	private Counter metricRemoved = EmptyCounter.EMPTY;
 
-	public QueueThreadReader(String name, int  number, Consumer<K> consumer) {
+	public QueueThreadReader(MeterRegistry registry, String name, int  number, Consumer<K> consumer) {
 		super();
+		if(Objects.nonNull(registry)) {
+			metricAdded = registry.counter(METRIC_NAME_QUEUE + METRIC_NAME_OPERATION, METRIC_NAME_OPERATION,
+					METRIC_NAME_ADDED, METRIC_NAME_SERVICENAME, name);
+	
+			metricRemoved = registry.counter(METRIC_NAME_QUEUE + METRIC_NAME_OPERATION, METRIC_NAME_OPERATION,
+					METRIC_NAME_REMOVED, METRIC_NAME_SERVICENAME, name);
+		}
 		this.consumer = consumer;
 		for (int i = 0; i < number; i++) {
 			runThread(name + "-queue-" + i);
@@ -40,7 +59,7 @@ public class QueueThreadReader<K> {
 		var thread = new Thread(() -> {
 			try {
 				while (true) {
-					Optional.ofNullable(queue.poll(POOL_SECONDS, TimeUnit.SECONDS)).ifPresent(consumer::accept);
+					Optional.ofNullable(queue.poll(POLL_SECONDS, TimeUnit.SECONDS)).ifPresent(this::remove);
 				}
 			} catch (Exception v) {
 				v.printStackTrace();
@@ -51,7 +70,13 @@ public class QueueThreadReader<K> {
 	}
 
 	public void add(K value) {
+		metricAdded.increment();
 		queue.add(value);
+	}
+
+	public void remove(K value) {
+		metricRemoved.increment();
+		consumer.accept(value);
 	}
 
 }
