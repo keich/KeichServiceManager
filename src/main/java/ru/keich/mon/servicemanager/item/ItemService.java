@@ -127,9 +127,6 @@ public class ItemService extends EntityService<String, Item> {
 		case UPDATED:
 			entityCache.computeIfPresent(info.getId(), item -> {
 				findParentsById(info.getId()).stream()
-				.map(this::findById)
-				.filter(Optional::isPresent)
-				.map(Optional::get)
 				.filter(parent -> Objects.isNull(parent.getDeletedOn()))
 				.map(Item::getId)
 				.forEach(parentId -> {
@@ -255,9 +252,13 @@ public class ItemService extends EntityService<String, Item> {
 				.toList();
 	}
 	
-	public Set<String> findParentsById(String itemId) {
+	public List<Item> findParentsById(String itemId) {
 		var predicate = Predicates.equal(Item.FIELD_PARENTS, itemId);
-		return entityCache.keySet(predicate, -1);
+		return entityCache.keySet(predicate, -1).stream()
+				.map(this::findById)
+				.filter(Optional::isPresent)
+				.map(Optional::get)
+				.toList();
 	}
 	
 	private List<Event> findEventsByItem(Item item) {

@@ -149,16 +149,14 @@ public class ItemController extends EntityController<String, Item> {
 		history.add(childId);
 		var outItem = new Item.Builder(child);
 		var l = itemService.findParentsById(childId).stream()
-				.filter(parentId -> {
-					if (history.contains(parentId)) {
-						log.warning("setParents: circle found from " + parentId + " to " + childId);
+				.filter(parent -> {
+					if (history.contains(parent.getId())) {
+						log.warning("setParents: circle found from " + parent.getId() + " to " + childId);
 						return false;
 					}
 					return true;
 				})
-				.map(itemService::findById)
-				.filter(Optional::isPresent)
-				.map(opt -> setParents(opt.get(), history))
+				.map(parent -> setParents(parent, history))
 				.toList();
 		outItem.setParents(l);
 		history.remove(childId);
