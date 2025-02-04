@@ -150,8 +150,7 @@ public class Item extends Entity<String> {
 		return Collections.unmodifiableSet(item.getChildrenIds());
 	}
 	
-	public static Set<Object> getNameForIndex(Entity<?> entity) {
-		Item item = (Item)entity;
+	public static Set<Object> getNameForIndex(Item item) {
 		return  Optional.ofNullable(item.getName())
 				.map(String::toUpperCase)
 				.map(s -> Collections.singleton((Object)s))
