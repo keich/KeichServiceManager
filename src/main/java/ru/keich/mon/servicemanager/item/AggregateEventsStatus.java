@@ -73,7 +73,7 @@ public class AggregateEventsStatus {
 	private class updateContext {
 		Map<String, ResultStatus> newStatuses = new HashMap<>();
 		Instant nowTime = Instant.now();
-		Instant ninutesAgoTime = Instant.now().minusSeconds(300); // TODO params?
+		Instant ninutesAgoTime = Instant.now().minusSeconds(360); // TODO params?
 		BaseStatus newMaxStatus = BaseStatus.CLEAR;
 		Set<String> eventsIds = new HashSet<>();
 	}
@@ -123,7 +123,7 @@ public class AggregateEventsStatus {
 
 	public Map<String, BaseStatus> getAggEventsStatus() {
 		var out = new HashMap<String, BaseStatus>();
-		Instant ninutesAgoTime = Instant.now().minusSeconds(300);
+		Instant ninutesAgoTime = Instant.now().minusSeconds(360);
 		for (var e : statuses.entrySet()) {
 			if (e.getValue().isDeleted() && e.getValue().deletedOn.compareTo(ninutesAgoTime) < 0) {
 				continue;

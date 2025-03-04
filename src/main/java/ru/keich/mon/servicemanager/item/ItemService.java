@@ -9,10 +9,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import io.micrometer.core.instrument.MeterRegistry;
@@ -22,6 +24,7 @@ import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.entity.EntityService;
 import ru.keich.mon.servicemanager.event.Event;
 import ru.keich.mon.servicemanager.event.EventService;
+import ru.keich.mon.servicemanager.history.EventStatusHistoryService;
 import ru.keich.mon.servicemanager.query.predicates.Predicates;
 import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
 
@@ -46,11 +49,15 @@ import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
 public class ItemService extends EntityService<String, Item> {
 	
 	private final EventService eventService;
+	private final EventStatusHistoryService eventStatusHistoryService;
+	private final boolean historyEnable;
 	
 	public ItemService(@Value("${replication.nodename}") String nodeName
 			,EventService eventService
+			,EventStatusHistoryService eventStatusHistoryService
 			,MeterRegistry registry
-			,@Value("${item.thread.count:2}") Integer threadCount) {
+			,@Value("${item.thread.count:2}") Integer threadCount
+			,@Value("${item.history.enable:false}") boolean historyEnable) {
 		super(nodeName, registry, threadCount);
 
 		entityCache.addIndex(Item.FIELD_FILTERS_EQL, IndexType.EQUAL, Item::getFiltersForIndex);
@@ -65,6 +72,8 @@ public class ItemService extends EntityService<String, Item> {
 		entityCache.addIndex(Item.FIELD_STATUS, IndexType.SORTED, Item::getStatusForIndex);
 		
 		this.eventService = eventService;
+		this.eventStatusHistoryService = eventStatusHistoryService;
+		this.historyEnable = historyEnable;
 		eventService.setItemService(this);
 	}
 
@@ -300,4 +309,23 @@ public class ItemService extends EntityService<String, Item> {
 
 	}
 	
+	public List<Event> findAllHistoryEventsById(String id, Instant from, Instant to) {
+		var items = new HashSet<Item>();
+		var history = new HashSet<String>();
+		findAllItemsById(id, items, history);
+		var ietmIds = items.stream().map(Item::getId).toList();
+		return eventStatusHistoryService.getEventsByItemId(ietmIds, from, to);
+	}
+	
+	// TODO rename to itemStatusHistory
+	@Scheduled(fixedRateString = "${item.history.fixedrate:300}", timeUnit = TimeUnit.SECONDS)
+	public void doHistory() {
+		if(!historyEnable) {
+			return;
+		}
+		eventStatusHistoryService.sendStatusHistory(() -> {
+			var byEventsStatus = Predicates.greaterThan(Item.FIELD_AGGEVENTSSTATUS, BaseStatus.INFORMATION);
+			return query(Collections.singletonList(byEventsStatus));
+		});
+	}
 }

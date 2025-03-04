@@ -3,7 +3,6 @@ package ru.keich.mon.servicemanager.event;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.json.MappingJacksonValue;
 import org.springframework.util.MultiValueMap;
@@ -38,9 +37,11 @@ import ru.keich.mon.servicemanager.entity.EntityController;
 @RestController
 @RequestMapping("/api/v1")
 public class EventController extends EntityController<String, Event> {
+	final EventService eventService;
 	
-	public EventController(@Autowired EventService eventService) {
+	public EventController(EventService eventService) {
 		super(eventService);
+		this.eventService = eventService;
 	}
 
 	@Override
@@ -61,6 +62,15 @@ public class EventController extends EntityController<String, Event> {
 	@CrossOrigin(origins = "*")
 	public ResponseEntity<MappingJacksonValue> findById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
 		return super.findById(id, reqParam);
+	}
+	
+	@GetMapping("/event/{id}/history")
+	@CrossOrigin(origins = "*")
+	public ResponseEntity<MappingJacksonValue> findByIdHistory(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
+		return eventService.findByIdHistory(id)
+				.map(MappingJacksonValue::new)
+				.map(value -> applyFilter(value, reqParam))
+				.orElse(ResponseEntity.notFound().build());
 	}
 
 	@Override

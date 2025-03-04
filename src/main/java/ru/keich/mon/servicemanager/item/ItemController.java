@@ -1,11 +1,11 @@
 package ru.keich.mon.servicemanager.item;
 
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.json.MappingJacksonValue;
 import org.springframework.util.MultiValueMap;
@@ -48,7 +48,7 @@ public class ItemController extends EntityController<String, Item> {
 	
 	private final ItemService itemService;
 	
-	public ItemController(@Autowired  ItemService itemService) {
+	public ItemController(ItemService itemService) {
 		super(itemService);
 		this.itemService = itemService;
 	}
@@ -96,6 +96,18 @@ public class ItemController extends EntityController<String, Item> {
 	@CrossOrigin(origins = "*")
 	public ResponseEntity<MappingJacksonValue> findAllEventsById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
 		return applyFilter(new MappingJacksonValue(itemService.findAllEventsById(id)), reqParam);
+	}
+	
+	@GetMapping("/item/{id}/events/history")
+	@CrossOrigin(origins = "*")
+	public ResponseEntity<MappingJacksonValue> findAllHistoryEventsById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
+		if(!reqParam.containsKey("from") || !reqParam.containsKey("to")) {
+			return ResponseEntity.badRequest().build();
+		}
+		var from = Instant.parse(reqParam.get("from").get(0));
+		var to = Instant.parse(reqParam.get("to").get(0));
+
+		return applyFilter(new MappingJacksonValue(itemService.findAllHistoryEventsById(id, from, to)), reqParam);
 	}
 
 	@GetMapping("/item/{id}/tree")

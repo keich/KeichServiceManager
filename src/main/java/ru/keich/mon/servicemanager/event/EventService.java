@@ -29,6 +29,7 @@ import org.springframework.stereotype.Service;
 import io.micrometer.core.instrument.MeterRegistry;
 import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.entity.EntityService;
+import ru.keich.mon.servicemanager.history.EventHistoryService;
 import ru.keich.mon.servicemanager.item.Item;
 import ru.keich.mon.servicemanager.item.ItemService;
 import ru.keich.mon.servicemanager.query.predicates.Predicates;
@@ -38,6 +39,8 @@ import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
 public class EventService extends EntityService<String, Event>{
 	
 	private ItemService itemService;
+	private final EventHistoryService eventHistoryService;
+	private final boolean historyEnable;
 	
 	public void setItemService(ItemService itemService) {
 		this.itemService = itemService;
@@ -47,9 +50,13 @@ public class EventService extends EntityService<String, Event>{
 	}
 
 	public EventService(@Value("${replication.nodename}") String nodeName
+			,EventHistoryService eventHistoryService
 			,MeterRegistry registry
-			,@Value("${event.thread.count:2}") Integer threadCount) {
+			,@Value("${event.thread.count:2}") Integer threadCount
+			, @Value("${event.history.enable:false}") boolean historyEnable) {
 		super(nodeName, registry, threadCount);
+		this.historyEnable = historyEnable;
+		this.eventHistoryService = eventHistoryService;
 	}
 	
 	@Override
@@ -105,6 +112,21 @@ public class EventService extends EntityService<String, Event>{
 		var predicate = Predicates.lessThan(Event.FIELD_ENDSON, Instant.now());
 		entityCache.keySet(predicate, -1).stream()
 				.forEach(this::deleteById);
+	}
+	
+	@Scheduled(fixedRateString = "${event.history.fixedrate:5}", timeUnit = TimeUnit.SECONDS)
+	public void doHistory() {
+		if(!historyEnable) {
+			return;
+		}
+		eventHistoryService.sendHistory(maxVersion -> {
+			var byVersion = Predicates.greaterThan(Event.FIELD_VERSION, maxVersion);
+			return query(Collections.singletonList(byVersion));
+		});
+	}
+	
+	public Optional<Event> findByIdHistory(String id) {
+		return Optional.ofNullable(eventHistoryService.getEventsByIds(Collections.singletonList(id)).get(id));
 	}
 	
 }
