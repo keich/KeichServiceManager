@@ -24,7 +24,6 @@ import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.entity.EntityService;
 import ru.keich.mon.servicemanager.event.Event;
 import ru.keich.mon.servicemanager.event.EventService;
-import ru.keich.mon.servicemanager.history.EventStatusHistoryService;
 import ru.keich.mon.servicemanager.query.predicates.Predicates;
 import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
 
@@ -49,15 +48,13 @@ import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
 public class ItemService extends EntityService<String, Item> {
 	
 	private final EventService eventService;
-	private final EventStatusHistoryService eventStatusHistoryService;
-	private final boolean historyEnable;
+	private final ItemHistoryService itemHistoryService;
 	
 	public ItemService(@Value("${replication.nodename}") String nodeName
 			,EventService eventService
-			,EventStatusHistoryService eventStatusHistoryService
+			,ItemHistoryService itemHistoryService
 			,MeterRegistry registry
-			,@Value("${item.thread.count:2}") Integer threadCount
-			,@Value("${item.history.enable:false}") boolean historyEnable) {
+			,@Value("${item.thread.count:2}") Integer threadCount) {
 		super(nodeName, registry, threadCount);
 
 		entityCache.addIndex(Item.FIELD_FILTERS_EQL, IndexType.EQUAL, Item::getFiltersForIndex);
@@ -68,12 +65,10 @@ public class ItemService extends EntityService<String, Item> {
 		entityCache.addIndex(Item.FIELD_EVENTIDS, IndexType.EQUAL, Item::getEventsIdsForIndex);
 		
 		entityCache.addQueryField(Item.FIELD_AGGSTATUS, Item::getAggStatusForQuery);
-		entityCache.addQueryField(Item.FIELD_AGGEVENTSSTATUS, Item::getAggEventsStatusForQuery);
 		entityCache.addIndex(Item.FIELD_STATUS, IndexType.SORTED, Item::getStatusForIndex);
 		
 		this.eventService = eventService;
-		this.eventStatusHistoryService = eventStatusHistoryService;
-		this.historyEnable = historyEnable;
+		this.itemHistoryService = itemHistoryService;
 		eventService.setItemService(this);
 	}
 
@@ -94,7 +89,7 @@ public class ItemService extends EntityService<String, Item> {
 			return new Item.Builder(item)
 					.status(oldItem.getStatus())
 					.aggStatus(oldItem.getAggStatus())
-					.aggEventsStatus(oldItem.getAggEventsStatus())
+					.eventsStatus(oldItem.getEventsStatus())
 					.version(getNextVersion())
 					.fromHistoryAdd(nodeName)
 					.createdOn(oldItem.getCreatedOn())
@@ -136,6 +131,7 @@ public class ItemService extends EntityService<String, Item> {
 			break;
 		case UPDATED:
 			entityCache.computeIfPresent(info.getId(), item -> {
+				itemHistoryService.add(item);
 				findParentsById(info.getId()).stream()
 				.filter(parent -> Objects.isNull(parent.getDeletedOn()))
 				.map(Item::getId)
@@ -150,20 +146,17 @@ public class ItemService extends EntityService<String, Item> {
 		}
 	}
 	
-	public void itemUpdateEventsStatus(String itemId, Consumer<Item.Builder> s) {
+	public void itemUpdateEventsStatus(String itemId, Consumer<Map<String, BaseStatus>> s) {
 		entityCache.computeIfPresent(itemId, item -> {
-			entityChangedQueue.add(new QueueInfo<>(itemId, QueueInfo.QueueInfoType.UPDATE));
-			var newItem = new Item.Builder(item);
-			s.accept(newItem);
-			return newItem.build();
+			entityChangedQueue.add(new QueueInfo<String>(itemId, QueueInfo.QueueInfoType.UPDATE));
+			return new Item.Builder(item).eventsStatusUpdate(s).build();
 		});
 	}
 
 	private void eventRemoved(Event event) {
 		var predicate = Predicates.equal(Item.FIELD_EVENTIDS, event.getId());
 		entityCache.keySet(predicate, -1).stream()
-				.forEach(itemId -> itemUpdateEventsStatus(itemId, builder ->
-					builder.aggEventsStatus(builder.getAggEventsStatus().removeEvent(event.getId()))));
+				.forEach(itemId -> itemUpdateEventsStatus(itemId, m -> m.remove(event.getId())));
 	}
 
 	public void eventChanged(Event event) {
@@ -175,7 +168,7 @@ public class ItemService extends EntityService<String, Item> {
 				.forEach(itft -> {
 					var item = itft.getKey();
 					var filter = itft.getValue();
-					itemUpdateEventsStatus(item.getId(), builder -> builder.aggEventsStatus(builder.getAggEventsStatus().addEventStatus(event.getId(), filter.getStatus(event))));
+					itemUpdateEventsStatus(item.getId(), m -> m.put(event.getId(), filter.getStatus(event)));
 				});
 	}
 
@@ -229,8 +222,8 @@ public class ItemService extends EntityService<String, Item> {
 		var rules = item.getRules().values();
 		var childrenIds = item.getChildrenIds();
 		var statusByChild = childrenIds.isEmpty() ? BaseStatus.CLEAR : BaseStatus.fromInteger(calculateStatusByChild(rules, childrenIds));
-		var statusByEvents = item.getAggEventsStatus().getMaxStatus();
-		return item.status(statusByChild.max(statusByEvents));
+		var statusByEvents = item.getEventsStatus().values().stream().mapToInt(BaseStatus::ordinal).max().orElse(0);
+		return item.status(statusByChild.max(BaseStatus.fromInteger(statusByEvents)));
 	}
 	
 	private List<Map.Entry<Item, ItemFilter>> findFiltersByEqualFields(Map<String, String> fields){
@@ -274,7 +267,7 @@ public class ItemService extends EntityService<String, Item> {
 	}
 	
 	private List<Event> findEventsByItem(Item item) {
-		return item.getAggEventsStatus().getEventsIds().stream()
+		return item.getEventsStatus().keySet().stream()
 				.map(id -> eventService.findById(id))
 				.filter(Optional::isPresent)
 				.map(Optional::get)
@@ -314,18 +307,18 @@ public class ItemService extends EntityService<String, Item> {
 		var history = new HashSet<String>();
 		findAllItemsById(id, items, history);
 		var ietmIds = items.stream().map(Item::getId).toList();
-		return eventStatusHistoryService.getEventsByItemId(ietmIds, from, to);
+		return itemHistoryService.getEventsByItemId(ietmIds, from, to);
 	}
 	
-	// TODO rename to itemStatusHistory
-	@Scheduled(fixedRateString = "${item.history.fixedrate:300}", timeUnit = TimeUnit.SECONDS)
-	public void doHistory() {
-		if(!historyEnable) {
-			return;
-		}
-		eventStatusHistoryService.sendStatusHistory(() -> {
-			var byEventsStatus = Predicates.greaterThan(Item.FIELD_AGGEVENTSSTATUS, BaseStatus.INFORMATION);
-			return query(Collections.singletonList(byEventsStatus));
-		});
+	@Scheduled(fixedRateString = "${item.history.all.fixedrate:60}", timeUnit = TimeUnit.SECONDS)
+	public void historyByFixedRate() {
+		var predicate = Predicates.greaterEqual(Item.FIELD_VERSION, 0L);
+		 entityCache.keySet(predicate, -1).stream()
+			.map(this::findById)
+			.filter(Optional::isPresent)
+			.map(Optional::get)
+			.forEach(itemHistoryService::add);
+		
 	}
+	
 }

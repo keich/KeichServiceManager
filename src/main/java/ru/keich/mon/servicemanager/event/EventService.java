@@ -29,7 +29,6 @@ import org.springframework.stereotype.Service;
 import io.micrometer.core.instrument.MeterRegistry;
 import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.entity.EntityService;
-import ru.keich.mon.servicemanager.history.EventHistoryService;
 import ru.keich.mon.servicemanager.item.Item;
 import ru.keich.mon.servicemanager.item.ItemService;
 import ru.keich.mon.servicemanager.query.predicates.Predicates;
@@ -40,7 +39,7 @@ public class EventService extends EntityService<String, Event>{
 	
 	private ItemService itemService;
 	private final EventHistoryService eventHistoryService;
-	private final boolean historyEnable;
+	private final Integer historyEventSearchLimit = 1000;
 	
 	public void setItemService(ItemService itemService) {
 		this.itemService = itemService;
@@ -52,10 +51,8 @@ public class EventService extends EntityService<String, Event>{
 	public EventService(@Value("${replication.nodename}") String nodeName
 			,EventHistoryService eventHistoryService
 			,MeterRegistry registry
-			,@Value("${event.thread.count:2}") Integer threadCount
-			, @Value("${event.history.enable:false}") boolean historyEnable) {
+			,@Value("${event.thread.count:2}") Integer threadCount) {
 		super(nodeName, registry, threadCount);
-		this.historyEnable = historyEnable;
 		this.eventHistoryService = eventHistoryService;
 	}
 	
@@ -102,6 +99,7 @@ public class EventService extends EntityService<String, Event>{
 	@Override
 	protected void queueRead(QueueInfo<String> info) {
 		entityCache.computeIfPresent(info.getId(), event -> {
+			eventHistoryService.add(event);
 			itemService.eventChanged(event);
 			return event;
 		});
@@ -114,19 +112,8 @@ public class EventService extends EntityService<String, Event>{
 				.forEach(this::deleteById);
 	}
 	
-	@Scheduled(fixedRateString = "${event.history.fixedrate:5}", timeUnit = TimeUnit.SECONDS)
-	public void doHistory() {
-		if(!historyEnable) {
-			return;
-		}
-		eventHistoryService.sendHistory(maxVersion -> {
-			var byVersion = Predicates.greaterThan(Event.FIELD_VERSION, maxVersion);
-			return query(Collections.singletonList(byVersion));
-		});
-	}
-	
 	public Optional<Event> findByIdHistory(String id) {
-		return Optional.ofNullable(eventHistoryService.getEventsByIds(Collections.singletonList(id)).get(id));
+		return Optional.ofNullable(eventHistoryService.getEventsByIds(Collections.singletonList(id), historyEventSearchLimit).get(id));
 	}
 	
 }

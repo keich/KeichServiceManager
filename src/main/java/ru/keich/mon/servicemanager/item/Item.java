@@ -2,13 +2,16 @@ package ru.keich.mon.servicemanager.item;
 
 import java.time.Instant;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
@@ -43,7 +46,6 @@ public class Item extends Entity<String> {
 	public static final String FIELD_FILTERS_EQL = "filters_equal";
 	public static final String FIELD_STATUS = "status";
 	public static final String FIELD_AGGSTATUS = "aggStatus";
-	public static final String FIELD_AGGEVENTSSTATUS = "aggEventsStatus";
 	
 	private final BaseStatus status;
 
@@ -58,9 +60,8 @@ public class Item extends Entity<String> {
 	
 	private final String name;
 	
-	@JsonSerialize(using = AggregateEventsStatusSerializer.class)
-	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
-	private AggregateEventsStatus aggEventsStatus = new AggregateEventsStatus();
+	@JsonIgnore
+	private Map<String, BaseStatus> eventsStatus = Collections.emptyMap();
 	
 	@JsonSerialize(using = AggregateStatusSerializer.class)
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
@@ -119,14 +120,14 @@ public class Item extends Entity<String> {
 			Instant createdOn,
 			Instant updatedOn,
 			Instant deletedOn,
-			AggregateEventsStatus aggEventsStatus,
+			Map<String, BaseStatus> eventsStatus,
 			AggregateStatus aggStatus,
 			List<Item> children,
 			List<Item> parents) {
 		this(id, version, source, sourceKey, sourceType, status, name, fields, rules, filters, childrenIds, fromHistory, createdOn,
 				updatedOn, deletedOn);
 
-		this.aggEventsStatus = aggEventsStatus;
+		this.eventsStatus = eventsStatus;
 		
 		this.children = children;
 		
@@ -157,11 +158,7 @@ public class Item extends Entity<String> {
 	}
 	
 	public static Set<Object> getEventsIdsForIndex(Item item) {
-		return Collections.unmodifiableSet(item.getAggEventsStatus().getEventsIds());
-	}
-	
-	public static boolean getAggEventsStatusForQuery(Item item, QueryPredicate predicate) {
-		return predicate.test(item.getAggEventsStatus().getMaxStatus());
+		return Collections.unmodifiableSet(item.getEventsStatus().keySet());
 	}
 	
 	public static boolean getAggStatusForQuery(Item item, QueryPredicate predicate) {
@@ -178,7 +175,6 @@ public class Item extends Entity<String> {
 			return str.toUpperCase();
 		case FIELD_STATUS:
 		case FIELD_AGGSTATUS:
-		case FIELD_AGGEVENTSSTATUS:
 			return BaseStatus.fromString(str);
 		}
 		return Entity.fieldValueOf(fieldName, str);
@@ -204,7 +200,7 @@ public class Item extends Entity<String> {
 		protected BaseStatus status;
 		protected Map<String, ItemRule> rules;
 		protected Map<String, ItemFilter> filters;
-		protected AggregateEventsStatus aggEventsStatus;
+		protected Map<String, BaseStatus> eventsStatus;
 		protected AggregateStatus aggStatus;
 		protected Set<String> childrenIds;
 		protected String name;
@@ -224,7 +220,7 @@ public class Item extends Entity<String> {
 			this.rules = item.getRules();
 			this.filters = item.getFilters();
 			this.childrenIds = item.getChildrenIds();
-			this.aggEventsStatus = item.getAggEventsStatus();
+			this.eventsStatus = new HashMap<>(item.getEventsStatus());
 			this.aggStatus = new AggregateStatus(item.getAggStatus());
 			this.children = item.getChildren();
 			this.parents = item.getParents();
@@ -247,7 +243,7 @@ public class Item extends Entity<String> {
 			this.createdOn,
 			this.updatedOn,
 			this.deletedOn,
-			this.aggEventsStatus,
+			this.eventsStatus,
 			this.aggStatus,
 			children,
 			parents);
@@ -274,8 +270,15 @@ public class Item extends Entity<String> {
 			return this;
 		}
 		
-		public Builder aggEventsStatus(AggregateEventsStatus aggEventsStatus) {
-			this.aggEventsStatus = aggEventsStatus;
+		public Builder eventsStatus(Map<String, BaseStatus> eventsStatus) {
+			this.eventsStatus.clear();
+			this.eventsStatus.putAll(eventsStatus);
+			this.changed = true;
+			return this;
+		}
+		
+		public Builder eventsStatusUpdate(Consumer<Map<String, BaseStatus>> s) {
+			s.accept(eventsStatus);
 			this.changed = true;
 			return this;
 		}
