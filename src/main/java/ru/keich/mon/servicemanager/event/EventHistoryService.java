@@ -50,12 +50,16 @@ public class EventHistoryService {
 			,@Value("${opensearch.user:none}") String osuser
 			,@Value("${opensearch.password:none}") String ospassword
 			,@Value("${event.history.indexname:ksm-events}") String osIndexName) {
-		if(historyEnable && !"none".equals(osurl)) {
-			this.queue = new HistoryQueueImp<Event>(limit);
+		if(!"none".equals(osurl) && !"none".equals(osuser)  && !"none".equals(ospassword)) {
 			enable = true;
+			
+		} else {
+			enable = false;
+		}
+		if(enable && historyEnable) {
+			this.queue = new HistoryQueueImp<Event>(limit);
 		} else {
 			this.queue = new HistoryQueueDummyImp<Event>();
-			enable = false;
 		}
 		this.osIndexName = osIndexName;
 		this.openSearchClient = OpenSearchClientBuilder.create(osurl, osuser, ospassword, objectMapper);

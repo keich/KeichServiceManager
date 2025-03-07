@@ -306,6 +306,7 @@ public class ItemService extends EntityService<String, Item> {
 		var items = new HashSet<Item>();
 		var history = new HashSet<String>();
 		findAllItemsById(id, items, history);
+		items.add(new Item.Builder(id).build());
 		var ietmIds = items.stream().map(Item::getId).toList();
 		return itemHistoryService.getEventsByItemId(ietmIds, from, to);
 	}

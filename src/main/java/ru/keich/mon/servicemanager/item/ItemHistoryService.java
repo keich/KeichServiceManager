@@ -54,12 +54,18 @@ public class ItemHistoryService {
 			,@Value("${opensearch.user:none}") String osuser
 			,@Value("${opensearch.password:none}") String ospassword
 			,@Value("${item.history.indexname:ksm-statusevents}") String osStatusIndexName) {
-		if(historyEnable && !"none".equals(osurl)) {
-			this.queue = new HistoryQueueImp<Item>(limit);
+
+		if(!"none".equals(osurl) && !"none".equals(osuser)  && !"none".equals(ospassword)) {
 			enable = true;
+			
+		} else {
+			enable = false;
+		}
+		
+		if(enable && historyEnable) {
+			this.queue = new HistoryQueueImp<Item>(limit);
 		} else {
 			this.queue = new HistoryQueueDummyImp<Item>();
-			enable = false;
 		}
 		this.eventHistoryService = eventHistoryService;
 		this.osStatusIndexName = osStatusIndexName;
