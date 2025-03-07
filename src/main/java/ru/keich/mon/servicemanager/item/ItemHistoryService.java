@@ -4,15 +4,18 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import org.assertj.core.util.Arrays;
 import org.opensearch.client.json.JsonData;
 import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch._types.FieldValue;
 import org.opensearch.client.opensearch._types.OpenSearchException;
+import org.opensearch.client.opensearch._types.aggregations.Aggregation;
 import org.opensearch.client.opensearch._types.query_dsl.RangeQuery;
 import org.opensearch.client.opensearch._types.query_dsl.TermsQuery;
 import org.opensearch.client.opensearch._types.query_dsl.TermsQueryField;
@@ -45,6 +48,7 @@ public class ItemHistoryService {
 	private final Integer groupLimit = 500;
 	private final Integer eventSearchLimit = 1000;
 	private final boolean enable;
+	private final Map<String, Aggregation> aggFields;
 	
 	public ItemHistoryService(EventHistoryService eventHistoryService
 			,@Value("${item.history.limit:1000}") Integer limit
@@ -70,6 +74,12 @@ public class ItemHistoryService {
 		this.eventHistoryService = eventHistoryService;
 		this.osStatusIndexName = osStatusIndexName;
 		this.openSearchClient = OpenSearchClientBuilder.create(osurl, osuser, ospassword, objectMapper);
+		
+		aggFields = Arrays.asList(BaseStatus.values())
+				.stream()
+				.map(s -> s.toString())
+				.map(s -> "events.".concat(s))
+				.collect(Collectors.toMap(s -> s, s -> new Aggregation.Builder().terms(t -> t.field(s).size(openSearchLimit)).build()));
 	}
 	
 	public static class OSEventsStatus {
@@ -105,6 +115,20 @@ public class ItemHistoryService {
 		
 	}
 	
+	public static class OsItemStatus {
+		public final String itemId;
+		public final BaseStatus itemStatus;
+		public final Map<BaseStatus,List<String>> events;
+		@JsonProperty("@timestamp")
+		public final Instant timestamp = Instant.now();
+
+		public OsItemStatus(String itemId, BaseStatus itemStatus, Map<BaseStatus,List<String>> events) {
+			this.itemId = itemId;
+			this.itemStatus = itemStatus;
+			this.events = events;
+		}
+	}
+	
 	public void add(Item value) {
 		queue.add(value);
 	}
@@ -115,14 +139,19 @@ public class ItemHistoryService {
 	}
 
 	private void sendStatusHistory(List<Item> items) {
-		var documents = items.stream()
-				.flatMap(item -> {
-					var itemId = item.getId();
-					return item.getEventsStatus()
+		
+		var documents = items.stream().map(item -> {
+			var itemId = item.getId();
+			var itemStatus = item.getAggStatus().getMax();
+			var map = item.getEventsStatus()
 					.entrySet()
 					.stream()
-					.map(s -> new OSEventsStatus(itemId, s.getKey(), s.getValue()));
-				}).collect(Collectors.toSet());
+					.collect(Collectors.groupingBy(Map.Entry::getValue))
+					.entrySet()
+					.stream()
+					.collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().stream().map(s -> s.getKey()).toList()));	
+			return new OsItemStatus(itemId, itemStatus, map);
+		}).filter(r -> r.events.size() > 0).toList();
 		
 		if(documents.size() == 0) {
 			return;
@@ -149,10 +178,8 @@ public class ItemHistoryService {
 		+ " Documents: " + documents.size()
 		+ " ] ");
 	}
-	
+
 	private List<Event> getEventsByItemIdInternal(List<String> itemIds, Instant from, Instant to) {
-		final String aggName = "events";
-		final String aggByField = "eventId";
 		final String fieldName = "itemId";
 		final String fieldTime = "@timestamp";
 		
@@ -163,7 +190,7 @@ public class ItemHistoryService {
 			var range = new RangeQuery.Builder().field(fieldTime).gte(JsonData.of(from)).to(JsonData.of(to)).build().toQuery();
 			var terms = new TermsQuery.Builder().field(fieldName).terms(itemIdsTerms).build().toQuery();
 			var eventIds = openSearchClient.search(s ->
-				s.aggregations(aggName, f -> f.terms(t -> t.size(openSearchLimit).field(aggByField)))
+				s.aggregations(aggFields)
 				.size(0)
 				.index(osStatusIndexName).query(q -> 
 					q.bool(b -> 
@@ -171,14 +198,11 @@ public class ItemHistoryService {
 					)
 		
 				)
-			, OSEventsStatus.class)
+			, OsItemStatus.class)
 			.aggregations()
-			.get(aggName)
-			.sterms()
-			.buckets()
-			.array()
+			.entrySet()
 			.stream()
-			.map(b -> b.key())
+			.flatMap(e -> e.getValue().sterms().buckets().array().stream().map(b -> b.key()))
 			.toList();
 			return eventHistoryService.getEventsByIds(eventIds, eventSearchLimit).values().stream().toList();
 		} catch (IOException | OpenSearchException e) {
