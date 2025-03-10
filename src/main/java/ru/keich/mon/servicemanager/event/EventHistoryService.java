@@ -184,10 +184,10 @@ public class EventHistoryService {
 					.stream()
 					.map(h -> h.source())
 					.collect(Collectors.toMap(Event::getId, Function.identity(), (e1, e2) -> {
-						if (Objects.nonNull(e1.getDeletedOn())) {
-							return e1;
+						if (Objects.nonNull(e2.getDeletedOn())) {
+							return new Event.Builder(e1).deletedOn(e2.getDeletedOn()).build();
 						}
-						return e2;
+						return new Event.Builder(e2).deletedOn(e1.getDeletedOn()).build();
 					}));
 
 		} catch (IOException | OpenSearchException e) {
