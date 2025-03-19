@@ -5,6 +5,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.json.MappingJacksonValue;
@@ -18,6 +20,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
+import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 
 import lombok.extern.java.Log;
 import ru.keich.mon.servicemanager.entity.EntityController;
@@ -46,11 +51,25 @@ public class ItemController extends EntityController<String, Item> {
 	public static final String QUERY_CHILDREN = "children";
 	public static final String QUERY_PARENTS = "parents";
 	
+	public static final String JSON_FILTER_FIELD = "parents";
+	
 	private final ItemService itemService;
 	
 	public ItemController(ItemService itemService) {
-		super(itemService);
+		super(itemService, new SimpleFilterProvider()
+				.addFilter(FILTER_NAME, SimpleBeanPropertyFilter
+						.serializeAllExcept(Set.of(Item.FIELD_EVENTSSTATUS, Item.FIELD_EVENTS))));
 		this.itemService = itemService;
+	}
+	
+	@Override
+	protected SimpleFilterProvider getJsonFilter(MultiValueMap<String, String> reqParam){
+		if(reqParam.containsKey(QUERY_PROPERTY)) {
+			var properties = reqParam.get(QUERY_PROPERTY).stream().collect(Collectors.toSet());
+			properties.add(QUERY_ID);
+			return new SimpleFilterProvider().addFilter(FILTER_NAME, SimpleBeanPropertyFilter.filterOutAllExcept(properties));
+		}
+		return jsonDefaultFilter;
 	}
 
 	@Override
@@ -66,22 +85,53 @@ public class ItemController extends EntityController<String, Item> {
 		return super.find(reqParam, Item::fieldValueOf);
 	}
 
+	boolean needEvents(List<String> property) {
+		return Optional.ofNullable(property)
+				.map(p -> p.stream().collect(Collectors.toSet()).contains(Item.FIELD_EVENTS))
+				.orElse(false);
+	}
+	
+	Item fillEvents(Item item) {
+		var outItem = new Item.Builder(item);
+		outItem.setEvents(itemService.findAllEventsById(item.getId()));
+		return outItem.build();
+	}
+	
+	List<Item> fillEvents(List<Item> items) {
+		return items.stream().map(this::fillEvents).toList();
+	}
+	
 	@Override
 	@GetMapping("/item/{id}")
 	@CrossOrigin(origins = "*")
 	public ResponseEntity<MappingJacksonValue> findById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
+		if(needEvents(reqParam.get(QUERY_PROPERTY))) {
+			return itemService.findById(id)
+					.map(this::fillEvents)
+					.map(MappingJacksonValue::new)
+					.map(value -> applyFilter(value, reqParam))
+					.orElse(ResponseEntity.notFound().build());
+		}
 		return super.findById(id, reqParam);
 	}
 
 	@GetMapping("/item/{id}/children")
 	@CrossOrigin(origins = "*")
 	ResponseEntity<MappingJacksonValue> findChildrenById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
-		return applyFilter(new MappingJacksonValue(itemService.findChildrenById(id)), reqParam);
+		var items = itemService.findChildrenById(id);
+		if(needEvents(reqParam.get(QUERY_PROPERTY))) {
+			items = fillEvents(items);
+		}
+		return applyFilter(new MappingJacksonValue(items), reqParam);
 	}
 	
 	@GetMapping("/item/{id}/parents")
 	@CrossOrigin(origins = "*")
 	ResponseEntity<MappingJacksonValue> findParentsById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
+		var items = itemService.findParentsById(id);
+		if(needEvents(reqParam.get(QUERY_PROPERTY))) {
+			items = fillEvents(items);
+		}
 		return applyFilter(new MappingJacksonValue(itemService.findParentsById(id)), reqParam);
 	}
 

@@ -40,9 +40,18 @@ public class EntityController<K, T extends Entity<K>> {
 	public static final String QUERY_ID = "id";
 	public static final String FILTER_NAME = "propertiesFilter";
 	
+	protected final SimpleFilterProvider jsonDefaultFilter;
+	
+	public EntityController(EntityService<K, T> entityService, SimpleFilterProvider jsonDefaultFilter) {
+		super();
+		this.entityService = entityService;
+		this.jsonDefaultFilter = jsonDefaultFilter;
+	}
+	
 	public EntityController(EntityService<K, T> entityService) {
 		super();
 		this.entityService = entityService;
+		this.jsonDefaultFilter = new SimpleFilterProvider().addFilter(FILTER_NAME, SimpleBeanPropertyFilter.serializeAll());
 	}
 	
 	public ResponseEntity<String> addOrUpdate(@RequestBody List<T> objs) {
@@ -56,7 +65,7 @@ public class EntityController<K, T extends Entity<K>> {
 			properties.add(QUERY_ID);
 			return new SimpleFilterProvider().addFilter(FILTER_NAME, SimpleBeanPropertyFilter.filterOutAllExcept(properties));
 		}
-		return new SimpleFilterProvider().addFilter(FILTER_NAME, SimpleBeanPropertyFilter.serializeAll());
+		return jsonDefaultFilter;
 	}
 	
 	protected ResponseEntity<MappingJacksonValue> applyFilter(MappingJacksonValue data, MultiValueMap<String, String> reqParam) {

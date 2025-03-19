@@ -11,7 +11,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
@@ -19,6 +18,7 @@ import lombok.Getter;
 import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.SourceType;
 import ru.keich.mon.servicemanager.entity.Entity;
+import ru.keich.mon.servicemanager.event.Event;
 import ru.keich.mon.servicemanager.query.predicates.QueryPredicate;
 
 /*
@@ -46,6 +46,8 @@ public class Item extends Entity<String> {
 	public static final String FIELD_FILTERS_EQL = "filters_equal";
 	public static final String FIELD_STATUS = "status";
 	public static final String FIELD_AGGSTATUS = "aggStatus";
+	public static final String FIELD_EVENTS= "events";
+	public static final String FIELD_EVENTSSTATUS= "eventsStatus";
 	
 	private final BaseStatus status;
 
@@ -60,7 +62,7 @@ public class Item extends Entity<String> {
 	
 	private final String name;
 	
-	@JsonIgnore
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	private Map<String, BaseStatus> eventsStatus = Collections.emptyMap();
 	
 	@JsonSerialize(using = AggregateStatusSerializer.class)
@@ -69,6 +71,9 @@ public class Item extends Entity<String> {
 	
 	private List<Item> children;
 	private List<Item> parents;
+	
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	private List<Event> events = Collections.emptyList();
 	
 	@JsonCreator
 	public Item(
@@ -123,7 +128,8 @@ public class Item extends Entity<String> {
 			Map<String, BaseStatus> eventsStatus,
 			AggregateStatus aggStatus,
 			List<Item> children,
-			List<Item> parents) {
+			List<Item> parents,
+			List<Event> events) {
 		this(id, version, source, sourceKey, sourceType, status, name, fields, rules, filters, childrenIds, fromHistory, createdOn,
 				updatedOn, deletedOn);
 
@@ -134,6 +140,8 @@ public class Item extends Entity<String> {
 		this.parents = parents;
 		
 		this.aggStatus = Optional.ofNullable(aggStatus).orElse(new AggregateStatus());
+		
+		this.events = events;
 
 	}
 
@@ -206,6 +214,7 @@ public class Item extends Entity<String> {
 		protected String name;
 		protected List<Item> children;
 		protected List<Item> parents;
+		protected List<Event> events;
 		
 		
 
@@ -224,6 +233,7 @@ public class Item extends Entity<String> {
 			this.aggStatus = new AggregateStatus(item.getAggStatus());
 			this.children = item.getChildren();
 			this.parents = item.getParents();
+			this.events = item.getEvents();
 		}
 		
 		@Override
@@ -246,7 +256,8 @@ public class Item extends Entity<String> {
 			this.eventsStatus,
 			this.aggStatus,
 			children,
-			parents);
+			parents,
+			events);
 		}
 		
 		public Builder name(String name) {
@@ -290,6 +301,11 @@ public class Item extends Entity<String> {
 		
 		public Builder setParents(List<Item> parents) {
 			this.parents = parents;
+			return this;
+		}
+		
+		public Builder setEvents(List<Event> events) {
+			this.events = events;
 			return this;
 		}
 			
