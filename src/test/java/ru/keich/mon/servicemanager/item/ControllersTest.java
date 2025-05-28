@@ -289,8 +289,8 @@ public class ControllersTest {
 	public void itemVersionFilter() throws IOException {
 		var items = new ArrayList<Item>();
 		for (int i = 0; i < 10; i++) {
-			final var item = new Item.Builder("id_itemVersionFilter_" + i)
-					.source("src_itemVersionFilter").sourceKey("src_key_itemVersionFilter").name("name").build();
+			final var item = new Item.Builder("id_itemVersionFilter_" + i).name("name")
+					.source("src_itemVersionFilter").sourceKey("src_key_itemVersionFilter").build();
 			items.add(item);
 		}
 		entityGetWithVersionFilter("/item", items, Item.class);
@@ -300,8 +300,8 @@ public class ControllersTest {
 	public void itemSourceFilter() throws IOException {
 		final var source = "src_itemSourceFilter";
 		final var sourceKey = "src_key_itemSourceFilter";
-		final var item = new Item.Builder("id_itemSourceFilter").source(source).sourceKey(sourceKey).name("name").build();
-		final var item1 = new Item.Builder("id_itemSourceFilter1").source(source + "1").sourceKey(sourceKey + "1").name("name").build();
+		final var item = new Item.Builder("id_itemSourceFilter").name("name").source(source).sourceKey(sourceKey).build();
+		final var item1 = new Item.Builder("id_itemSourceFilter1").name("name").source(source + "1").sourceKey(sourceKey + "1").build();
 		entityAdd("/item", item);
 		entityAdd("/item", item1);
 		
@@ -325,13 +325,13 @@ public class ControllersTest {
 		final var source = "src_itemSourceKeyFilter";
 		final var sourceKey = "src_key_itemSourceKeyFilter";
 		final var item = new Item.Builder(id)
+				.name("name")
 				.source(source)
-				.sourceKey(sourceKey)
-				.name("name").build();
+				.sourceKey(sourceKey).build();
 		final var item1 = new Item.Builder(id + "1")
+				.name("name")
 				.source(source + "1")
-				.sourceKey(sourceKey + "1")
-				.name("name").build();
+				.sourceKey(sourceKey + "1").build();
 		entityAdd("/item", item);
 		entityAdd("/item", item1);
 		
@@ -352,13 +352,13 @@ public class ControllersTest {
 	@Test
 	public void itemDeleteBySoyrceAndSourceKeyNot() throws IOException {
 		final var item1 = new Item.Builder("id_itemDeleteBySoyrceAndSourceKeyNot1")
+				.name("name")
 				.source("src_itemDeleteBySoyrceAndSourceKeyNot")
-				.sourceKey("src_key_itemDeleteBySoyrceAndSourceKeyNot")
-				.name("name").build();
+				.sourceKey("src_key_itemDeleteBySoyrceAndSourceKeyNot").build();
 		final var item2 = new Item.Builder("id_itemDeleteBySoyrceAndSourceKeyNot2")
+				.name("name")
 				.source("src_itemDeleteBySoyrceAndSourceKeyNot")
-				.sourceKey("src_key_itemDeleteBySoyrceAndSourceKeyNot_new")
-				.name("name").build();
+				.sourceKey("src_key_itemDeleteBySoyrceAndSourceKeyNot_new").build();
 		entityDeleteBySoyrceAndSourceKeyNot("/item", item1, item2, Item.class);
 	}
 
