@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -35,9 +36,9 @@ import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
  */
 
 public abstract class EntityService<K, T extends Entity<K>> {
-	static public Long VERSION_MIN = 0L;
+	static public final Long VERSION_MIN = 0L;
 	
-	private Long incrementVersion = VERSION_MIN + 1;
+	private AtomicLong incrementVersion = new AtomicLong(VERSION_MIN + 1);
 	
 	final protected IndexedHashMap<K, T> entityCache;
 	final protected QueueThreadReader<QueueInfo<K>> entityChangedQueue;
@@ -61,11 +62,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	}
 	
 	protected Long getNextVersion() {
-		synchronized (this) {
-			Long out = incrementVersion;
-			incrementVersion++;
-			return out;
-		}
+		return incrementVersion.incrementAndGet();
 	}
 
 	protected abstract void queueRead(QueueInfo<K> info);	
