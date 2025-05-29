@@ -72,6 +72,7 @@ public class ItemService extends EntityService<String, Item> {
 		eventService.setItemService(this);
 	}
 
+	@Override
 	public void addOrUpdate(Item item) {
 		entityCache.compute(item.getId(), () -> {
 			entityChangedQueue.add(new QueueInfo<String>(item.getId(), QueueInfo.QueueInfoType.UPDATE));
@@ -133,11 +134,11 @@ public class ItemService extends EntityService<String, Item> {
 			entityCache.computeIfPresent(info.getId(), item -> {
 				itemHistoryService.add(item);
 				findParentsById(info.getId()).stream()
-				.filter(parent -> Objects.isNull(parent.getDeletedOn()))
-				.map(Item::getId)
-				.forEach(parentId -> {
-					entityChangedQueue.add(new QueueInfo<String>(parentId, QueueInfo.QueueInfoType.UPDATE));
-				});
+						.filter(parent -> Objects.isNull(parent.getDeletedOn()))
+						.map(Item::getId)
+						.forEach(parentId -> {
+							entityChangedQueue.add(new QueueInfo<String>(parentId, QueueInfo.QueueInfoType.UPDATE));
+						});
 				return null;
 			});
 			break;
@@ -315,10 +316,10 @@ public class ItemService extends EntityService<String, Item> {
 	public void historyByFixedRate() {
 		var predicate = Predicates.greaterEqual(Item.FIELD_VERSION, 0L);
 		 entityCache.keySet(predicate, -1).stream()
-			.map(this::findById)
-			.filter(Optional::isPresent)
-			.map(Optional::get)
-			.forEach(itemHistoryService::add);
+				.map(this::findById)
+				.filter(Optional::isPresent)
+				.map(Optional::get)
+				.forEach(itemHistoryService::add);
 		
 	}
 	
