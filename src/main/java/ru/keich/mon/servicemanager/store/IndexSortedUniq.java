@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 
 public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> {
 	private final Function<T, Set<Object>> mapper;
-	private final SortedMap<Object, K> objects = new TreeMap<>();
+	private final SortedMap<Object, K> objects = new ConcurrentSkipListMap<>();
 	private final AtomicInteger metricObjectsSize = new AtomicInteger(0);
 	
 	public IndexSortedUniq(Function<T, Set<Object>> mapper) {
@@ -38,51 +38,41 @@ public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> 
 
 	@Override
 	public Set<K> findByKey(Predicate<Object> predicate) {
-		synchronized (this) {
-			return objects.entrySet().stream()
-					.filter(entry -> predicate.test(entry.getKey()))
-					.map(Map.Entry::getValue)
-					.collect(Collectors.toSet());
-		}
+		return objects.entrySet().stream()
+				.filter(entry -> predicate.test(entry.getKey()))
+				.map(Map.Entry::getValue)
+				.collect(Collectors.toSet());
 	}
 	
 	@Override
 	public void append(T entity) {
-		synchronized (this) {
-			mapper.apply(entity).forEach(key -> {
-				if(objects.containsKey(key)) {
-					throw new UnsupportedOperationException("Already contains key " + key);
-				}
-				objects.put(key, entity.getId());
-			});
-			metricObjectsSize.set(objects.size());
-		}
+		mapper.apply(entity).forEach(key -> {
+			if(objects.containsKey(key)) {
+				throw new UnsupportedOperationException("Already contains key " + key);
+			}
+			objects.put(key, entity.getId());
+		});
+		metricObjectsSize.set(objects.size());
 	}
 
 	@Override
 	public void remove(final T entity) {
-		synchronized (this) {
-			mapper.apply(entity).forEach(key -> {
-				objects.remove(key);
-			});
-			metricObjectsSize.set(objects.size());
-		}
+		mapper.apply(entity).forEach(key -> {
+			objects.remove(key);
+		});
+		metricObjectsSize.set(objects.size());
 	}
 
 	@Override
 	public Set<K> get(Object key) {
-		synchronized (this) {
-			return Optional.ofNullable(objects.get(key))
-					.map(Collections::singleton)
-					.orElse(Collections.emptySet());
-		}
+		return Optional.ofNullable(objects.get(key))
+				.map(Collections::singleton)
+				.orElse(Collections.emptySet());
 	}
 
 	@Override
 	public Set<K> getBefore(Object key) {
-		synchronized (this) {
-			return objects.headMap(key).values().stream().collect(Collectors.toSet());
-		}
+		return objects.headMap(key).values().stream().collect(Collectors.toSet());
 	}
 
 	@Override
@@ -94,20 +84,16 @@ public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> 
 
 	@Override
 	public Set<K> getAfterFirst(Object key) {
-		synchronized (this) {
-			var view = objects.tailMap(key);
-			if(view.isEmpty()) {
-				return Collections.emptySet();
-			}
-			return Collections.singleton(objects.get(view.firstKey()));
+		var view = objects.tailMap(key);
+		if(view.isEmpty()) {
+			return Collections.emptySet();
 		}
+		return Collections.singleton(objects.get(view.firstKey()));
 	}
 
 	@Override
 	public Set<K> valueSet() {
-		synchronized (this) {
-			return objects.values().stream().collect(Collectors.toSet());
-		}
+		return objects.values().stream().collect(Collectors.toSet());
 	}
 	
 	@Override
