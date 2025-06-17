@@ -139,8 +139,7 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 			final var newEntity = updateTrigger.apply(oldEntity);
 			if (Objects.nonNull(newEntity) && newEntity != oldEntity) {
 				index.entrySet().forEach(e -> {
-					e.getValue().remove(oldEntity);
-					e.getValue().append(newEntity);
+					e.getValue().removeOldAndAppend(oldEntity, newEntity);
 				});
 				metricUpdated.increment();
 				return newEntity;
@@ -153,14 +152,13 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 		metricObjectsSize.set(cache.size());
 		return Optional.ofNullable(cache.compute(entityId, (key, oldEntity) -> {
 			if (Objects.nonNull(oldEntity)) {
-				final var entity = updateTrigger.apply(oldEntity);
-				if (Objects.nonNull(entity) && entity != oldEntity) {
+				final var newEntity = updateTrigger.apply(oldEntity);
+				if (Objects.nonNull(newEntity) && newEntity != oldEntity) {
 					index.entrySet().forEach(e -> {
-						e.getValue().remove(oldEntity);
-						e.getValue().append(entity);
+						e.getValue().removeOldAndAppend(oldEntity, newEntity);
 					});
 					metricUpdated.increment();
-					return entity;
+					return newEntity;
 				}
 			} else {
 				final var entity = insertTrigger.get();

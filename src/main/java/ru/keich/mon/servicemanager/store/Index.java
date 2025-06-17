@@ -30,4 +30,5 @@ public interface Index <K, T> {
 	public Set<K> findByKey(Predicate<Object> predicate);
 	public Set<K> valueSet();
 	public AtomicInteger getMetricObjectsSize();
+	public void removeOldAndAppend(T oldEntity, T newEntity);
 }

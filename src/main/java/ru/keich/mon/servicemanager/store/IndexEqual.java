@@ -1,10 +1,10 @@
 package ru.keich.mon.servicemanager.store;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -30,7 +30,7 @@ import java.util.stream.Stream;
 public class IndexEqual<K, T extends BaseEntity<K>> implements Index<K, T> {
 	private static final Object PRESENT = new Object();
 	private final Function<T, Set<Object>> mapper;
-	private final Map<Object, Map<K, Object>> objects = new ConcurrentHashMap<>();
+	private final Map<Object, Map<K, Object>> objects = new HashMap<>();
 	private final AtomicInteger metricObjectsSize = new AtomicInteger(0);
 	
 	public IndexEqual(Function<T, Set<Object>> mapper) {
@@ -38,7 +38,7 @@ public class IndexEqual<K, T extends BaseEntity<K>> implements Index<K, T> {
 	}
 
 	@Override
-	public Set<K> findByKey( Predicate<Object> predicate) {
+	public synchronized Set<K> findByKey( Predicate<Object> predicate) {
 		return objects.entrySet().stream()
 				.filter(entry -> {
 						return predicate.test(entry.getKey());
@@ -50,13 +50,13 @@ public class IndexEqual<K, T extends BaseEntity<K>> implements Index<K, T> {
 	}
 
 	@Override
-	public void append(T entity) {
+	public synchronized void append(T entity) {
 		mapper.apply(entity).forEach(key -> {
 			objects.compute(key, (k, map) ->{
 				if(Objects.nonNull(map)) {
 					map.put(entity.getId(), PRESENT);
 				} else {
-					map = new ConcurrentHashMap<>();
+					map = new HashMap<>();
 					map.put(entity.getId(), PRESENT);
 				}
 				return map;
@@ -66,7 +66,7 @@ public class IndexEqual<K, T extends BaseEntity<K>> implements Index<K, T> {
 	}
 
 	@Override
-	public void remove(final T entity) {
+	public synchronized void remove(final T entity) {
 		mapper.apply(entity).forEach(key -> {
 			objects.compute(key, (k, map) ->{
 				if(Objects.nonNull(map)) {
@@ -82,7 +82,7 @@ public class IndexEqual<K, T extends BaseEntity<K>> implements Index<K, T> {
 	}
 
 	@Override
-	public Set<K> get(Object key) {
+	public synchronized Set<K> get(Object key) {
 		return Optional.ofNullable(objects.get(key))
 				.map(Map::keySet)
 				.map(Set::stream)
@@ -106,13 +106,19 @@ public class IndexEqual<K, T extends BaseEntity<K>> implements Index<K, T> {
 	}
 
 	@Override
-	public Set<K> valueSet() {
+	public synchronized Set<K> valueSet() {
 		return objects.values().stream().map(Map::keySet).flatMap(Set::stream).collect(Collectors.toSet());
 	}
 
 	@Override
 	public AtomicInteger getMetricObjectsSize() {
 		return metricObjectsSize;
+	}
+	
+	@Override
+	public synchronized void removeOldAndAppend(T oldEntity, T newEntity) {
+		remove(oldEntity);
+		append(newEntity);
 	}
 
 }

@@ -1,13 +1,13 @@
 package ru.keich.mon.servicemanager.store;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentNavigableMap;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -33,7 +33,7 @@ import java.util.stream.Stream;
 public class IndexSorted<K, T extends BaseEntity<K>> implements Index<K, T> {
 	private static final Object PRESENT = new Object();
 	private final Function<T, Set<Object>> mapper;
-	private final ConcurrentNavigableMap<Object, Map<K, Object>> objects = new ConcurrentSkipListMap<>();
+	private final SortedMap<Object, Map<K, Object>> objects = new TreeMap<>();
 	private final AtomicInteger metricObjectsSize = new AtomicInteger(0);
 	
 	public IndexSorted(Function<T, Set<Object>> mapper) {
@@ -41,7 +41,7 @@ public class IndexSorted<K, T extends BaseEntity<K>> implements Index<K, T> {
 	}
 
 	@Override
-	public Set<K> findByKey( Predicate<Object> predicate) {
+	public synchronized Set<K> findByKey( Predicate<Object> predicate) {
 		return objects.entrySet().stream()
 				.filter(entry -> {
 						return predicate.test(entry.getKey());
@@ -53,15 +53,13 @@ public class IndexSorted<K, T extends BaseEntity<K>> implements Index<K, T> {
 	}
 
 	@Override
-	public void append(T entity) {
+	public synchronized void append(T entity) {
 		mapper.apply(entity).forEach(key -> {
-			//log.info("DEBUG "+key);
-			//log.info("DEBUG "+key.getClass().getCanonicalName());
 			objects.compute(key, (k, map) ->{
 				if(Objects.nonNull(map)) {
 					map.put(entity.getId(), PRESENT);
 				} else {
-					map = new ConcurrentHashMap<>();
+					map = new HashMap<>();
 					map.put(entity.getId(), PRESENT);
 				}
 				return map;
@@ -71,7 +69,7 @@ public class IndexSorted<K, T extends BaseEntity<K>> implements Index<K, T> {
 	}
 
 	@Override
-	public void remove(final T entity) {
+	public synchronized void remove(final T entity) {
 		mapper.apply(entity).forEach(key -> {
 			Optional.ofNullable(objects.get(key)).ifPresent(set -> {
 				set.remove(entity.getId());
@@ -84,7 +82,7 @@ public class IndexSorted<K, T extends BaseEntity<K>> implements Index<K, T> {
 	}
 
 	@Override
-	public Set<K> get(Object key) {
+	public synchronized Set<K> get(Object key) {
 		return Optional.ofNullable(objects.get(key))
 				.map(Map::keySet)
 				.map(Set::stream)
@@ -93,17 +91,17 @@ public class IndexSorted<K, T extends BaseEntity<K>> implements Index<K, T> {
 	}
 
 	@Override
-	public Set<K> getBefore(Object key) {
+	public synchronized Set<K> getBefore(Object key) {
 		return objects.headMap(key).values().stream().flatMap(l -> l.keySet().stream()).collect(Collectors.toSet());
 	}
 	
 	@Override
-	public Set<K> getAfterEqual(Object key) {
+	public synchronized Set<K> getAfterEqual(Object key) {
 		return objects.tailMap(key).values().stream().flatMap(l -> l.keySet().stream()).collect(Collectors.toSet());
 	}
 	
 	@Override
-	public Set<K> getAfterFirst(Object key) {
+	public synchronized Set<K> getAfterFirst(Object key) {
 		var view = objects.tailMap(key);
 		if (view.isEmpty()) {
 			return Collections.emptySet();
@@ -112,13 +110,19 @@ public class IndexSorted<K, T extends BaseEntity<K>> implements Index<K, T> {
 	}
 
 	@Override
-	public Set<K> valueSet() {
+	public synchronized Set<K> valueSet() {
 		return objects.values().stream().flatMap(l -> l.keySet().stream()).collect(Collectors.toSet());
 	}
 
 	@Override
 	public AtomicInteger getMetricObjectsSize() {
 		return metricObjectsSize;
+	}
+	
+	@Override
+	public synchronized void removeOldAndAppend(T oldEntity, T newEntity) {
+		remove(oldEntity);
+		append(newEntity);
 	}
 	
 }
