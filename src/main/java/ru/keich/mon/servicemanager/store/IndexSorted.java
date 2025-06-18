@@ -3,7 +3,6 @@ package ru.keich.mon.servicemanager.store;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
@@ -39,13 +38,33 @@ public class IndexSorted<K, T extends BaseEntity<K>> implements Index<K, T> {
 	public IndexSorted(Function<T, Set<Object>> mapper) {
 		this.mapper = mapper;
 	}
+	
+	private void put(Object key, K id) {
+		objects.compute(key, (k, map) -> {
+			if (map == null) {
+				map = new HashMap<>();
+			}
+			map.put(id, PRESENT);
+			return map;
+		});
+	}
+
+	private void del(Object key, K id) {
+		objects.compute(key, (k, set) -> {
+			if (set != null) {
+				set.remove(id);
+				if (set.isEmpty()) {
+					return null;
+				}
+			}
+			return set;
+		});
+	}
 
 	@Override
 	public synchronized Set<K> findByKey( Predicate<Object> predicate) {
 		return objects.entrySet().stream()
-				.filter(entry -> {
-						return predicate.test(entry.getKey());
-				})
+				.filter(entry -> predicate.test(entry.getKey()))
 				.map(Map.Entry::getValue)
 				.map(Map::keySet)
 				.flatMap(Set::stream)
@@ -54,30 +73,13 @@ public class IndexSorted<K, T extends BaseEntity<K>> implements Index<K, T> {
 
 	@Override
 	public synchronized void append(T entity) {
-		mapper.apply(entity).forEach(key -> {
-			objects.compute(key, (k, map) ->{
-				if(Objects.nonNull(map)) {
-					map.put(entity.getId(), PRESENT);
-				} else {
-					map = new HashMap<>();
-					map.put(entity.getId(), PRESENT);
-				}
-				return map;
-			});
-		});
+		mapper.apply(entity).forEach(key -> put(key, entity.getId()));
 		metricObjectsSize.set(objects.size());
 	}
 
 	@Override
 	public synchronized void remove(final T entity) {
-		mapper.apply(entity).forEach(key -> {
-			Optional.ofNullable(objects.get(key)).ifPresent(set -> {
-				set.remove(entity.getId());
-				if (set.isEmpty()) {
-					objects.remove(key);
-				}
-			});
-		});
+		mapper.apply(entity).forEach(key -> del(key, entity.getId()));
 		metricObjectsSize.set(objects.size());
 	}
 
@@ -121,8 +123,16 @@ public class IndexSorted<K, T extends BaseEntity<K>> implements Index<K, T> {
 	
 	@Override
 	public synchronized void removeOldAndAppend(T oldEntity, T newEntity) {
-		remove(oldEntity);
-		append(newEntity);
+		final K id = newEntity.getId();
+		var oldSet = mapper.apply(oldEntity);
+		var newSet = mapper.apply(newEntity);
+		oldSet.stream()
+				.filter(key -> !newSet.contains(key))
+				.forEach(key -> del(key, id));
+		newSet.stream()
+				.filter(key -> !oldSet.contains(key))
+				.forEach(key -> put(key, id));
+		metricObjectsSize.set(objects.size());
 	}
 	
 }

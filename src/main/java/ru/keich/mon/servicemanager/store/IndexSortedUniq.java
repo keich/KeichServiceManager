@@ -35,6 +35,17 @@ public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> 
 	public IndexSortedUniq(Function<T, Set<Object>> mapper) {
 		this.mapper = mapper;
 	}
+	
+	private void put(Object key, K id) {
+		if(objects.containsKey(key)) {
+			throw new UnsupportedOperationException("Already contains key " + key);
+		}
+		objects.put(key, id);
+	}
+	
+	private void del(Object key, K id) {
+		objects.remove(key);
+	}
 
 	@Override
 	public synchronized Set<K> findByKey(Predicate<Object> predicate) {
@@ -43,23 +54,15 @@ public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> 
 				.map(Map.Entry::getValue)
 				.collect(Collectors.toSet());
 	}
-	
 	@Override
 	public synchronized void append(T entity) {
-		mapper.apply(entity).forEach(key -> {
-			if(objects.containsKey(key)) {
-				throw new UnsupportedOperationException("Already contains key " + key);
-			}
-			objects.put(key, entity.getId());
-		});
+		mapper.apply(entity).forEach(key -> put(key, entity.getId()));
 		metricObjectsSize.set(objects.size());
 	}
 
 	@Override
 	public synchronized void remove(final T entity) {
-		mapper.apply(entity).forEach(key -> {
-			objects.remove(key);
-		});
+		mapper.apply(entity).forEach(key -> del(key, entity.getId()));
 		metricObjectsSize.set(objects.size());
 	}
 
@@ -77,9 +80,7 @@ public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> 
 
 	@Override
 	public synchronized Set<K> getAfterEqual(Object key) {
-		synchronized (this) {
-			return objects.tailMap(key).values().stream().collect(Collectors.toSet());
-		}
+		return objects.tailMap(key).values().stream().collect(Collectors.toSet());
 	}
 
 	@Override
@@ -103,8 +104,16 @@ public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> 
 	
 	@Override
 	public synchronized void removeOldAndAppend(T oldEntity, T newEntity) {
-		remove(oldEntity);
-		append(newEntity);
+		final K id = newEntity.getId();
+		var oldSet = mapper.apply(oldEntity);
+		var newSet = mapper.apply(newEntity);
+		oldSet.stream()
+				.filter(key -> !newSet.contains(key))
+				.forEach(key -> del(key, id));
+		newSet.stream()
+				.filter(key -> !oldSet.contains(key))
+				.forEach(key -> put(key, id));
+		metricObjectsSize.set(objects.size());
 	}
 	
 }
