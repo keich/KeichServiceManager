@@ -2,7 +2,6 @@ package ru.keich.mon.servicemanager.item;
 
 import java.util.Collections;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -38,7 +37,7 @@ public class ItemFilter {
 	private final Map<String, String> equalFields;
 
 	public BaseStatus getStatus(Event event) {
-		if(Objects.nonNull(event.getDeletedOn())) {
+		if (event.isDeleted()) {
 			return BaseStatus.CLEAR;
 		}
 		if(usingResultStatus) {
@@ -71,7 +70,7 @@ public class ItemFilter {
 		if (getClass() != obj.getClass())
 			return false;
 		ItemFilter other = (ItemFilter) obj;
-		if(equalFields.size() != other.equalFields.size()) {
+		if (equalFields.size() != other.equalFields.size()) {
 			return false;
 		}
 		return equalFields.equals(other.equalFields)

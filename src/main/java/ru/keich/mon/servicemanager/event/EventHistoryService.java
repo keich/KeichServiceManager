@@ -5,7 +5,6 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -50,13 +49,13 @@ public class EventHistoryService {
 			,@Value("${opensearch.user:none}") String osuser
 			,@Value("${opensearch.password:none}") String ospassword
 			,@Value("${event.history.indexname:ksm-events}") String osIndexName) {
-		if(!"none".equals(osurl) && !"none".equals(osuser)  && !"none".equals(ospassword)) {
+		if (!"none".equals(osurl) && !"none".equals(osuser)  && !"none".equals(ospassword)) {
 			enable = true;
 			
 		} else {
 			enable = false;
 		}
-		if(enable && historyEnable) {
+		if (enable && historyEnable) {
 			this.queue = new HistoryQueueImp<Event>(limit);
 		} else {
 			this.queue = new HistoryQueueDummyImp<Event>();
@@ -88,7 +87,7 @@ public class EventHistoryService {
 		});
 		var result = openSearchClient.bulk(br.build());
 		
-		if(result.errors()) {
+		if (result.errors()) {
 			log.info("OpenSearch bulk operation has errors");
 		}
 		
@@ -104,16 +103,20 @@ public class EventHistoryService {
 		}
 		
 		public SimpleEvent(Map<String, JsonData> map) {
-			if(map.containsKey("id")) {
+			if (map.containsKey("id")) {
 				this.id = map.get("id").toJson().asJsonArray().getString(0);
 			} else {
 				this.id = "none";
 			}
-			if(map.containsKey("deletedOn")) {
+			if (map.containsKey("deletedOn")) {
 				this.deletedOn = Instant.parse(map.get("deletedOn").toJson().asJsonArray().getString(0));
 			} else {
 				this.deletedOn = null;
 			}
+		}
+		
+		public boolean isDeleted() {
+			return deletedOn != null;
 		}
 		
 	}
@@ -143,7 +146,7 @@ public class EventHistoryService {
 						return new SimpleEvent(h.fields());
 					})
 					.collect(Collectors.toMap(SimpleEvent::getId, Function.identity(), (e1, e2) -> {
-						if (Objects.nonNull(e1.getDeletedOn())) {
+						if (e1.isDeleted()) {
 							return e1;
 						}
 						return e2;
@@ -184,7 +187,7 @@ public class EventHistoryService {
 					.stream()
 					.map(h -> h.source())
 					.collect(Collectors.toMap(Event::getId, Function.identity(), (e1, e2) -> {
-						if (Objects.nonNull(e2.getDeletedOn())) {
+						if (e2.isDeleted()) {
 							return new Event.Builder(e1).deletedOn(e2.getDeletedOn()).build();
 						}
 						return new Event.Builder(e2).deletedOn(e1.getDeletedOn()).build();
@@ -197,10 +200,10 @@ public class EventHistoryService {
 	}
 	
 	public Map<String, Event> getEventsByIds(List<String> eventIds, Integer limit) {
-		if(!enable) {
+		if (!enable) {
 			return Collections.emptyMap();
 		}
-		if(eventIds.size() == 0) {
+		if (eventIds.size() == 0) {
 			return Collections.emptyMap();
 		}
 		AtomicInteger index = new AtomicInteger(0);
@@ -224,13 +227,13 @@ public class EventHistoryService {
 		var filteredInputEvents = inputEvents.stream()
 				.filter(event -> {
 					var oldEvent = existsEvents.get(event.getId());
-					if(oldEvent == null){
+					if (oldEvent == null) {
 						return true;
 					}
-					if(oldEvent.getDeletedOn() != null) {
+					if (oldEvent.isDeleted()) {
 						return false;
 					}
-					if(event.getDeletedOn() != null) {
+					if (event.isDeleted()) {
 						return true;
 					}
 					return false;

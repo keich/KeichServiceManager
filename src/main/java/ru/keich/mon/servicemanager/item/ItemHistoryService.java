@@ -59,14 +59,14 @@ public class ItemHistoryService {
 			,@Value("${opensearch.password:none}") String ospassword
 			,@Value("${item.history.indexname:ksm-statusevents}") String osStatusIndexName) {
 
-		if(!"none".equals(osurl) && !"none".equals(osuser)  && !"none".equals(ospassword)) {
+		if (!"none".equals(osurl) && !"none".equals(osuser)  && !"none".equals(ospassword)) {
 			enable = true;
 			
 		} else {
 			enable = false;
 		}
 		
-		if(enable && historyEnable) {
+		if (enable && historyEnable) {
 			this.queue = new HistoryQueueImp<Item>(limit);
 		} else {
 			this.queue = new HistoryQueueDummyImp<Item>();
@@ -168,7 +168,7 @@ public class ItemHistoryService {
 		BulkResponse result;
 		try {
 			result = openSearchClient.bulk(br.build());
-			if(result.errors()) {
+			if (result.errors()) {
 				log.info("OpenSearch bulk operation has errors");
 			}
 		} catch (OpenSearchException | IOException e) {
@@ -191,13 +191,9 @@ public class ItemHistoryService {
 			var terms = new TermsQuery.Builder().field(fieldName).terms(itemIdsTerms).build().toQuery();
 			var eventIds = openSearchClient.search(s ->
 				s.aggregations(aggFields)
-				.size(0)
-				.index(osStatusIndexName).query(q -> 
-					q.bool(b -> 
-					     b.must(range, terms)
-					)
-		
-				)
+						.size(0)
+						.index(osStatusIndexName)
+						.query(q -> q.bool(b -> b.must(range, terms)))
 			, OsItemStatus.class)
 			.aggregations()
 			.entrySet()
@@ -212,7 +208,7 @@ public class ItemHistoryService {
 	}
 	
 	public List<Event> getEventsByItemId(List<String> itemIds, Instant from, Instant to) {
-		if(itemIds.size() == 0 || !enable) {
+		if (itemIds.size() == 0 || !enable) {
 			return Collections.emptyList();
 		}
 		AtomicInteger index = new AtomicInteger(0);

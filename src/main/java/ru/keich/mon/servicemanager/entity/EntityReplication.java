@@ -79,7 +79,7 @@ public class EntityReplication<K, T extends Entity<K>> {
 			return;
 		}
 		
-		if(state.isActive()) {
+		if (state.isActive()) {
 			log.info("Entity " + path + ". Replication still active. State [ " + state.toString() + " ]");
 			return;
 		}

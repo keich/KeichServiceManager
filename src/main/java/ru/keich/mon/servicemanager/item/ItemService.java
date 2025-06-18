@@ -6,12 +6,12 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -80,11 +80,11 @@ public class ItemService extends EntityService<String, Item> {
 					.status(BaseStatus.CLEAR)
 					.version(getNextVersion())
 					.fromHistoryAdd(nodeName)
-					.deletedOn(Objects.nonNull(item.getDeletedOn()) ? Instant.now() : null)
+					.deletedOn(item.isDeleted() ? Instant.now() : null)
 					.build();
 		}, oldItem -> {
-			if(Objects.nonNull(item.getDeletedOn()) && Objects.nonNull(oldItem.getDeletedOn())) {
-				return null;
+			if (item.isDeleted() && oldItem.isDeleted()) {
+				return oldItem;
 			}
 			entityChangedQueue.add(new QueueInfo<String>(item.getId(), QueueInfo.QueueInfoType.UPDATE));
 			return new Item.Builder(item)
@@ -95,7 +95,7 @@ public class ItemService extends EntityService<String, Item> {
 					.fromHistoryAdd(nodeName)
 					.createdOn(oldItem.getCreatedOn())
 					.updatedOn(Instant.now())
-					.deletedOn(Objects.nonNull(item.getDeletedOn()) ? Instant.now() : null)
+					.deletedOn(item.isDeleted() ? Instant.now() : null)
 					.build();
 		});
 
@@ -103,9 +103,9 @@ public class ItemService extends EntityService<String, Item> {
 	
 	@Override
 	public Optional<Item> deleteById(String itemId) {
-		return entityCache.computeIfPresent(itemId, oldItem -> {
-			if(Objects.nonNull(oldItem.getDeletedOn())) {
-				return null;
+		return entityCache.compute(itemId, () -> null, oldItem -> {
+			if (oldItem.isDeleted()) {
+				return oldItem;
 			}
 			entityChangedQueue.add(new QueueInfo<String>(itemId, QueueInfo.QueueInfoType.UPDATE));
 			return new Item.Builder(oldItem)
@@ -121,25 +121,25 @@ public class ItemService extends EntityService<String, Item> {
 	protected void queueRead(QueueInfo<String> info) {
 		switch(info.getType()) {
 		case UPDATE:
-			entityCache.computeIfPresent(info.getId(), oldItem -> {
-				var item = calculateStatus(new Item.Builder(oldItem));
-				if (item.isChanged()) {
+			entityCache.compute(info.getId(), () -> null, oldItem -> {
+				var newItem = calculateStatus(new Item.Builder(oldItem));
+				if (newItem.isChanged()) {
 					entityChangedQueue.add(new QueueInfo<String>(info.getId(), QueueInfo.QueueInfoType.UPDATED));
-					return item.build();
+					return newItem.build();
 				}
-				return null;
+				return oldItem;
 			});
 			break;
 		case UPDATED:
-			entityCache.computeIfPresent(info.getId(), item -> {
+			entityCache.compute(info.getId(), () -> null, item -> {
 				itemHistoryService.add(item);
 				findParentsById(info.getId()).stream()
-						.filter(parent -> Objects.isNull(parent.getDeletedOn()))
+						.filter(Item::isNotDeleted)
 						.map(Item::getId)
 						.forEach(parentId -> {
 							entityChangedQueue.add(new QueueInfo<String>(parentId, QueueInfo.QueueInfoType.UPDATE));
 						});
-				return null;
+				return item;
 			});
 			break;
 		default:
@@ -148,23 +148,19 @@ public class ItemService extends EntityService<String, Item> {
 	}
 	
 	public void itemUpdateEventsStatus(String itemId, Consumer<Map<String, BaseStatus>> s) {
-		entityCache.computeIfPresent(itemId, item -> {
+		entityCache.compute(itemId, () -> null, item -> {
 			entityChangedQueue.add(new QueueInfo<String>(itemId, QueueInfo.QueueInfoType.UPDATE));
 			return new Item.Builder(item).eventsStatusUpdate(s).build();
 		});
 	}
 
-	private void eventRemoved(Event event) {
+	public void eventRemoved(Event event) {
 		var predicate = Predicates.equal(Item.FIELD_EVENTIDS, event.getId());
 		entityCache.keySet(predicate, -1).stream()
 				.forEach(itemId -> itemUpdateEventsStatus(itemId, m -> m.remove(event.getId())));
 	}
 
 	public void eventChanged(Event event) {
-		if(Objects.nonNull(event.getDeletedOn())) {
-			eventRemoved(event);
-			return;
-		}
 		findFiltersByEqualFields(event.getFields())
 				.forEach(itft -> {
 					var item = itft.getKey();
@@ -178,7 +174,7 @@ public class ItemService extends EntityService<String, Item> {
 				.map(this::findById)
 				.filter(Optional::isPresent)
 				.map(Optional::get)
-				.filter(child -> Objects.isNull(child.getDeletedOn()))
+				.filter(Item::isNotDeleted)
 				.mapToInt(child -> child.getStatus().ordinal())
 				.boxed()
 				.filter(i -> i >= rule.getStatusThreshold().ordinal())
@@ -188,8 +184,7 @@ public class ItemService extends EntityService<String, Item> {
 			if (rule.isUsingResultStatus()) {
 				return rule.getResultStatus().ordinal();
 			} else {
-				var min = listStatus.stream().mapToInt(i -> i).min().orElse(0);
-				return min;
+				return listStatus.stream().mapToInt(i -> i).min().orElse(0);
 			}
 		}
 		return 0;
@@ -200,8 +195,9 @@ public class ItemService extends EntityService<String, Item> {
 				.map(this::findById)
 				.filter(Optional::isPresent)
 				.map(Optional::get)
-				.filter(child -> Objects.isNull(child.getDeletedOn()))
-				.mapToInt(child -> child.getStatus().ordinal())
+				.filter(Item::isNotDeleted)
+				.map(Item::getStatus)
+				.mapToInt(BaseStatus::ordinal)
 				.max().orElse(0);
 	}
 	
@@ -217,7 +213,7 @@ public class ItemService extends EntityService<String, Item> {
 	}
 	
 	private Item.Builder calculateStatus(Item.Builder item) {
-		if(Objects.nonNull(item.getDeletedOn())) {
+		if (item.isDeleted()) {
 			return item.status(BaseStatus.CLEAR);
 		}
 		var rules = item.getRules().values();
@@ -227,7 +223,7 @@ public class ItemService extends EntityService<String, Item> {
 		return item.status(statusByChild.max(BaseStatus.fromInteger(statusByEvents)));
 	}
 	
-	private List<Map.Entry<Item, ItemFilter>> findFiltersByEqualFields(Map<String, String> fields){
+	private Stream<Map.Entry<Item, ItemFilter>> findFiltersByEqualFields(Map<String, String> fields){
 		return fields.entrySet().stream()
 				.map(e -> Predicates.equal(Item.FIELD_FILTERS_EQL, e))
 				.flatMap(p -> entityCache.keySet(p, -1).stream())
@@ -235,7 +231,7 @@ public class ItemService extends EntityService<String, Item> {
 				.map(this::findById)
 				.filter(Optional::isPresent)
 				.map(Optional::get)
-				.filter(item -> Objects.isNull(item.getDeletedOn()))
+				.filter(Item::isNotDeleted)
 				.map(item -> {
 					return item.getFilters().entrySet().stream()
 							.filter(flt -> fields.entrySet().containsAll(flt.getValue().getEqualFields().entrySet()))
@@ -243,8 +239,7 @@ public class ItemService extends EntityService<String, Item> {
 							.map(e -> Map.entry(item, e.getValue()));
 				})
 				.filter(Optional::isPresent)
-				.map(Optional::get)
-				.collect(Collectors.toList());
+				.map(Optional::get);
 	}
 	
 	public List<Item> findChildrenById(String id) {
@@ -267,17 +262,16 @@ public class ItemService extends EntityService<String, Item> {
 				.toList();
 	}
 	
-	private List<Event> findEventsByItem(Item item) {
+	private Stream<Event> findEventsByItem(Item item) {
 		return item.getEventsStatus().keySet().stream()
-				.map(id -> eventService.findById(id))
+				.map(eventService::findById)
 				.filter(Optional::isPresent)
-				.map(Optional::get)
-				.collect(Collectors.toList());
+				.map(Optional::get);
 	}
 	
 	private void findAllItemsById(String parentId, Set<Item> out, Set<String> history) {
 		findById(parentId).ifPresent(parent -> {
-			if(Objects.nonNull(parent.getDeletedOn())) {
+			if (parent.isDeleted()) {
 				return;
 			}
 			history.add(parentId);
@@ -297,7 +291,8 @@ public class ItemService extends EntityService<String, Item> {
 		var items = new HashSet<Item>();
 		var history = new HashSet<String>();
 		findAllItemsById(id, items, history);
-		return items.stream().flatMap(item -> findEventsByItem(item).stream())
+		return items.stream()
+				.flatMap(this::findEventsByItem)
 				.distinct()
 				.collect(Collectors.toList());
 

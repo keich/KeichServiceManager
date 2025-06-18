@@ -30,16 +30,16 @@ public class HistoryQueueImp<T> implements HistoryQueue<T> {
 		List<T> list = new ArrayList<T>();
 		try {
 			var element = queue.poll();
-			while(element != null) {
+			while (element != null) {
 				list.add(element);
 				metricRemoved.increment();
-				if(list.size() >= limit) {
+				if (list.size() >= limit) {
 					consumer.accept(list);
 					list = new ArrayList<T>();
 				}
 				element = queue.poll();
 			}
-			if(list.size() > 0) {
+			if (list.size() > 0) {
 				consumer.accept(list);
 			}
 		} catch (Exception v) {

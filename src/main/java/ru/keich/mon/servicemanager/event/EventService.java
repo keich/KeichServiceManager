@@ -18,7 +18,6 @@ package ru.keich.mon.servicemanager.event;
 
 import java.time.Instant;
 import java.util.Collections;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -63,11 +62,11 @@ public class EventService extends EntityService<String, Event>{
 			return new Event.Builder(event)
 					.version(getNextVersion())
 					.fromHistoryAdd(nodeName)
-					.deletedOn(Objects.nonNull(event.getDeletedOn()) ? Instant.now() : null)
+					.deletedOn(event.isDeleted() ? Instant.now() : null)
 					.build();	
 		}, oldEvent -> {
-			if(Objects.nonNull(event.getDeletedOn()) && Objects.nonNull(oldEvent.getDeletedOn())) {
-				return null;
+			if (event.isDeleted() && oldEvent.isDeleted()) {
+				return oldEvent;
 			}
 			entityChangedQueue.add(new QueueInfo<String>(oldEvent.getId(), QueueInfo.QueueInfoType.UPDATE));
 			return new Event.Builder(event)
@@ -75,16 +74,16 @@ public class EventService extends EntityService<String, Event>{
 					.fromHistoryAdd(nodeName)
 					.createdOn(oldEvent.getCreatedOn())
 					.updatedOn(Instant.now())
-					.deletedOn(Objects.nonNull(event.getDeletedOn())? Instant.now() : null)
+					.deletedOn(event.isDeleted() ? Instant.now() : null)
 					.build();
 		});
 	}
 
 	@Override
 	public Optional<Event> deleteById(String eventId) {
-		return entityCache.computeIfPresent(eventId, oldEvent -> {
-			if(Objects.nonNull(oldEvent.getDeletedOn())) {
-				return null;
+		return entityCache.compute(eventId, () -> null, oldEvent -> {
+			if (oldEvent.isDeleted()) {
+				return oldEvent;
 			}
 			entityChangedQueue.add(new QueueInfo<String>(eventId, QueueInfo.QueueInfoType.UPDATE));
 			return new Event.Builder(oldEvent)
@@ -98,9 +97,13 @@ public class EventService extends EntityService<String, Event>{
 
 	@Override
 	protected void queueRead(QueueInfo<String> info) {
-		entityCache.computeIfPresent(info.getId(), event -> {
+		entityCache.compute(info.getId(), () -> null, event -> {
 			eventHistoryService.add(event);
-			itemService.eventChanged(event);
+			if (event.isDeleted()) {
+				itemService.eventRemoved(event);
+			} else {
+				itemService.eventChanged(event);
+			}
 			return event;
 		});
 	}
@@ -108,8 +111,7 @@ public class EventService extends EntityService<String, Event>{
 	@Scheduled(fixedRateString = "1", timeUnit = TimeUnit.SECONDS)
 	public void deleteEndsOnScheduled() {
 		var predicate = Predicates.lessThan(Event.FIELD_ENDSON, Instant.now());
-		entityCache.keySet(predicate, -1).stream()
-				.forEach(this::deleteById);
+		entityCache.keySet(predicate, -1).forEach(this::deleteById);
 	}
 	
 	public Optional<Event> findByIdHistory(String id) {

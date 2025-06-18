@@ -1,7 +1,6 @@
 package ru.keich.mon.servicemanager.query.predicates;
 
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 import ru.keich.mon.servicemanager.query.Operator;
 

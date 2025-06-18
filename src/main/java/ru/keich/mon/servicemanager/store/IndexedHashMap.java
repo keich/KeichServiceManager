@@ -3,7 +3,6 @@ package ru.keich.mon.servicemanager.store;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -92,7 +91,7 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 		this.registry = registry;
 		this.serviceName = serviceName;
 
-		if(Objects.nonNull(registry)) {
+		if (registry != null) {
 			metricAdded = registry.counter(METRIC_NAME_MAP + METRIC_NAME_OPERATION, METRIC_NAME_OPERATION,
 					METRIC_NAME_ADDED, METRIC_NAME_SERVICENAME, serviceName);
 	
@@ -119,7 +118,7 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 			index.put(name, new IndexSortedUniq<K,T>(mapper));
 			break;		
 		}
-		if(Objects.nonNull(registry)) {
+		if (registry != null) {
 			var tags = Tags.of(METRIC_NAME_SERVICENAME, serviceName, METRIC_NAME_INDEX, name.toLowerCase());
 			registry.gauge(METRIC_NAME_MAP + METRIC_NAME_INDEX + "_" + METRIC_NAME_SIZE, tags,
 					index.get(name).getMetricObjectsSize());
@@ -131,44 +130,49 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 	}
 		
 	public Optional<T> put(T entity) {
-		return compute(entity.getId(), () -> entity, (o) -> null);
+		return compute(entity.getId(), () -> entity, Function.identity());
 	}
 	
-	public Optional<T> computeIfPresent(K entityId, Function<T,T> updateTrigger) {
-		return Optional.ofNullable(cache.computeIfPresent(entityId, (key, oldEntity) -> {
-			final var newEntity = updateTrigger.apply(oldEntity);
-			if (Objects.nonNull(newEntity) && newEntity != oldEntity) {
-				index.entrySet().forEach(e -> {
-					e.getValue().removeOldAndAppend(oldEntity, newEntity);
-				});
-				metricUpdated.increment();
-				return newEntity;
-			}
-			return oldEntity;
-		}));
+	
+	private T removeEntity(T entity) {
+		index.entrySet().stream()
+				.map(Map.Entry::getValue)
+				.forEach(index -> index.remove(entity));	
+		metricRemoved.increment();
+		return null;
+	}
+	
+	private T updateEntity(T oldEntity, T newEntity) {
+		index.entrySet().stream()
+				.map(Map.Entry::getValue)
+				.forEach(index -> index.removeOldAndAppend(oldEntity, newEntity));
+		metricUpdated.increment();
+		return newEntity;
+	}
+	
+	private T insertEntity(T entity) {
+		if (entity != null) {
+			index.entrySet().stream()
+			.map(Map.Entry::getValue)
+			.forEach(index -> index.append(entity));
+			metricAdded.increment();
+		}
+		return entity;
 	}
 	
 	public Optional<T> compute(K entityId, Supplier<T> insertTrigger, Function<T,T> updateTrigger) {
 		metricObjectsSize.set(cache.size());
 		return Optional.ofNullable(cache.compute(entityId, (key, oldEntity) -> {
-			if (Objects.nonNull(oldEntity)) {
+			if (oldEntity != null) {
 				final var newEntity = updateTrigger.apply(oldEntity);
-				if (Objects.nonNull(newEntity) && newEntity != oldEntity) {
-					index.entrySet().forEach(e -> {
-						e.getValue().removeOldAndAppend(oldEntity, newEntity);
-					});
-					metricUpdated.increment();
-					return newEntity;
+				if (newEntity  == null) {
+					return removeEntity(oldEntity);
+				} else if (newEntity != oldEntity) {
+					return updateEntity(oldEntity, newEntity);
 				}
 			} else {
 				final var entity = insertTrigger.get();
-				if (Objects.nonNull(entity)) {
-					index.entrySet().forEach(e -> {
-						e.getValue().append(entity);
-					});
-					metricAdded.increment();
-					return entity;
-				}
+				return insertEntity(entity);
 			}
 			return oldEntity;
 		}));
@@ -176,19 +180,6 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 	
 	public Optional<T> get(K id) {
 		return Optional.ofNullable(cache.get(id));
-	}
-
-	public Optional<T> remove(K id) {
-		metricObjectsSize.set(cache.size());
-		return Optional.ofNullable(cache.compute(id, (key, oldEntity) -> {
-			if (Objects.nonNull(oldEntity)) {
-				index.entrySet().forEach(e -> {
-					e.getValue().remove(oldEntity);
-				});	
-				metricRemoved.increment();
-			}
-			return null;
-		}));
 	}
 	
 	private Set<K> findByQuery(QueryPredicate predicate) {
@@ -233,7 +224,7 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 		Set<K> ret;
 		if (index.containsKey(fieldName)) {
 			ret = findByIndex(predicate);
-		} else if(query.containsKey(fieldName)) {
+		} else if (query.containsKey(fieldName)) {
 			ret = findByQuery(predicate);
 		} else {
 			throw new RuntimeException("Can't query by field \"" + fieldName + "\"");

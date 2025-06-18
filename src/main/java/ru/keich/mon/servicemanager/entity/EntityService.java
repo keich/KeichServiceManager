@@ -117,7 +117,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	public void deleteOldScheduled() {
 		var predicate = Predicates.lessThan(Entity.FIELD_DELETEDON, Instant.now().minusSeconds(seconds));
 		entityCache.keySet(predicate, -1)
-				.forEach(id -> entityCache.remove(id));
+				.forEach(id -> entityCache.compute(id, null, null));
 	}
 	
 }

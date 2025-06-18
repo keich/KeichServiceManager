@@ -53,10 +53,10 @@ public class EntityReplicationState {
 	}
 	
 	public void updateVersion(Long version) {
-		if(minVersion > version) {
+		if (minVersion > version) {
 			minVersion = version;
 		}
-		if(maxVersion < version) {
+		if (maxVersion < version) {
 			maxVersion = version;
 		}
 	}

@@ -101,7 +101,7 @@ public class Item extends Entity<String> {
 		this.filters = Optional.ofNullable(filters).map(Collections::unmodifiableMap).orElse(Collections.emptyMap());
 		this.childrenIds = Optional.ofNullable(childrenIds).map(Collections::unmodifiableSet).orElse(Collections.emptySet());
 
-		if(this.childrenIds.size() > 0) {
+		if (this.childrenIds.size() > 0) {
 			this.hasChildren = true;
 		}else {
 			this.hasChildren = false;

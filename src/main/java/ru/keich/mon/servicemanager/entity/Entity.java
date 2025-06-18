@@ -209,6 +209,14 @@ public class Entity<K> extends BaseEntity<K> {
 			this.changed = true;
 			return this;
 		}
+		
+		public boolean isNotDeleted() {
+			return deletedOn == null;
+		}
+		
+		public boolean isDeleted() {
+			return deletedOn != null;
+		}
 
 	}
 	
@@ -222,6 +230,14 @@ public class Entity<K> extends BaseEntity<K> {
 			return Instant.parse(str);
 		}
 		return str;
+	}
+	
+	public boolean isNotDeleted() {
+		return deletedOn == null;
+	}
+	
+	public boolean isDeleted() {
+		return deletedOn != null;
 	}
 	
 }

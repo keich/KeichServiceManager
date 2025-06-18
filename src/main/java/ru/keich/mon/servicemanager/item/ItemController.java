@@ -119,7 +119,7 @@ public class ItemController extends EntityController<String, Item> {
 	@CrossOrigin(origins = "*")
 	ResponseEntity<MappingJacksonValue> findChildrenById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
 		var items = itemService.findChildrenById(id);
-		if(needEvents(reqParam.get(QUERY_PROPERTY))) {
+		if (needEvents(reqParam.get(QUERY_PROPERTY))) {
 			items = fillEvents(items);
 		}
 		return applyFilter(new MappingJacksonValue(items), reqParam);
@@ -129,7 +129,7 @@ public class ItemController extends EntityController<String, Item> {
 	@CrossOrigin(origins = "*")
 	ResponseEntity<MappingJacksonValue> findParentsById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
 		var items = itemService.findParentsById(id);
-		if(needEvents(reqParam.get(QUERY_PROPERTY))) {
+		if (needEvents(reqParam.get(QUERY_PROPERTY))) {
 			items = fillEvents(items);
 		}
 		return applyFilter(new MappingJacksonValue(itemService.findParentsById(id)), reqParam);
@@ -151,7 +151,7 @@ public class ItemController extends EntityController<String, Item> {
 	@GetMapping("/item/{id}/events/history")
 	@CrossOrigin(origins = "*")
 	public ResponseEntity<MappingJacksonValue> findAllHistoryEventsById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
-		if(!reqParam.containsKey("from") || !reqParam.containsKey("to")) {
+		if (!reqParam.containsKey("from") || !reqParam.containsKey("to")) {
 			return ResponseEntity.badRequest().build();
 		}
 		var from = Instant.parse(reqParam.get("from").get(0));
@@ -164,7 +164,7 @@ public class ItemController extends EntityController<String, Item> {
 	@CrossOrigin(origins = "*")
 	// TODO rename children/tree
 	ResponseEntity<MappingJacksonValue> getTree(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
-		if(reqParam.containsKey(QUERY_PROPERTY)) {
+		if (reqParam.containsKey(QUERY_PROPERTY)) {
 			reqParam.add(QUERY_PROPERTY, QUERY_CHILDREN);
 		}
 		return itemService.findById(id)
@@ -197,7 +197,7 @@ public class ItemController extends EntityController<String, Item> {
 	@GetMapping("/item/{id}/parents/tree")
 	@CrossOrigin(origins = "*")
 	ResponseEntity<MappingJacksonValue> findParentsTreeById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
-		if(reqParam.containsKey(QUERY_PROPERTY)) {
+		if (reqParam.containsKey(QUERY_PROPERTY)) {
 			reqParam.add(QUERY_PROPERTY, QUERY_PARENTS);
 		}
 		return itemService.findById(id)
