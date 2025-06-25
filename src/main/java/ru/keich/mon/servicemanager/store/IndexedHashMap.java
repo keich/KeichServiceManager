@@ -78,7 +78,7 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 	}
 	
 	public enum IndexType {
-		EQUAL, SORTED, UNIQ_SORTED
+		EQUAL, SORTED, UNIQ_SORTED, STATUS
 	}
 	
 	private Map<K, T> cache = new ConcurrentHashMap<>();
@@ -116,7 +116,10 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 			break;
 		case UNIQ_SORTED:
 			index.put(name, new IndexSortedUniq<K,T>(mapper));
-			break;		
+			break;	
+		case STATUS:
+			index.put(name, new IndexStatus<K,T>(mapper));
+			break;
 		}
 		if (registry != null) {
 			var tags = Tags.of(METRIC_NAME_SERVICENAME, serviceName, METRIC_NAME_INDEX, name.toLowerCase());

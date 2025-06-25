@@ -44,7 +44,7 @@ public class EventService extends EntityService<String, Event>{
 		this.itemService = itemService;
 		entityCache.addIndex(Event.FIELD_ENDSON, IndexType.SORTED, Event::getEndsOnForIndex);
 		entityCache.addIndex(Event.FIELD_NODE, IndexType.EQUAL, Event::getNodeForIndex);
-		entityCache.addIndex(Item.FIELD_STATUS, IndexType.SORTED, Event::getStatusForIndex);
+		entityCache.addIndex(Item.FIELD_STATUS, IndexType.STATUS, Event::getStatusForIndex);
 	}
 
 	public EventService(@Value("${replication.nodename}") String nodeName
