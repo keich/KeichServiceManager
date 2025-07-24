@@ -56,7 +56,7 @@ public class AlertService {
 		fields.put(FIELDS_ALERTS_PREFIX + "starts_at", alert.getStartsAt());
 		fields.put(FIELDS_ALERTS_PREFIX + "ends_at", alert.getEndsAt());
 		fields.put(FIELDS_ALERTS_PREFIX + "generator_url", alert.getGeneratorURL());
-		return new Event.Builder(alert.getAnnotations().getOrDefault(ANNOTATION_ALERT_ID, ""))
+		return new Event.Builder(alert.getAnnotations().getOrDefault(ANNOTATION_ALERT_ID, "") + "_" + Instant.parse(alert.getStartsAt()).getEpochSecond())
 				.node(alert.getAnnotations().getOrDefault(ANNOTATION_NODE, ""))
 				.endsOn(Instant.parse(alert.getEndsAt()))
 				.status(BaseStatus.fromString(alert.getAnnotations().getOrDefault(ANNOTATION_SEVERITY, "1")))

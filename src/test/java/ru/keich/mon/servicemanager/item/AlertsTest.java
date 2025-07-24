@@ -60,10 +60,11 @@ public class AlertsTest {
 						"alert_id": 7380901136023483174}
 					}
 				""";
+		var startAt = Instant.parse("2024-11-06T10:31:00+03:00");
 		Alert alert = mapper.readValue(json, Alert.class);
 		alert.setEndsAt(Instant.now().plusSeconds(60).toString());
 		alertAdd(alert);
-		var event = eventGet("7380901136023483174");
+		var event = eventGet("7380901136023483174_" + startAt.getEpochSecond());
 		assertEquals(BaseStatus.WARNING, event.getStatus());
 		assertNotNull(event.getEndsOn());
 	}
