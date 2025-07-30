@@ -449,6 +449,11 @@ public class ControllersTest {
 		
 		
 		events = itemGetEvents(itemRoot.getId());
+		assertTrue(events.length > 0);
+
+		var itemRoot2 = entityGetById("/item", itemRoot.getId(), Item.class);
+		
+		assertEquals(BaseStatus.WARNING, itemRoot2.getStatus());
 
 		var item2 = entityGetById("/item", item.getId(), Item.class);
 		
