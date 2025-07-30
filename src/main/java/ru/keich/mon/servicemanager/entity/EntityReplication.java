@@ -106,6 +106,7 @@ public class EntityReplication<K, T extends Entity<K>> {
 				})
 				.doFirst(() -> {
 					state.setActiveTrue();
+					log.info("Entity " + path + ". Replication start. State [ " + state.toString() + " ]");
 				})
 				.doOnComplete(() -> {
 					state.setFirstRunFalse();
