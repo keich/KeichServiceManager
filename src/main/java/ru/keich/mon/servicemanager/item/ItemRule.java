@@ -1,5 +1,6 @@
 package ru.keich.mon.servicemanager.item;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -82,6 +83,31 @@ public class ItemRule {
 		this.statusThreshold = Optional.ofNullable(statusThreshold).orElse(BaseStatus.CLEAR);
 		this.valueThreshold = Optional.ofNullable(valueThreshold).orElse(0);
 		this.type = type;
+	}
+	
+	public BaseStatus getStatus(List<BaseStatus> statuses) {
+		switch(type) {
+		case CLUSTER:
+			return doCluster(statuses);
+		default:
+			return doDefault(statuses);
+		}
+	}
+	
+	private BaseStatus doCluster(List<BaseStatus> statuses) {
+		var filtered = statuses.stream().filter(s -> getStatusThreshold().lessThenOrEqual(s)).toList();
+		var percent = 100 * filtered.size() / statuses.size();
+		if (percent >= getValueThreshold()) {
+			if (isUsingResultStatus()) {
+				return getResultStatus();
+			}
+			return filtered.stream().reduce(BaseStatus.CLEAR, BaseStatus::min);
+		}
+		return BaseStatus.CLEAR;
+	}
+	
+	public static BaseStatus doDefault(List<BaseStatus> statuses) {
+		return statuses.stream().reduce(BaseStatus.CLEAR, BaseStatus::max);
 	}
 
 }

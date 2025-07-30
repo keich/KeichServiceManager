@@ -168,59 +168,41 @@ public class ItemService extends EntityService<String, Item> {
 					itemUpdateEventsStatus(item.getId(), m -> m.put(event.getId(), filter.getStatus(event)));
 				});
 	}
-
-	private int calculateEntityStatusAsCluster(Set<String> childrenIds, ItemRule rule) {
-		var listStatus = childrenIds.stream()
-				.map(this::findById)
-				.filter(Optional::isPresent)
-				.map(Optional::get)
-				.filter(Item::isNotDeleted)
-				.mapToInt(child -> child.getStatus().ordinal())
-				.boxed()
-				.filter(i -> i >= rule.getStatusThreshold().ordinal())
-				.toList();
-		var percent = 100 * listStatus.size() / childrenIds.size();
-		if (percent >= rule.getValueThreshold()) {
-			if (rule.isUsingResultStatus()) {
-				return rule.getResultStatus().ordinal();
-			} else {
-				return listStatus.stream().mapToInt(i -> i).min().orElse(0);
-			}
+	
+	private BaseStatus calculateStatusByChild(Collection<ItemRule> rules, Set<String> childrenIds) {
+		if(childrenIds.isEmpty()) {
+			return BaseStatus.CLEAR;
 		}
-		return 0;
-	}
-
-	private int calculateEntityStatusDefault(Set<String> childrenIds) {
-		return childrenIds.stream()
+		
+		final var childrenStatuses = childrenIds.stream()
 				.map(this::findById)
 				.filter(Optional::isPresent)
 				.map(Optional::get)
 				.filter(Item::isNotDeleted)
 				.map(Item::getStatus)
-				.mapToInt(BaseStatus::ordinal)
-				.max().orElse(0);
-	}
-	
-	private int calculateStatusByChild(Collection<ItemRule> rules, Set<String> childrenIds) {
-		return rules.stream().mapToInt(rule -> {
-			switch (rule.getType()) {
-			case CLUSTER:
-				return calculateEntityStatusAsCluster(childrenIds, rule);
-			default:
-				return calculateEntityStatusDefault(childrenIds);
-			}
-		}).max().orElse(calculateEntityStatusDefault(childrenIds));
+				.toList();
+		
+		if(childrenStatuses.isEmpty()) {
+			return BaseStatus.CLEAR;
+		}
+		
+		if(rules.isEmpty()) {
+			return ItemRule.doDefault(childrenStatuses);
+		}
+		
+		return rules.stream()
+				.map(r -> r.getStatus(childrenStatuses))
+				.reduce(BaseStatus.CLEAR, BaseStatus::max);
 	}
 	
 	private Item.Builder calculateStatus(Item.Builder item) {
 		if (item.isDeleted()) {
 			return item.status(BaseStatus.CLEAR);
 		}
-		var rules = item.getRules().values();
-		var childrenIds = item.getChildrenIds();
-		var statusByChild = childrenIds.isEmpty() ? BaseStatus.CLEAR : BaseStatus.fromInteger(calculateStatusByChild(rules, childrenIds));
-		var statusByEvents = item.getEventsStatus().values().stream().mapToInt(BaseStatus::ordinal).max().orElse(0);
-		return item.status(statusByChild.max(BaseStatus.fromInteger(statusByEvents)));
+		var statusByChild = calculateStatusByChild(item.getRules().values(), item.getChildrenIds());
+		var statusByEvents = item.getEventsStatus().values().stream()
+				.reduce(BaseStatus.CLEAR, BaseStatus::max);
+		return item.status(statusByChild.max(statusByEvents));
 	}
 	
 	private Stream<Map.Entry<Item, ItemFilter>> findFiltersByEqualFields(Map<String, String> fields){
