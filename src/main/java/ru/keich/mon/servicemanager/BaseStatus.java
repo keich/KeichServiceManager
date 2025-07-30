@@ -16,8 +16,6 @@ package ru.keich.mon.servicemanager;
  * limitations under the License.
  */
 
-import java.util.Objects;
-
 public enum BaseStatus {
 	CLEAR(0), INDETERMINATE(1), INFORMATION(2), WARNING(3), MAJOR(4), CRITICAL(5);
 	
@@ -81,13 +79,12 @@ public enum BaseStatus {
     }
 	
 	public BaseStatus max(BaseStatus other) {
-		if(Objects.nonNull(other)) {
-			if(this.status < other.status) {
-				return other;
-			}
+		if(this.status < other.status) {
+			return other;
 		}
 		return this;
 	}
+	
 	public boolean lessThen(BaseStatus other) {
 		if(this.status < other.status) {
 			return true;
