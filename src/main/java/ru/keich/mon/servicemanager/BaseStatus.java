@@ -85,6 +85,13 @@ public enum BaseStatus {
 		return this;
 	}
 	
+	public BaseStatus min(BaseStatus other) {
+		if(this.status > other.status) {
+			return other;
+		}
+		return this;
+	}
+	
 	public boolean lessThen(BaseStatus other) {
 		if(this.status < other.status) {
 			return true;
