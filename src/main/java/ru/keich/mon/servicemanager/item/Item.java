@@ -47,8 +47,6 @@ public class Item extends Entity<String> {
 	public static final String FIELD_AGGSTATUS = "aggStatus";
 	public static final String FIELD_EVENTS= "events";
 	public static final String FIELD_EVENTSSTATUS= "eventsStatus";
-	
-	private final BaseStatus status;
 
 	private final Map<String, ItemRule> rules;
 
@@ -56,31 +54,29 @@ public class Item extends Entity<String> {
 
 	private final Set<String> childrenIds;
 
-	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	private final boolean hasChildren;
 	
 	private final String name;
 	
-	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
-	private Map<String, BaseStatus> eventsStatus = Collections.emptyMap();
+	
+	private final Map<String, BaseStatus> eventsStatus;
 	
 	@JsonSerialize(using = AggregateStatusSerializer.class)
-	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
-	private AggregateStatus aggStatus = new AggregateStatus(); 
+	private final AggregateStatus aggStatus; 
 	
-	private List<Item> children;
-	private List<Item> parents;
+	private final List<Item> children;
 	
-	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
-	private List<Event> events = Collections.emptyList();
+	private final List<Item> parents;
+	
+	private final List<Event> events;
 	
 	@JsonCreator
 	public Item(
 			@JsonProperty(value = "id", required = true) String id,
-			@JsonProperty(value = "version", required = false) Long version,
+			@JsonProperty(value = "version") Long version,
 			@JsonProperty(value = "source", required = true) String source,
 			@JsonProperty(value = "sourceKey", required = true) String sourceKey,
-			@JsonProperty(value = "sourceType", required = false) SourceType sourceType,
+			@JsonProperty(value = "sourceType") SourceType sourceType,
 			@JsonProperty("status") BaseStatus status,
 			@JsonProperty("name") String name,
 			@JsonProperty("fields") Map<String, String> fields,
@@ -88,54 +84,28 @@ public class Item extends Entity<String> {
 			@JsonProperty("filters") Map<String, ItemFilter> filters,
 			@JsonProperty("childrenIds") Set<String> childrenIds,
 			@JsonProperty("fromHistory") Set<String> fromHistory,
-			@JsonProperty(value = "createdOn", required = false) Instant createdOn,
-			@JsonProperty(value = "updatedOn", required = false) Instant updatedOn,
-			@JsonProperty(value = "deletedOn", required = false) Instant deletedOn) {
-		super(id, version, source, sourceKey, sourceType, fields, fromHistory, createdOn, updatedOn, deletedOn);
+			@JsonProperty(value = "createdOn") Instant createdOn,
+			@JsonProperty(value = "updatedOn") Instant updatedOn,
+			@JsonProperty(value = "deletedOn") Instant deletedOn,
+			@JsonProperty(value = "eventsStatus") Map<String, BaseStatus> eventsStatus,
+			@JsonProperty(value = "aggStatus", access = JsonProperty.Access.READ_ONLY) AggregateStatus aggStatus,
+			@JsonProperty(value = "children") List<Item> children,
+			@JsonProperty(value = "parents") List<Item> parents,
+			@JsonProperty(value = "events") List<Event> events
+			) {
+		super(id, version, source, sourceKey, sourceType, fields, fromHistory, createdOn, updatedOn, deletedOn, status);
 
 		this.name = name;
-		this.status = status == null ? BaseStatus.CLEAR : status;
+		
 		this.rules = rules == null ? Collections.emptyMap() : Collections.unmodifiableMap(rules);
 		this.filters = filters == null ? Collections.emptyMap() : Collections.unmodifiableMap(filters);
 		this.childrenIds = childrenIds == null ? Collections.emptySet() : Collections.unmodifiableSet(childrenIds);
 		this.hasChildren = this.childrenIds.size() > 0;
-		
-	}
-	
-	public Item(
-			String id,
-			Long version,
-			String source,
-			String sourceKey,
-			SourceType sourceType,
-			BaseStatus status,
-			String name,
-			Map<String, String> fields,
-			Map<String, ItemRule> rules,
-			Map<String, ItemFilter> filters,
-			Set<String> childrenIds,
-			Set<String> fromHistory,
-			Instant createdOn,
-			Instant updatedOn,
-			Instant deletedOn,
-			Map<String, BaseStatus> eventsStatus,
-			AggregateStatus aggStatus,
-			List<Item> children,
-			List<Item> parents,
-			List<Event> events) {
-		this(id, version, source, sourceKey, sourceType, status, name, fields, rules, filters, childrenIds, fromHistory, createdOn,
-				updatedOn, deletedOn);
-
-		this.eventsStatus = eventsStatus;
-		
-		this.children = children;
-		
-		this.parents = parents;
-		
+		this.eventsStatus = eventsStatus == null ? Collections.emptyMap() : Collections.unmodifiableMap(eventsStatus);
+		this.children = children == null ? Collections.emptyList() : Collections.unmodifiableList(children);
+		this.parents = parents == null ? Collections.emptyList() : Collections.unmodifiableList(parents);
+		this.events = events == null ? Collections.emptyList() : Collections.unmodifiableList(events);
 		this.aggStatus = aggStatus == null ? new AggregateStatus() : aggStatus;
-		
-		this.events = events;
-
 	}
 
 	public static Set<Object> getFiltersForIndex(Item item) {
@@ -179,7 +149,7 @@ public class Item extends Entity<String> {
 	}
 	@Override
 	public String toString() {
-		return "Item [name=" + name + ", status=" + status + ", fields=" + getFields() + ", rules=" + rules + ", filters=" + filters
+		return "Item [name=" + name + ", status=" + getStatus() + ", fields=" + getFields() + ", rules=" + rules + ", filters=" + filters
 				+ ", getVersion()=" + getVersion() + ", getSource()=" + getSource() + ", getSourceKey()="
 				+ getSourceKey() + ", getCreatedOn()=" + getCreatedOn() + ", getUpdatedOn()=" + getUpdatedOn()
 				+ ", getDeletedOn()=" + getDeletedOn() + ", getFromHistory()=" + getFromHistory() + ", getId()="
@@ -195,7 +165,6 @@ public class Item extends Entity<String> {
 			return "Builder [status=" + status + ", getId()=" + getId() + "]";
 		}
 
-		protected BaseStatus status;
 		protected Map<String, ItemRule> rules;
 		protected Map<String, ItemFilter> filters;
 		protected Map<String, BaseStatus> eventsStatus;
@@ -214,16 +183,15 @@ public class Item extends Entity<String> {
 		
 		public Builder(Item item) {
 			super(item);
-			this.status = item.getStatus();
 			this.name = item.getName();
 			this.rules = item.getRules();
 			this.filters = item.getFilters();
 			this.childrenIds = item.getChildrenIds();
 			this.eventsStatus = new HashMap<>(item.getEventsStatus());
-			this.aggStatus = new AggregateStatus(item.getAggStatus());
 			this.children = item.getChildren();
 			this.parents = item.getParents();
 			this.events = item.getEvents();
+			this.aggStatus = new AggregateStatus(item.getAggStatus());
 		}
 		
 		@Override
@@ -256,21 +224,6 @@ public class Item extends Entity<String> {
 			return this;
 		}
 		
-		public Builder status(BaseStatus status) {
-			if(this.status != status) {
-				this.status = status;
-				this.changed = true;
-				aggStatus.set(status);
-			}
-			return this;
-		}
-		
-		public Builder aggStatus(AggregateStatus aggStatus) {
-			this.aggStatus = new AggregateStatus(aggStatus);
-			this.changed = true;
-			return this;
-		}
-		
 		public Builder eventsStatus(Map<String, BaseStatus> eventsStatus) {
 			this.eventsStatus.clear();
 			this.eventsStatus.putAll(eventsStatus);
@@ -298,6 +251,80 @@ public class Item extends Entity<String> {
 			this.events = events;
 			return this;
 		}
+
+		@Override
+		public Builder source(String source) {
+			super.source(source);
+			return this;
+		}
+
+		@Override
+		public Builder sourceKey(String sourceKey) {
+			super.sourceKey(sourceKey);
+			return this;
+		}
+
+		@Override
+		public Builder sourceType(SourceType sourceType) {
+			super.sourceType(sourceType);
+			return this;
+		}
+
+		@Override
+		public Builder version(Long version) {
+			super.version(version);
+			return this;
+		}
+
+		@Override
+		public Builder createdOn(Instant createdOn) {
+			super.createdOn(createdOn);
+			return this;
+		}
+
+		@Override
+		public Builder updatedOn(Instant updatedOn) {
+			super.updatedOn(updatedOn);
+			return this;
+		}
+
+		@Override
+		public Builder deletedOn(Instant deletedOn) {
+			super.deletedOn(deletedOn);
+			return this;
+		}
+
+		@Override
+		public Builder fromHistory(Set<String> fromHistory) {
+			super.fromHistory(fromHistory);
+			return this;
+		}
+
+		@Override
+		public Builder fromHistoryAdd(String value) {
+			super.fromHistoryAdd(value);
+			return this;
+		}
+
+		@Override
+		public Builder fields(Map<String, String> fields) {
+			super.fields(fields);
+			return this;
+		}		
+		
+		public Builder aggStatus(AggregateStatus aggStatus) {
+			this.aggStatus = new AggregateStatus(aggStatus);
+			this.changed = true;
+			return this;
+		}
+		
+		@Override
+		public Builder status(BaseStatus status) {
+			super.status(status);
+			aggStatus.set(status);
+			return this;
+		}
+		
 			
 	}
 	

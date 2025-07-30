@@ -88,9 +88,9 @@ public class ItemService extends EntityService<String, Item> {
 			}
 			entityChangedQueue.add(new QueueInfo<String>(item.getId(), QueueInfo.QueueInfoType.UPDATE));
 			return new Item.Builder(item)
+					.eventsStatus(oldItem.getEventsStatus())
 					.status(oldItem.getStatus())
 					.aggStatus(oldItem.getAggStatus())
-					.eventsStatus(oldItem.getEventsStatus())
 					.version(getNextVersion())
 					.fromHistoryAdd(nodeName)
 					.createdOn(oldItem.getCreatedOn())

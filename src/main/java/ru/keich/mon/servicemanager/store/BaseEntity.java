@@ -1,8 +1,5 @@
 package ru.keich.mon.servicemanager.store;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -21,10 +18,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class BaseEntity<K> {
 	public static final String FIELD_ID = "id";
+	
 	private final K id;
 
-	@JsonCreator
-	public BaseEntity(@JsonProperty(value = "id", required = true) K id) {
+	public BaseEntity(K id) {
 		super();
 		this.id = id;
 	}

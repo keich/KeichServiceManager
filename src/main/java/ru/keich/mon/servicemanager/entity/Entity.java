@@ -12,6 +12,7 @@ import java.util.stream.Stream;
 import com.fasterxml.jackson.annotation.JsonFilter;
 
 import lombok.Getter;
+import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.SourceType;
 import ru.keich.mon.servicemanager.store.BaseEntity;
 
@@ -50,6 +51,8 @@ public class Entity<K> extends BaseEntity<K> {
 	private final String sourceKey;
 	private final SourceType sourceType;
 
+	private final BaseStatus status;
+	
 	private final Instant createdOn;
 	private final Instant updatedOn;
 	private final Instant deletedOn;
@@ -66,7 +69,8 @@ public class Entity<K> extends BaseEntity<K> {
 			Set<String> fromHistory,
 			Instant createdOn,
 			Instant updatedOn,
-			Instant deletedOn) {
+			Instant deletedOn,
+			BaseStatus status) {
 		super(id);
 		this.version = version;
 		this.source = source;
@@ -79,6 +83,7 @@ public class Entity<K> extends BaseEntity<K> {
 		this.fields = Stream.ofNullable(fields)
 				.flatMap(f -> f.entrySet().stream())
 				.collect(Collectors.toMap(e -> e.getKey().intern(), e -> e.getValue().intern()));
+		this.status = status == null ? BaseStatus.CLEAR : status;
 	}
 	
 	public static Set<Object> getSourceForIndex(Entity<?> entity) {
@@ -123,6 +128,7 @@ public class Entity<K> extends BaseEntity<K> {
 		protected String source;
 		protected String sourceKey;
 		protected SourceType sourceType;
+		protected BaseStatus status;
 		protected Instant createdOn;
 		protected Instant updatedOn;
 		protected Instant deletedOn;
@@ -145,6 +151,7 @@ public class Entity<K> extends BaseEntity<K> {
 			this.deletedOn = entity.getDeletedOn();
 			this.fromHistory = new HashSet<String>(entity.getFromHistory());
 			this.fields = entity.getFields();
+			this.status = entity.getStatus();
 		}
 		
 		public abstract B build();
@@ -207,6 +214,14 @@ public class Entity<K> extends BaseEntity<K> {
 		public Builder<K, B> fields(Map<String, String> fields) {
 			this.fields = fields;
 			this.changed = true;
+			return this;
+		}
+		
+		public Builder<K, B> status(BaseStatus status) {
+			if(this.status != status) {
+				this.status = status;
+				this.changed = true;
+			}
 			return this;
 		}
 		

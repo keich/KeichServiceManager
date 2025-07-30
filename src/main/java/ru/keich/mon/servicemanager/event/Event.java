@@ -42,7 +42,6 @@ public class Event extends Entity<String> {
 	}
 	
 	private final EventType type;
-	private final BaseStatus status;
 	private final String node;
 	private final String summary;
 	private final Instant endsOn;
@@ -63,9 +62,8 @@ public class Event extends Entity<String> {
 			@JsonProperty(value = "updatedOn") Instant updatedOn,
 			@JsonProperty(value = "deletedOn") Instant deletedOn,
 			@JsonProperty(value = "endsOn") Instant endsOn) {
-		super(id, version, source, sourceKey, sourceType, fields, fromHistory, createdOn, updatedOn, deletedOn);
+		super(id, version, source, sourceKey, sourceType, fields, fromHistory, createdOn, updatedOn, deletedOn, status);
 		this.type = type;
-		this.status = status;
 		this.node = node;
 		this.summary = summary;
 		this.endsOn = endsOn;
@@ -85,7 +83,7 @@ public class Event extends Entity<String> {
 	
 	@Override
 	public String toString() {
-		return "Event [id=" + getId() + ", type=" + type + ", status=" + status +
+		return "Event [id=" + getId() + ", type=" + type + ", status=" + getStatus() +
 				", createdOn=" + getCreatedOn() + ", createdOn=" + getUpdatedOn() + ", deletedOn=" + getDeletedOn() +
 				", fields=" + getFields() + "]";
 	}
@@ -172,6 +170,66 @@ public class Event extends Entity<String> {
 		public Builder endsOn(Instant endsOn) {
 			this.endsOn = endsOn;
 			this.changed = true;
+			return this;
+		}
+
+		@Override
+		public Builder source(String source) {
+			super.source(source);
+			return this;
+		}
+
+		@Override
+		public Builder sourceKey(String sourceKey) {
+			super.sourceKey(sourceKey);
+			return this;
+		}
+
+		@Override
+		public Builder sourceType(SourceType sourceType) {
+			super.sourceType(sourceType);
+			return this;
+		}
+
+		@Override
+		public Builder version(Long version) {
+			super.version(version);
+			return this;
+		}
+
+		@Override
+		public Builder createdOn(Instant createdOn) {
+			super.createdOn(createdOn);
+			return this;
+		}
+
+		@Override
+		public Builder updatedOn(Instant updatedOn) {
+			super.updatedOn(updatedOn);
+			return this;
+		}
+
+		@Override
+		public Builder deletedOn(Instant deletedOn) {
+			super.deletedOn(deletedOn);
+			return this;
+		}
+
+		@Override
+		public Builder fromHistory(Set<String> fromHistory) {
+			super.fromHistory(fromHistory);
+			return this;
+		}
+
+		@Override
+		public Builder fromHistoryAdd(String value) {
+			super.fromHistoryAdd(value);
+			return this;
+		}
+
+		@Override
+		public Builder fields(Map<String, String> fields) {
+			super.fields(fields);
 			return this;
 		}
 		
