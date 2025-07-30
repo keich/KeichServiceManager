@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -95,17 +94,11 @@ public class Item extends Entity<String> {
 		super(id, version, source, sourceKey, sourceType, fields, fromHistory, createdOn, updatedOn, deletedOn);
 
 		this.name = name;
-		this.status = Optional.ofNullable(status).orElse(BaseStatus.CLEAR);
-		
-		this.rules = Optional.ofNullable(rules).map(Collections::unmodifiableMap).orElse(Collections.emptyMap());
-		this.filters = Optional.ofNullable(filters).map(Collections::unmodifiableMap).orElse(Collections.emptyMap());
-		this.childrenIds = Optional.ofNullable(childrenIds).map(Collections::unmodifiableSet).orElse(Collections.emptySet());
-
-		if (this.childrenIds.size() > 0) {
-			this.hasChildren = true;
-		}else {
-			this.hasChildren = false;
-		}
+		this.status = status == null ? BaseStatus.CLEAR : status;
+		this.rules = rules == null ? Collections.emptyMap() : Collections.unmodifiableMap(rules);
+		this.filters = filters == null ? Collections.emptyMap() : Collections.unmodifiableMap(filters);
+		this.childrenIds = childrenIds == null ? Collections.emptySet() : Collections.unmodifiableSet(childrenIds);
+		this.hasChildren = this.childrenIds.size() > 0;
 		
 	}
 	
@@ -139,7 +132,7 @@ public class Item extends Entity<String> {
 		
 		this.parents = parents;
 		
-		this.aggStatus = Optional.ofNullable(aggStatus).orElse(new AggregateStatus());
+		this.aggStatus = aggStatus == null ? new AggregateStatus() : aggStatus;
 		
 		this.events = events;
 
@@ -159,10 +152,7 @@ public class Item extends Entity<String> {
 	}
 	
 	public static Set<Object> getNameForIndex(Item item) {
-		return  Optional.ofNullable(item.getName())
-				.map(String::toUpperCase)
-				.map(s -> Collections.singleton((Object)s))
-				.orElse(Collections.emptySet());
+		return item.getName() == null ? Collections.emptySet() : Collections.singleton(item.getName().toUpperCase());
 	}
 	
 	public static Set<Object> getEventsIdsForIndex(Item item) {

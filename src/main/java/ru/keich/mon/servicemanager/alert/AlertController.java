@@ -3,7 +3,6 @@ package ru.keich.mon.servicemanager.alert;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.MultiValueMap;
@@ -45,7 +44,7 @@ public class AlertController {
 		alerts.stream()
 				.map(alertService::alertToEvent)
 				.filter(event -> { 
-					if(Objects.nonNull(event.getEndsOn())) {
+					if(event.getEndsOn() != null) {
 						return Instant.now().isBefore(event.getEndsOn());
 					}
 					return true;

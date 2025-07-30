@@ -3,8 +3,6 @@ package ru.keich.mon.servicemanager.event;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -74,11 +72,11 @@ public class Event extends Entity<String> {
 	}
 
 	public static Set<Object> getEndsOnForIndex(Event event) {
-		return Optional.ofNullable((Object)event.endsOn).map(Collections::singleton).orElse(Collections.emptySet());
+		return event.endsOn == null ? Collections.emptySet() : Collections.singleton(event.endsOn);
 	}
 	
 	public static Set<Object> getNodeForIndex(Event event) {
-		return Optional.ofNullable((Object)event.node).map(Collections::singleton).orElse(Collections.emptySet());
+		return event.node == null ? Collections.emptySet() : Collections.singleton(event.node);
 	}
 	
 	public static Set<Object> getStatusForIndex(Event event) {
@@ -112,17 +110,17 @@ public class Event extends Entity<String> {
 			this.endsOn = event.getEndsOn();
 
 			this.node = event.getNode();
-			if (Objects.isNull(this.node)) {
+			if (this.node == null) {
 				var fieldsNode = event.getFields().get("node");
-				if (Objects.nonNull(fieldsNode)) {
+				if (fieldsNode != null) {
 					this.node = fieldsNode;
 				}
 			}
 
 			this.summary = event.getSummary();
-			if (Objects.isNull(summary)) {
+			if (summary == null) {
 				var fieldsSummary = event.getFields().get("summary");
-				if (Objects.nonNull(fieldsSummary)) {
+				if (fieldsSummary != null) {
 					this.summary = fieldsSummary;
 				}
 			}

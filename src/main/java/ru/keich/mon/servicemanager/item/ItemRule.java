@@ -2,7 +2,6 @@ package ru.keich.mon.servicemanager.item;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -78,10 +77,10 @@ public class ItemRule {
 			@JsonProperty(value = "type", required = true) RuleType type) {
 		super();
 
-		this.resultStatus = Optional.ofNullable(resultStatus).orElse(BaseStatus.INDETERMINATE);
-		this.usingResultStatus = Optional.ofNullable(usingResultStatus).orElse(false);
-		this.statusThreshold = Optional.ofNullable(statusThreshold).orElse(BaseStatus.CLEAR);
-		this.valueThreshold = Optional.ofNullable(valueThreshold).orElse(0);
+		this.resultStatus = resultStatus == null ? BaseStatus.INDETERMINATE : resultStatus;
+		this.usingResultStatus = usingResultStatus;
+		this.statusThreshold = statusThreshold == null ? BaseStatus.CLEAR : statusThreshold;
+		this.valueThreshold = valueThreshold == null ? 0 : valueThreshold;
 		this.type = type;
 	}
 	

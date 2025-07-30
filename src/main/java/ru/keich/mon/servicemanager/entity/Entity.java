@@ -71,10 +71,10 @@ public class Entity<K> extends BaseEntity<K> {
 		this.version = version;
 		this.source = source;
 		this.sourceKey = sourceKey;
-		this.sourceType = Optional.ofNullable(sourceType).orElse(SourceType.OTHER);
+		this.sourceType = sourceType == null ? SourceType.OTHER : (sourceType);
 		this.fromHistory = Optional.ofNullable(fromHistory).map(Collections::unmodifiableSet).orElse(Collections.emptySet());
-		this.createdOn = Optional.ofNullable(createdOn).orElse(Instant.now());
-		this.updatedOn = Optional.ofNullable(updatedOn).orElse(Instant.now());
+		this.createdOn = createdOn == null ? Instant.now() : createdOn;
+		this.updatedOn = updatedOn == null ? Instant.now() : updatedOn;
 		this.deletedOn = deletedOn;
 		this.fields = Stream.ofNullable(fields)
 				.flatMap(f -> f.entrySet().stream())
@@ -94,15 +94,15 @@ public class Entity<K> extends BaseEntity<K> {
 	}
 	
 	public static Set<Object> getDeletedOnForIndex(Entity<?> entity) {
-		return Optional.ofNullable((Object)entity.deletedOn).map(Collections::singleton).orElse(Collections.emptySet());
+		return entity.deletedOn == null ? Collections.emptySet() : Collections.singleton(entity.deletedOn);
 	}
 	
 	public static Set<Object> getUpdatedOnForIndex(Entity<?> entity) {
-		return Optional.ofNullable((Object)entity.updatedOn).map(Collections::singleton).orElse(Collections.emptySet());
+		return entity.updatedOn == null ? Collections.emptySet() : Collections.singleton(entity.updatedOn);
 	}
 	
 	public static Set<Object> getCreatedOnForIndex(Entity<?> entity) {
-		return Optional.ofNullable((Object)entity.createdOn).map(Collections::singleton).orElse(Collections.emptySet());
+		return entity.createdOn == null ? Collections.emptySet() : Collections.singleton(entity.createdOn);
 	}
 	
 	public static Set<Object> getFieldsForIndex(Entity<?> item) {

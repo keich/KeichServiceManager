@@ -42,7 +42,7 @@ public class QueueThreadReader<K> {
 
 	public QueueThreadReader(MeterRegistry registry, String name, int  number, Consumer<K> consumer) {
 		super();
-		if(Objects.nonNull(registry)) {
+		if(registry != null) {
 			metricAdded = registry.counter(METRIC_NAME_QUEUE + METRIC_NAME_OPERATION, METRIC_NAME_OPERATION,
 					METRIC_NAME_ADDED, METRIC_NAME_SERVICENAME, name);
 	
