@@ -173,7 +173,7 @@ public class ItemService extends EntityService<String, Item> {
 	
 	private BaseStatus calculateStatusByChild(Item parent) {	
 		var rules = parent.getRules().values();
-		var statuses = findChildren(parent)
+		var statuses = findChildren(parent).stream()
 				.filter(Item::isNotDeleted)
 				.map(Item::getStatus)
 				.toList();
@@ -189,14 +189,10 @@ public class ItemService extends EntityService<String, Item> {
 		return statusByChild.max(statusByEvents);
 	}
 	
-	private Stream<Map.Entry<Item, ItemFilter>> findFiltersByEqualFields(Map<String, String> fields){
+	private Stream<Map.Entry<Item, ItemFilter>> findFiltersByEqualFields(Map<String, String> fields) {
 		return fields.entrySet().stream()
 				.map(e -> Predicates.equal(Item.FIELD_FILTERS_EQL, e))
-				.flatMap(p -> entityCache.keySet(p, -1).stream())
-				.distinct()
-				.map(this::findById)
-				.filter(Optional::isPresent)
-				.map(Optional::get)
+				.flatMap(p -> findByIds(entityCache.keySet(p, -1)).stream())
 				.filter(Item::isNotDeleted)
 				.map(item -> {
 					return item.getFilters().entrySet().stream()
@@ -208,35 +204,23 @@ public class ItemService extends EntityService<String, Item> {
 				.map(Optional::get);
 	}
 	
-	private Stream<Item> findChildren(Item parent) {
-		return parent.getChildrenIds().stream()
-				.distinct()
-				.map(this::findById)
-				.filter(Optional::isPresent)
-				.map(Optional::get);
+	private List<Item> findChildren(Item parent) {
+		return findByIds(parent.getChildrenIds());
 	}
 	
 	public List<Item> findChildrenById(String id) {
 		return findById(id)
 				.map(this::findChildren)
-				.map(Stream::toList)
 				.orElse(Collections.emptyList());
 	}
 	
 	public List<Item> findParentsById(String itemId) {
 		var predicate = Predicates.equal(Item.FIELD_PARENTS, itemId);
-		return entityCache.keySet(predicate, -1).stream()
-				.map(this::findById)
-				.filter(Optional::isPresent)
-				.map(Optional::get)
-				.toList();
+		return findByIds(entityCache.keySet(predicate, -1));
 	}
 	
 	private Stream<Event> findEventsByItem(Item item) {
-		return item.getEventsStatus().keySet().stream()
-				.map(eventService::findById)
-				.filter(Optional::isPresent)
-				.map(Optional::get);
+		return eventService.findByIds(item.getEventsStatus().keySet()).stream();
 	}
 	
 	private void findAllItemsById(String parentId, Set<Item> out, Set<String> history) {
@@ -280,11 +264,7 @@ public class ItemService extends EntityService<String, Item> {
 	@Scheduled(fixedRateString = "${item.history.all.fixedrate:60}", timeUnit = TimeUnit.SECONDS)
 	public void historyByFixedRate() {
 		var predicate = Predicates.greaterEqual(Item.FIELD_VERSION, 0L);
-		 entityCache.keySet(predicate, -1).stream()
-				.map(this::findById)
-				.filter(Optional::isPresent)
-				.map(Optional::get)
-				.forEach(itemHistoryService::add);
+		findByIds(entityCache.keySet(predicate, -1)).forEach(itemHistoryService::add);
 		
 	}
 	

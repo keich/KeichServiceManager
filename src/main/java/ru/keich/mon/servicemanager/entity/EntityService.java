@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -73,6 +74,10 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	
 	public Optional<T> findById(K id) {
 		return entityCache.get(id);
+	}
+	
+	public List<T> findByIds(Set<K> ids) {
+		return entityCache.get(ids);
 	}
 	
 	public List<T> deleteByIds(List<K> ids) {

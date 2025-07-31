@@ -1,7 +1,9 @@
 package ru.keich.mon.servicemanager.store;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -184,6 +186,17 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 	
 	public Optional<T> get(K id) {
 		return Optional.ofNullable(cache.get(id));
+	}
+	
+	public List<T> get(Set<K> ids) {
+		var out = new ArrayList<T>();
+		for(var id: ids) {
+			var e = cache.get(id);
+			if(e != null) {
+				out.add(e);
+			}
+		}
+		return out;
 	}
 	
 	private Set<K> findByQuery(QueryPredicate predicate) {
