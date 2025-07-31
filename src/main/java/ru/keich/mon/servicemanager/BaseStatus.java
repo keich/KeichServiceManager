@@ -1,5 +1,7 @@
 package ru.keich.mon.servicemanager;
 
+import java.util.Collection;
+
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -78,11 +80,27 @@ public enum BaseStatus {
         return CLEAR; // TODO
     }
 	
+	public static BaseStatus max(Collection<BaseStatus> statuses) {
+		var maxStatus = BaseStatus.CLEAR;
+		for(var status: statuses) {
+			maxStatus = maxStatus.max(status);
+		}
+		return maxStatus;
+	}
+	
 	public BaseStatus max(BaseStatus other) {
 		if(this.status < other.status) {
 			return other;
 		}
 		return this;
+	}
+	
+	public static BaseStatus min(Collection<BaseStatus> statuses) {
+		var minStatus = BaseStatus.CRITICAL;
+		for(var status: statuses) {
+			minStatus = minStatus.min(status);
+		}
+		return minStatus;
 	}
 	
 	public BaseStatus min(BaseStatus other) {
