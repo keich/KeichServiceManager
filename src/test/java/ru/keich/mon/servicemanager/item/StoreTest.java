@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import lombok.Getter;
 import lombok.Setter;
+import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.SourceType;
 import ru.keich.mon.servicemanager.entity.Entity;
 import ru.keich.mon.servicemanager.query.predicates.Predicates;
@@ -35,7 +36,7 @@ public class StoreTest {
 
 		public TestEntity(String id, Long version, String source, String sourceKey, SourceType sourceType, Map<String, String> fields,
 				Set<String> fromHistory, Instant createdOn, Instant updatedOn, Instant deletedOn) {
-			super(id, version, source, sourceKey, sourceType, fields, fromHistory, createdOn, updatedOn, deletedOn);
+			super(id, version, source, sourceKey, sourceType, fields, fromHistory, createdOn, updatedOn, deletedOn, BaseStatus.CLEAR);
 		}
 
 		String name;
