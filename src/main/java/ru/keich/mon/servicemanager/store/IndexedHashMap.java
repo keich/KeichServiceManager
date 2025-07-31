@@ -146,9 +146,10 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 	}
 	
 	private T updateEntity(T oldEntity, T newEntity) {
-		index.entrySet().stream()
-				.map(Map.Entry::getValue)
-				.forEach(index -> index.removeOldAndAppend(oldEntity, newEntity));
+		for(var entry: index.entrySet()) {
+			var idx = entry.getValue();
+			idx.removeOldAndAppend(oldEntity, newEntity);
+		}
 		metricUpdated.increment();
 		return newEntity;
 	}

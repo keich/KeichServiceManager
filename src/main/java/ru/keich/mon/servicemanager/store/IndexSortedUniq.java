@@ -107,12 +107,17 @@ public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> 
 		final K id = newEntity.getId();
 		var oldSet = mapper.apply(oldEntity);
 		var newSet = mapper.apply(newEntity);
-		oldSet.stream()
-				.filter(key -> !newSet.contains(key))
-				.forEach(key -> del(key, id));
-		newSet.stream()
-				.filter(key -> !oldSet.contains(key))
-				.forEach(key -> put(key, id));
+		
+		for(var key: oldSet) {
+			if(!newSet.contains(key)) {
+				del(key, id);
+			}
+		}
+		for(var key: newSet) {
+			if(!oldSet.contains(key)) {
+				put(key, id);
+			}
+		}
 		metricObjectsSize.set(objects.size());
 	}
 	
