@@ -99,11 +99,13 @@ public class ItemRule {
 			return BaseStatus.CLEAR;
 		}
 		
-		var minStatus = BaseStatus.CRITICAL;
+		var minStatus = BaseStatus.MAX;
 		var size = 0;
 		for(var status: statuses) {
 			if(statusThreshold.lessThenOrEqual(status)) {
-				minStatus = minStatus.min(status);
+				if(minStatus.moreThen(status)) {
+					minStatus = status;
+				}
 				size++;
 			}
 		}
@@ -126,15 +128,27 @@ public class ItemRule {
 	public static BaseStatus max(Collection<ItemRule> rules, List<BaseStatus> statuses) {
 		var maxStatus = BaseStatus.CLEAR;
 		for(var rule: rules) {
-			maxStatus = maxStatus.max(rule.getStatus(statuses));
+			var status = rule.getStatus(statuses);
+			if(maxStatus.lessThen(status)) {
+				maxStatus = status;
+				if(maxStatus == BaseStatus.MAX) {
+					break;
+				}
+			}
 		}
 		return maxStatus;
 	}
 	
 	public static BaseStatus min(Collection<ItemRule> rules, List<BaseStatus> statuses) {
-		var minStatus = BaseStatus.CRITICAL;
+		var minStatus = BaseStatus.MAX;
 		for(var rule: rules) {
-			minStatus = minStatus.min(rule.getStatus(statuses));
+			var status = rule.getStatus(statuses);
+			if(minStatus.moreThen(status)) {
+				minStatus = status;
+				if(minStatus == BaseStatus.CLEAR) {
+					break;
+				}
+			}
 		}
 		return minStatus;
 	}

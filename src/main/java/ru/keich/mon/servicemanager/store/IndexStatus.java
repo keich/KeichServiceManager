@@ -45,19 +45,19 @@ public class IndexStatus<K, T extends BaseEntity<K>> implements Index<K, T> {
 	
 	private void put(Object key, K id) {
 		BaseStatus status = (BaseStatus)key;
-		objects[status.ordinal()].put(id, PRESENT);
+		objects[status.getInt()].put(id, PRESENT);
 	}
 
 	private void del(Object key, K id) {
 		BaseStatus status = (BaseStatus)key;
-		objects[status.ordinal()].remove(id);
+		objects[status.getInt()].remove(id);
 	}
 
 	@Override
 	public synchronized Set<K> findByKey( Predicate<Object> predicate) {
 		return Stream.of(BaseStatus.values())
 				.filter(s -> predicate.test(s))
-				.flatMap(s -> objects[s.ordinal()].keySet().stream())
+				.flatMap(s -> objects[s.getInt()].keySet().stream())
 				.collect(Collectors.toSet());
 	}
 
@@ -74,13 +74,13 @@ public class IndexStatus<K, T extends BaseEntity<K>> implements Index<K, T> {
 	@Override
 	public synchronized Set<K> get(Object key) {
 		BaseStatus status = (BaseStatus)key;
-		return objects[status.ordinal()].keySet().stream().collect(Collectors.toSet());
+		return objects[status.getInt()].keySet().stream().collect(Collectors.toSet());
 	}
 
 	@Override
 	public synchronized Set<K> getBefore(Object key) {
 		BaseStatus status = (BaseStatus)key;
-		return IntStream.range(0,status.ordinal()).boxed()
+		return IntStream.range(0,status.getInt()).boxed()
 				.flatMap(s -> objects[s].keySet().stream())
 				.collect(Collectors.toSet());
 	}
@@ -88,7 +88,7 @@ public class IndexStatus<K, T extends BaseEntity<K>> implements Index<K, T> {
 	@Override
 	public synchronized Set<K> getAfterEqual(Object key) {
 		BaseStatus status = (BaseStatus)key;
-		return IntStream.range(status.ordinal(), BaseStatus.length).boxed()
+		return IntStream.range(status.getInt(), BaseStatus.length).boxed()
 				.flatMap(s -> objects[s].keySet().stream())
 				.collect(Collectors.toSet());
 	}
@@ -96,7 +96,7 @@ public class IndexStatus<K, T extends BaseEntity<K>> implements Index<K, T> {
 	@Override
 	public synchronized Set<K> getAfterFirst(Object key) {
 		BaseStatus status = (BaseStatus)key;
-		int idx = status.ordinal() + 1;
+		int idx = status.getInt() + 1;
 		if(idx < BaseStatus.length) {
 			return objects[idx].keySet().stream().collect(Collectors.toSet());
 		}

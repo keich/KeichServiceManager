@@ -38,7 +38,7 @@ public class AggregateStatus {
 	}
 
 	public void set(BaseStatus status) {
-		lastStatus = status.ordinal();
+		lastStatus = status.getInt();
 		statuses[lastStatus] = Instant.now();
 	}
 

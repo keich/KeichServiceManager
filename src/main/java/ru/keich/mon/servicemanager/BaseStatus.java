@@ -21,10 +21,16 @@ import java.util.Collection;
 public enum BaseStatus {
 	CLEAR(0), INDETERMINATE(1), INFORMATION(2), WARNING(3), MAJOR(4), CRITICAL(5);
 	
-	private Integer status;
+	private final int status;
+	
+	public static final BaseStatus MAX = CRITICAL;
 	
 	private BaseStatus(int status) {
     	this.status = status;
+	}
+	
+	public int getInt() {
+		return status;
 	}
 
 	static final public int length = 6;
@@ -81,9 +87,14 @@ public enum BaseStatus {
     }
 	
 	public static BaseStatus max(Collection<BaseStatus> statuses) {
-		var maxStatus = BaseStatus.CLEAR;
+		var maxStatus = CLEAR;
 		for(var status: statuses) {
-			maxStatus = maxStatus.max(status);
+			if(maxStatus.status < status.status) {
+				maxStatus = status;
+				if(maxStatus == MAX) {
+					break;
+				}
+			}
 		}
 		return maxStatus;
 	}
@@ -96,9 +107,14 @@ public enum BaseStatus {
 	}
 	
 	public static BaseStatus min(Collection<BaseStatus> statuses) {
-		var minStatus = BaseStatus.CRITICAL;
+		var minStatus = MAX;
 		for(var status: statuses) {
-			minStatus = minStatus.min(status);
+			if(minStatus.status > status.status) {
+				minStatus = status;
+				if(minStatus == CLEAR) {
+					break;
+				}
+			}
 		}
 		return minStatus;
 	}
@@ -118,10 +134,7 @@ public enum BaseStatus {
 	}
 	
 	public boolean lessThenOrEqual(BaseStatus other) {
-		if(this.status < other.status) {
-			return true;
-		}
-		if(this.status.equals(other.status)) {
+		if(this.status <= other.status) {
 			return true;
 		}
 		return false;
