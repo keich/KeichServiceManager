@@ -1,7 +1,6 @@
 package ru.keich.mon.servicemanager.item;
 
 import java.time.Instant;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -122,12 +121,15 @@ public class ItemService extends EntityService<String, Item> {
 		switch(info.getType()) {
 		case UPDATE:
 			entityCache.compute(info.getId(), () -> null, oldItem -> {
-				var newItem = calculateStatus(new Item.Builder(oldItem));
-				if (newItem.isChanged()) {
-					entityChangedQueue.add(new QueueInfo<String>(info.getId(), QueueInfo.QueueInfoType.UPDATED));
-					return newItem.build();
+				var newStatus = BaseStatus.CLEAR;
+				if(oldItem.isNotDeleted()) {
+					newStatus = calculateStatus(oldItem);
 				}
-				return oldItem;
+				if(oldItem.getStatus().equals(newStatus)) {
+					return oldItem;
+				}
+				entityChangedQueue.add(new QueueInfo<String>(info.getId(), QueueInfo.QueueInfoType.UPDATED));
+				return new Item.Builder(oldItem).status(newStatus).build();
 			});
 			break;
 		case UPDATED:
@@ -169,40 +171,22 @@ public class ItemService extends EntityService<String, Item> {
 				});
 	}
 	
-	private BaseStatus calculateStatusByChild(Collection<ItemRule> rules, Set<String> childrenIds) {
-		if(childrenIds.isEmpty()) {
-			return BaseStatus.CLEAR;
-		}
-		
-		final var childrenStatuses = childrenIds.stream()
-				.map(this::findById)
-				.filter(Optional::isPresent)
-				.map(Optional::get)
+	private BaseStatus calculateStatusByChild(Item parent) {	
+		var rules = parent.getRules().values();
+		var statuses = findChildren(parent)
 				.filter(Item::isNotDeleted)
 				.map(Item::getStatus)
 				.toList();
-		
-		if(childrenStatuses.isEmpty()) {
-			return BaseStatus.CLEAR;
-		}
-		
 		if(rules.isEmpty()) {
-			return ItemRule.doDefault(childrenStatuses);
+			return ItemRule.doDefault(statuses);
 		}
-		
-		return rules.stream()
-				.map(r -> r.getStatus(childrenStatuses))
-				.reduce(BaseStatus.CLEAR, BaseStatus::max);
+		return ItemRule.max(rules, statuses);
 	}
 	
-	private Item.Builder calculateStatus(Item.Builder item) {
-		if (item.isDeleted()) {
-			return item.status(BaseStatus.CLEAR);
-		}
-		var statusByChild = calculateStatusByChild(item.getRules().values(), item.getChildrenIds());
-		var statusByEvents = item.getEventsStatus().values().stream()
-				.reduce(BaseStatus.CLEAR, BaseStatus::max);
-		return item.status(statusByChild.max(statusByEvents));
+	private BaseStatus calculateStatus(Item item) {
+		var statusByChild = calculateStatusByChild(item);
+		var statusByEvents = BaseStatus.max(item.getEventsStatus().values());
+		return statusByChild.max(statusByEvents);
 	}
 	
 	private Stream<Map.Entry<Item, ItemFilter>> findFiltersByEqualFields(Map<String, String> fields){
@@ -224,15 +208,19 @@ public class ItemService extends EntityService<String, Item> {
 				.map(Optional::get);
 	}
 	
-	public List<Item> findChildrenById(String id) {
-		return findById(id).stream()
-				.map(Item::getChildrenIds)
-				.flatMap(Set::stream)
+	private Stream<Item> findChildren(Item parent) {
+		return parent.getChildrenIds().stream()
 				.distinct()
 				.map(this::findById)
 				.filter(Optional::isPresent)
-				.map(Optional::get)
-				.toList();
+				.map(Optional::get);
+	}
+	
+	public List<Item> findChildrenById(String id) {
+		return findById(id)
+				.map(this::findChildren)
+				.map(Stream::toList)
+				.orElse(Collections.emptyList());
 	}
 	
 	public List<Item> findParentsById(String itemId) {
