@@ -175,7 +175,10 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 				}
 			} else {
 				final var entity = insertTrigger.get();
-				return insertEntity(entity);
+				if(entity != null) {
+					return insertEntity(entity);
+				}
+				return null;
 			}
 			return oldEntity;
 		}));
