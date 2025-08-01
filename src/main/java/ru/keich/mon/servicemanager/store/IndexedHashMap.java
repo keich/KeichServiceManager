@@ -189,7 +189,7 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 	}
 	
 	public List<T> get(Set<K> ids) {
-		var out = new ArrayList<T>();
+		var out = new ArrayList<T>(ids.size());
 		for(var id: ids) {
 			var e = cache.get(id);
 			if(e != null) {

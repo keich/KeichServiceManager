@@ -85,27 +85,29 @@ public class ItemController extends EntityController<String, Item> {
 		return super.find(reqParam, Item::fieldValueOf);
 	}
 
-	boolean needEvents(List<String> property) {
+	boolean isFieldEvents(List<String> property) {
 		return Optional.ofNullable(property)
 				.map(p -> p.stream().collect(Collectors.toSet()).contains(Item.FIELD_EVENTS))
 				.orElse(false);
 	}
 	
 	Item fillEvents(Item item) {
-		var outItem = new Item.Builder(item);
-		outItem.setEvents(itemService.findAllEventsById(item.getId()));
-		return outItem.build();
+		return new Item.Builder(item)
+				.setEvents(itemService.findAllEventsById(item.getId()))
+				.build();
 	}
 	
 	List<Item> fillEvents(List<Item> items) {
-		return items.stream().map(this::fillEvents).toList();
+		return items.stream()
+				.map(this::fillEvents)
+				.toList();
 	}
 	
 	@Override
 	@GetMapping("/item/{id}")
 	@CrossOrigin(origins = "*")
 	public ResponseEntity<MappingJacksonValue> findById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
-		if(needEvents(reqParam.get(QUERY_PROPERTY))) {
+		if(isFieldEvents(reqParam.get(QUERY_PROPERTY))) {
 			return itemService.findById(id)
 					.map(this::fillEvents)
 					.map(MappingJacksonValue::new)
@@ -118,21 +120,31 @@ public class ItemController extends EntityController<String, Item> {
 	@GetMapping("/item/{id}/children")
 	@CrossOrigin(origins = "*")
 	ResponseEntity<MappingJacksonValue> findChildrenById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
-		var items = itemService.findChildrenById(id);
-		if (needEvents(reqParam.get(QUERY_PROPERTY))) {
-			items = fillEvents(items);
-		}
-		return applyFilter(new MappingJacksonValue(items), reqParam);
+		return Optional.of(itemService.findChildrenById(id))
+				.map(items -> {
+					if (isFieldEvents(reqParam.get(QUERY_PROPERTY))) {
+						return fillEvents(items);
+					}
+					return items;
+				})
+				.map(MappingJacksonValue::new)
+				.map(value -> applyFilter(value, reqParam))
+				.orElse(ResponseEntity.notFound().build());
 	}
 	
 	@GetMapping("/item/{id}/parents")
 	@CrossOrigin(origins = "*")
 	ResponseEntity<MappingJacksonValue> findParentsById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
-		var items = itemService.findParentsById(id);
-		if (needEvents(reqParam.get(QUERY_PROPERTY))) {
-			items = fillEvents(items);
-		}
-		return applyFilter(new MappingJacksonValue(itemService.findParentsById(id)), reqParam);
+		return Optional.of(itemService.findParentsById(id))
+				.map(items -> {
+					if (isFieldEvents(reqParam.get(QUERY_PROPERTY))) {
+						return fillEvents(items);
+					}
+					return items;
+				})
+				.map(MappingJacksonValue::new)
+				.map(value -> applyFilter(value, reqParam))
+				.orElse(ResponseEntity.notFound().build());
 	}
 
 	@Override

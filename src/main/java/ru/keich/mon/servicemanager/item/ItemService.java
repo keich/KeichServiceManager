@@ -9,7 +9,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -125,7 +124,7 @@ public class ItemService extends EntityService<String, Item> {
 				if(oldItem.isNotDeleted()) {
 					newStatus = calculateStatus(oldItem);
 				}
-				if(oldItem.getStatus().equals(newStatus)) {
+				if(oldItem.getStatus() == newStatus) {
 					return oldItem;
 				}
 				entityChangedQueue.add(new QueueInfo<String>(info.getId(), QueueInfo.QueueInfoType.UPDATED));
@@ -158,16 +157,16 @@ public class ItemService extends EntityService<String, Item> {
 
 	public void eventRemoved(Event event) {
 		var predicate = Predicates.equal(Item.FIELD_EVENTIDS, event.getId());
-		entityCache.keySet(predicate, -1).stream()
+		entityCache.keySet(predicate, -1)
 				.forEach(itemId -> itemUpdateEventsStatus(itemId, m -> m.remove(event.getId())));
 	}
 
 	public void eventChanged(Event event) {
 		findFiltersByEqualFields(event.getFields())
 				.forEach(itft -> {
-					var item = itft.getKey();
-					var filter = itft.getValue();
-					itemUpdateEventsStatus(item.getId(), m -> m.put(event.getId(), filter.getStatus(event)));
+					var itemId = itft.getKey().getId();
+					var newStatus = itft.getValue().getStatus(event);
+					itemUpdateEventsStatus(itemId, m -> m.put(event.getId(), newStatus));
 				});
 	}
 	
@@ -204,6 +203,11 @@ public class ItemService extends EntityService<String, Item> {
 				.map(Optional::get);
 	}
 	
+	public List<Item> findParentsById(String itemId) {
+		var predicate = Predicates.equal(Item.FIELD_PARENTS, itemId);
+		return findByIds(entityCache.keySet(predicate, -1));
+	}
+	
 	private List<Item> findChildren(Item parent) {
 		return findByIds(parent.getChildrenIds());
 	}
@@ -214,16 +218,14 @@ public class ItemService extends EntityService<String, Item> {
 				.orElse(Collections.emptyList());
 	}
 	
-	public List<Item> findParentsById(String itemId) {
-		var predicate = Predicates.equal(Item.FIELD_PARENTS, itemId);
-		return findByIds(entityCache.keySet(predicate, -1));
+	private Set<Item> findAllChildrenById(String parentId) {
+		var items = new HashSet<Item>();
+		var history = new HashSet<String>();
+		findAllChildrenById(parentId, items, history);
+		return items;
 	}
 	
-	private Stream<Event> findEventsByItem(Item item) {
-		return eventService.findByIds(item.getEventsStatus().keySet()).stream();
-	}
-	
-	private void findAllItemsById(String parentId, Set<Item> out, Set<String> history) {
+	private void findAllChildrenById(String parentId, Set<Item> out, Set<String> history) {
 		findById(parentId).ifPresent(parent -> {
 			if (parent.isDeleted()) {
 				return;
@@ -234,7 +236,7 @@ public class ItemService extends EntityService<String, Item> {
 				if (history.contains(childId)) {
 					log.warning("findAllEventsById: circle found from " + parentId + " to " + childId);
 				} else {
-					findAllItemsById(childId, out, history);
+					findAllChildrenById(childId, out, history);
 				}
 			});
 			history.remove(parentId);
@@ -242,22 +244,18 @@ public class ItemService extends EntityService<String, Item> {
 	}
 
 	public List<Event> findAllEventsById(String id) {
-		var items = new HashSet<Item>();
-		var history = new HashSet<String>();
-		findAllItemsById(id, items, history);
-		return items.stream()
-				.flatMap(this::findEventsByItem)
-				.distinct()
-				.collect(Collectors.toList());
-
+		return findAllChildrenById(id).stream()
+				.map(Item::getEventsStatus)
+				.map(Map::keySet)
+				.flatMap(Set::stream)
+				.map(eventService::findById)
+				.filter(Optional::isPresent)
+				.map(Optional::get)
+				.toList();
 	}
 	
 	public List<Event> findAllHistoryEventsById(String id, Instant from, Instant to) {
-		var items = new HashSet<Item>();
-		var history = new HashSet<String>();
-		findAllItemsById(id, items, history);
-		items.add(new Item.Builder(id).build());
-		var ietmIds = items.stream().map(Item::getId).toList();
+		var ietmIds = findAllChildrenById(id).stream().map(Item::getId).toList();
 		return itemHistoryService.getEventsByItemId(ietmIds, from, to);
 	}
 	

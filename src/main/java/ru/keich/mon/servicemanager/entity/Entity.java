@@ -117,6 +117,26 @@ public class Entity<K> extends BaseEntity<K> {
 	public static Set<Object> getFromHistoryForIndex(Entity<?> item) {
 		return item.getFromHistory().stream().collect(Collectors.toSet());
 	}
+	
+	public static Object fieldValueOf(String fieldName, String str) {
+		switch (fieldName) {
+		case FIELD_VERSION:
+			return Long.valueOf(str);
+		case FIELD_CREATEDON:
+		case FIELD_UPDATEDON:
+		case FIELD_DELETEDON:
+			return Instant.parse(str);
+		}
+		return str;
+	}
+	
+	public boolean isNotDeleted() {
+		return deletedOn == null;
+	}
+	
+	public boolean isDeleted() {
+		return deletedOn != null;
+	}
 
 	@Getter
 	public static abstract class Builder<K, B extends Entity<K>> {
@@ -233,26 +253,6 @@ public class Entity<K> extends BaseEntity<K> {
 			return deletedOn != null;
 		}
 
-	}
-	
-	public static Object fieldValueOf(String fieldName, String str) {
-		switch (fieldName) {
-		case FIELD_VERSION:
-			return Long.valueOf(str);
-		case FIELD_CREATEDON:
-		case FIELD_UPDATEDON:
-		case FIELD_DELETEDON:
-			return Instant.parse(str);
-		}
-		return str;
-	}
-	
-	public boolean isNotDeleted() {
-		return deletedOn == null;
-	}
-	
-	public boolean isDeleted() {
-		return deletedOn != null;
 	}
 	
 }
