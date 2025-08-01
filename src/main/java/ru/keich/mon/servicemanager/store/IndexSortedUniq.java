@@ -1,15 +1,13 @@
 package ru.keich.mon.servicemanager.store;
 
 import java.util.Collections;
-import java.util.Map;
-import java.util.Optional;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -49,11 +47,15 @@ public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> 
 
 	@Override
 	public synchronized Set<K> findByKey(Predicate<Object> predicate) {
-		return objects.entrySet().stream()
-				.filter(entry -> predicate.test(entry.getKey()))
-				.map(Map.Entry::getValue)
-				.collect(Collectors.toSet());
+		var out = new HashSet<K>();
+		for(var entry: objects.entrySet()) {
+			if(predicate.test(entry.getKey())) {
+				out.add(entry.getValue());
+			}
+		}
+		return out;
 	}
+	
 	@Override
 	public synchronized void append(T entity) {
 		mapper.apply(entity).forEach(key -> put(key, entity.getId()));
@@ -68,19 +70,29 @@ public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> 
 
 	@Override
 	public synchronized Set<K> get(Object key) {
-		return Optional.ofNullable(objects.get(key))
-				.map(Collections::singleton)
-				.orElse(Collections.emptySet());
+		var val = objects.get(key);
+		if(val == null) {
+			return Collections.emptySet();
+		}
+		return Collections.singleton(val);
 	}
 
 	@Override
 	public synchronized Set<K> getBefore(Object key) {
-		return objects.headMap(key).values().stream().collect(Collectors.toSet());
+		var out = new HashSet<K>();
+		for(var val: objects.headMap(key).values()) {
+			out.add(val);
+		}
+		return out;
 	}
 
 	@Override
 	public synchronized Set<K> getAfterEqual(Object key) {
-		return objects.tailMap(key).values().stream().collect(Collectors.toSet());
+		var out = new HashSet<K>();
+		for(var val: objects.tailMap(key).values()) {
+			out.add(val);
+		}
+		return out;
 	}
 
 	@Override
@@ -94,7 +106,7 @@ public class IndexSortedUniq<K, T extends BaseEntity<K>> implements Index<K, T> 
 
 	@Override
 	public synchronized Set<K> valueSet() {
-		return objects.values().stream().collect(Collectors.toSet());
+		return new HashSet<K>(objects.values());
 	}
 	
 	@Override

@@ -1,14 +1,13 @@
 package ru.keich.mon.servicemanager.store;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -60,12 +59,13 @@ public class IndexEqual<K, T extends BaseEntity<K>> implements Index<K, T> {
 	
 	@Override
 	public synchronized Set<K> findByKey( Predicate<Object> predicate) {
-		return objects.entrySet().stream()
-				.filter(entry -> predicate.test(entry.getKey()))
-				.map(Map.Entry::getValue)
-				.map(Map::keySet)
-				.flatMap(Set::stream)
-				.collect(Collectors.toSet());
+		var out = new HashSet<K>();
+		for(var entry: objects.entrySet()) {
+			if(predicate.test(entry.getKey())) {
+				out.addAll(entry.getValue().keySet());
+			}
+		}
+		return out;
 	}
 
 	@Override
@@ -82,11 +82,11 @@ public class IndexEqual<K, T extends BaseEntity<K>> implements Index<K, T> {
 
 	@Override
 	public synchronized Set<K> get(Object key) {
-		return Optional.ofNullable(objects.get(key))
-				.map(Map::keySet)
-				.map(Set::stream)
-				.orElse(Stream.empty())
-				.collect(Collectors.toSet());
+		var map = objects.get(key);
+		if(map == null) {
+			return Collections.emptySet();
+		}
+		return new HashSet<K>(map.keySet());
 	}
 
 	@Override
@@ -106,7 +106,12 @@ public class IndexEqual<K, T extends BaseEntity<K>> implements Index<K, T> {
 
 	@Override
 	public synchronized Set<K> valueSet() {
-		return objects.values().stream().map(Map::keySet).flatMap(Set::stream).collect(Collectors.toSet());
+		var out = new HashSet<K>();
+		var entries = objects.entrySet();
+		for(var entry: entries) {
+			out.addAll(entry.getValue().keySet());
+		}
+		return out;
 	}
 
 	@Override

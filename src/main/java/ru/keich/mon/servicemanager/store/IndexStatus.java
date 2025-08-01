@@ -2,14 +2,12 @@ package ru.keich.mon.servicemanager.store;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import ru.keich.mon.servicemanager.BaseStatus;
 
@@ -55,10 +53,13 @@ public class IndexStatus<K, T extends BaseEntity<K>> implements Index<K, T> {
 
 	@Override
 	public synchronized Set<K> findByKey( Predicate<Object> predicate) {
-		return Stream.of(BaseStatus.values())
-				.filter(s -> predicate.test(s))
-				.flatMap(s -> objects[s.getInt()].keySet().stream())
-				.collect(Collectors.toSet());
+		var out = new HashSet<K>();
+		for(var val: BaseStatus.values()) {
+			if(predicate.test(val)) {
+				out.addAll(objects[val.getInt()].keySet());
+			}
+		}
+		return out;
 	}
 
 	@Override
@@ -74,23 +75,27 @@ public class IndexStatus<K, T extends BaseEntity<K>> implements Index<K, T> {
 	@Override
 	public synchronized Set<K> get(Object key) {
 		BaseStatus status = (BaseStatus)key;
-		return objects[status.getInt()].keySet().stream().collect(Collectors.toSet());
+		return new HashSet<K>(objects[status.getInt()].keySet());
 	}
 
 	@Override
 	public synchronized Set<K> getBefore(Object key) {
 		BaseStatus status = (BaseStatus)key;
-		return IntStream.range(0,status.getInt()).boxed()
-				.flatMap(s -> objects[s].keySet().stream())
-				.collect(Collectors.toSet());
+		var out = new HashSet<K>();
+		for(int i = 0; i < status.getInt(); i++) {
+			out.addAll(objects[i].keySet());
+		}
+		return out;
 	}
 	
 	@Override
 	public synchronized Set<K> getAfterEqual(Object key) {
 		BaseStatus status = (BaseStatus)key;
-		return IntStream.range(status.getInt(), BaseStatus.length).boxed()
-				.flatMap(s -> objects[s].keySet().stream())
-				.collect(Collectors.toSet());
+		var out = new HashSet<K>();
+		for(int i = status.getInt(); i < BaseStatus.length; i++) {
+			out.addAll(objects[i].keySet());
+		}
+		return out;
 	}
 	
 	@Override
@@ -98,16 +103,18 @@ public class IndexStatus<K, T extends BaseEntity<K>> implements Index<K, T> {
 		BaseStatus status = (BaseStatus)key;
 		int idx = status.getInt() + 1;
 		if(idx < BaseStatus.length) {
-			return objects[idx].keySet().stream().collect(Collectors.toSet());
+			return new HashSet<K>(objects[idx].keySet());
 		}
 		return Collections.emptySet();
 	}
 
 	@Override
 	public synchronized Set<K> valueSet() {
-		return IntStream.range(0, BaseStatus.length).boxed()
-		.flatMap(s -> objects[s].keySet().stream())
-		.collect(Collectors.toSet());
+		var out = new HashSet<K>();
+		for(int i = 0; i < BaseStatus.length; i++) {
+			out.addAll(objects[i].keySet());
+		}
+		return out;
 	}
 
 	@Override
