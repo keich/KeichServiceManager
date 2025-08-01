@@ -140,29 +140,26 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 	
 	
 	private T removeEntity(T entity) {
-		index.entrySet().stream()
-				.map(Map.Entry::getValue)
-				.forEach(index -> index.remove(entity));	
+		for(var entry: index.entrySet()) {
+			entry.getValue().remove(entity);
+		}
 		metricRemoved.increment();
 		return null;
 	}
 	
 	private T updateEntity(T oldEntity, T newEntity) {
 		for(var entry: index.entrySet()) {
-			var idx = entry.getValue();
-			idx.removeOldAndAppend(oldEntity, newEntity);
+			entry.getValue().removeOldAndAppend(oldEntity, newEntity);
 		}
 		metricUpdated.increment();
 		return newEntity;
 	}
 	
 	private T insertEntity(T entity) {
-		if (entity != null) {
-			index.entrySet().stream()
-			.map(Map.Entry::getValue)
-			.forEach(index -> index.append(entity));
-			metricAdded.increment();
+		for(var entry: index.entrySet()) {
+			entry.getValue().append(entity);
 		}
+		metricAdded.increment();
 		return entity;
 	}
 	
