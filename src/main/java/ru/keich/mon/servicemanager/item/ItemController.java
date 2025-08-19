@@ -61,16 +61,6 @@ public class ItemController extends EntityController<String, Item> {
 						.serializeAllExcept(Set.of(Item.FIELD_EVENTSSTATUS, Item.FIELD_EVENTS))));
 		this.itemService = itemService;
 	}
-	
-	@Override
-	protected SimpleFilterProvider getJsonFilter(MultiValueMap<String, String> reqParam){
-		if(reqParam.containsKey(QUERY_PROPERTY)) {
-			var properties = reqParam.get(QUERY_PROPERTY).stream().collect(Collectors.toSet());
-			properties.add(QUERY_ID);
-			return new SimpleFilterProvider().addFilter(FILTER_NAME, SimpleBeanPropertyFilter.filterOutAllExcept(properties));
-		}
-		return jsonDefaultFilter;
-	}
 
 	@Override
 	@PostMapping("/item")
