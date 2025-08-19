@@ -1,6 +1,7 @@
 package ru.keich.mon.servicemanager.item;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -75,8 +76,8 @@ public class ItemController extends EntityController<String, Item> {
 		return super.find(reqParam, Item::fieldValueOf);
 	}
 
-	boolean isFieldEvents(List<String> property) {
-		return Optional.ofNullable(property)
+	boolean isNeedEvents(MultiValueMap<String, String> reqParam) {
+		return Optional.ofNullable(reqParam.get(QUERY_PROPERTY))
 				.map(p -> p.stream().collect(Collectors.toSet()).contains(Item.FIELD_EVENTS))
 				.orElse(false);
 	}
@@ -93,30 +94,29 @@ public class ItemController extends EntityController<String, Item> {
 				.toList();
 	}
 	
+	List<Item> fillEvents(List<Item> items, MultiValueMap<String, String> reqParam) {
+		if(isNeedEvents(reqParam)) {
+			return fillEvents(items);
+		}
+		return items;
+	}
+	
 	@Override
 	@GetMapping("/item/{id}")
 	@CrossOrigin(origins = "*")
 	public ResponseEntity<MappingJacksonValue> findById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
-		if(isFieldEvents(reqParam.get(QUERY_PROPERTY))) {
-			return itemService.findById(id)
-					.map(this::fillEvents)
-					.map(MappingJacksonValue::new)
-					.map(value -> applyFilter(value, reqParam))
-					.orElse(ResponseEntity.notFound().build());
-		}
-		return super.findById(id, reqParam);
+		return itemService.findById(id)
+				.map(i -> fillEvents(Collections.singletonList(i), reqParam).get(0))
+				.map(MappingJacksonValue::new)
+				.map(value -> applyFilter(value, reqParam))
+				.orElse(ResponseEntity.notFound().build());
 	}
 
 	@GetMapping("/item/{id}/children")
 	@CrossOrigin(origins = "*")
 	ResponseEntity<MappingJacksonValue> findChildrenById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
 		return Optional.of(itemService.findChildrenById(id))
-				.map(items -> {
-					if (isFieldEvents(reqParam.get(QUERY_PROPERTY))) {
-						return fillEvents(items);
-					}
-					return items;
-				})
+				.map(l -> fillEvents(l, reqParam))
 				.map(MappingJacksonValue::new)
 				.map(value -> applyFilter(value, reqParam))
 				.orElse(ResponseEntity.notFound().build());
@@ -126,12 +126,7 @@ public class ItemController extends EntityController<String, Item> {
 	@CrossOrigin(origins = "*")
 	ResponseEntity<MappingJacksonValue> findParentsById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
 		return Optional.of(itemService.findParentsById(id))
-				.map(items -> {
-					if (isFieldEvents(reqParam.get(QUERY_PROPERTY))) {
-						return fillEvents(items);
-					}
-					return items;
-				})
+				.map(l -> fillEvents(l, reqParam))
 				.map(MappingJacksonValue::new)
 				.map(value -> applyFilter(value, reqParam))
 				.orElse(ResponseEntity.notFound().build());
