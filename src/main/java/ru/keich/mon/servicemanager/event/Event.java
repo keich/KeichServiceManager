@@ -35,7 +35,6 @@ public class Event extends Entity<String> {
 	public static final String FIELD_ENDSON = "endsOn";
 	public static final String FIELD_NODE = "node";
 	public static final String FIELD_SUMMARY = "summary";
-	public static final String FIELD_STATUS = "status";
 	
 	public enum EventType {
 		NOTSET, PROBLEM, RESOLUTION, INFORMATION
@@ -239,8 +238,6 @@ public class Event extends Entity<String> {
 		switch (fieldName) {
 		case FIELD_ENDSON:
 			return Instant.parse(str);
-		case FIELD_STATUS:
-			return BaseStatus.fromString(str);
 		}
 		return Entity.fieldValueOf(fieldName, str);
 	}

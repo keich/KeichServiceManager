@@ -45,6 +45,7 @@ public class Entity<K> extends BaseEntity<K> {
 	public static final String FIELD_SOURCETYPE = "sourceType";
 	public static final String FIELD_FIELDS = "fields";
 	public static final String FIELD_FROMHISTORY = "fromHistory";
+	public static final String FIELD_STATUS = "status";
 	
 	private final Long version;
 	private final String source;
@@ -126,6 +127,8 @@ public class Entity<K> extends BaseEntity<K> {
 		case FIELD_UPDATEDON:
 		case FIELD_DELETEDON:
 			return Instant.parse(str);
+		case FIELD_STATUS:
+			return BaseStatus.fromString(str);
 		}
 		return str;
 	}

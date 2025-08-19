@@ -43,7 +43,6 @@ public class Item extends Entity<String> {
 	public static final String FIELD_EVENTIDS = "events";
 	public static final String FIELD_PARENTS = "parents";
 	public static final String FIELD_FILTERS_EQL = "filters_equal";
-	public static final String FIELD_STATUS = "status";
 	public static final String FIELD_AGGSTATUS = "aggStatus";
 	public static final String FIELD_EVENTS= "events";
 	public static final String FIELD_EVENTSSTATUS= "eventsStatus";
@@ -141,7 +140,6 @@ public class Item extends Entity<String> {
 		switch (fieldName) {
 		case FIELD_NAME:
 			return str.toUpperCase();
-		case FIELD_STATUS:
 		case FIELD_AGGSTATUS:
 			return BaseStatus.fromString(str);
 		}
