@@ -74,10 +74,11 @@ public class Event extends Entity<String> {
 	}
 	
 	public static boolean testNodeForQuery(Event event, QueryPredicate predicate) {
-		if(event.node == null) {
-			return false;
-		}
 		return predicate.test(event.getNode());
+	}
+	
+	public static boolean testSummaryForQuery(Event event, QueryPredicate predicate) {
+		return predicate.test(event.getSummary());
 	}
 	
 	@Override
