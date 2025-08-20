@@ -14,7 +14,6 @@ import com.fasterxml.jackson.annotation.JsonFilter;
 import lombok.Getter;
 import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.SourceType;
-import ru.keich.mon.servicemanager.event.Event;
 import ru.keich.mon.servicemanager.store.BaseEntity;
 
 /*
