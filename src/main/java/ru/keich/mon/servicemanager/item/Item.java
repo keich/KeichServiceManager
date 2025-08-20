@@ -120,8 +120,8 @@ public class Item extends Entity<String> {
 		return Collections.unmodifiableSet(item.getChildrenIds());
 	}
 	
-	public static Set<Object> getNameForIndex(Item item) {
-		return item.getName() == null ? Collections.emptySet() : Collections.singleton(item.getName().toUpperCase());
+	public static boolean testNameForQuery(Item item, QueryPredicate predicate) {
+		return predicate.test(item.getName().toUpperCase());
 	}
 	
 	public static Set<Object> getEventsIdsForIndex(Item item) {

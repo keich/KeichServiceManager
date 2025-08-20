@@ -58,7 +58,7 @@ public class ItemService extends EntityService<String, Item> {
 		entityCache.addIndex(Item.FIELD_FILTERS_EQL, IndexType.EQUAL, Item::getFiltersForIndex);
 		entityCache.addIndex(Item.FIELD_PARENTS, IndexType.EQUAL, Item::getParentsForIndex);
 		
-		entityCache.addIndex(Item.FIELD_NAME, IndexType.EQUAL, Item::getNameForIndex);
+		entityCache.addQueryField(Item.FIELD_NAME, Item::testNameForQuery);
 		
 		entityCache.addIndex(Item.FIELD_EVENTIDS, IndexType.EQUAL, Item::getEventsIdsForIndex);
 		
