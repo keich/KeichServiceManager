@@ -128,7 +128,7 @@ public class Item extends Entity<String> {
 		return Collections.unmodifiableSet(item.getEventsStatus().keySet());
 	}
 	
-	public static boolean getAggStatusForQuery(Item item, QueryPredicate predicate) {
+	public static boolean testAggStatusForQuery(Item item, QueryPredicate predicate) {
 		return predicate.test(item.getAggStatus().getMax());
 	}
 	
