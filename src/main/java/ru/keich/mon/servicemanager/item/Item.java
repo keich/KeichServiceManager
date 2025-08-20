@@ -132,10 +132,6 @@ public class Item extends Entity<String> {
 		return predicate.test(item.getAggStatus().getMax());
 	}
 	
-	public static Set<Object> getStatusForIndex(Item item) {
-		return Collections.singleton(item.getStatus());
-	}
-	
 	public static Object fieldValueOf(String fieldName, String str) {
 		switch (fieldName) {
 		case FIELD_NAME:

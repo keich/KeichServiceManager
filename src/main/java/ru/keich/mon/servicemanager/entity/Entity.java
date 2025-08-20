@@ -14,6 +14,7 @@ import com.fasterxml.jackson.annotation.JsonFilter;
 import lombok.Getter;
 import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.SourceType;
+import ru.keich.mon.servicemanager.event.Event;
 import ru.keich.mon.servicemanager.store.BaseEntity;
 
 /*
@@ -111,12 +112,16 @@ public class Entity<K> extends BaseEntity<K> {
 		return entity.createdOn == null ? Collections.emptySet() : Collections.singleton(entity.createdOn);
 	}
 	
-	public static Set<Object> getFieldsForIndex(Entity<?> item) {
-		return item.fields.entrySet().stream().collect(Collectors.toSet());
+	public static Set<Object> getFieldsForIndex(Entity<?> entity) {
+		return entity.fields.entrySet().stream().collect(Collectors.toSet());
 	}
 	
-	public static Set<Object> getFromHistoryForIndex(Entity<?> item) {
-		return item.getFromHistory().stream().collect(Collectors.toSet());
+	public static Set<Object> getFromHistoryForIndex(Entity<?> entity) {
+		return entity.getFromHistory().stream().collect(Collectors.toSet());
+	}
+	
+	public static Set<Object> getStatusForIndex(Entity<?> entity) {
+		return Collections.singleton(entity.getStatus());
 	}
 	
 	public static Object fieldValueOf(String fieldName, String str) {

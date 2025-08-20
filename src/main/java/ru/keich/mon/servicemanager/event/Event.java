@@ -76,10 +76,6 @@ public class Event extends Entity<String> {
 		return event.node == null ? Collections.emptySet() : Collections.singleton(event.node);
 	}
 	
-	public static Set<Object> getStatusForIndex(Event event) {
-		return Collections.singleton(event.getStatus());
-	}
-	
 	@Override
 	public String toString() {
 		return "Event [id=" + getId() + ", type=" + type + ", status=" + getStatus() +
