@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
+import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.query.predicates.QueryPredicate;
 
 
@@ -82,7 +83,7 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 	}
 	
 	public enum IndexType {
-		EQUAL, SORTED, UNIQ_SORTED, STATUS
+		EQUAL, SORTED, UNIQ_SORTED
 	}
 	
 	private Map<K, T> cache = new ConcurrentHashMap<>();
@@ -110,6 +111,10 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 		}
 	}
 	
+	public void addIndexStatus(String name, Function<T, BaseStatus> mapper) {
+		index.put(name, new IndexStatus<K, T>(mapper));
+	}
+	
 	public void addIndex(String name, IndexType type, Function<T, Set<Object>> mapper) {
 		switch(type) {
 		case EQUAL:
@@ -121,9 +126,6 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 		case UNIQ_SORTED:
 			index.put(name, new IndexSortedUniq<K,T>(mapper));
 			break;	
-		case STATUS:
-			index.put(name, new IndexStatus<K,T>(mapper));
-			break;
 		}
 		if (registry != null) {
 			var tags = Tags.of(METRIC_NAME_SERVICENAME, serviceName, METRIC_NAME_INDEX, name.toLowerCase());

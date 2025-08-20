@@ -58,7 +58,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 		entityCache.addIndex(Entity.FIELD_DELETEDON, IndexType.SORTED, Entity::getDeletedOnForIndex);
 		entityCache.addIndex(Entity.FIELD_CREATEDON, IndexType.SORTED, Entity::getCreatedOnForIndex);
 		entityCache.addIndex(Entity.FIELD_UPDATEDON, IndexType.SORTED, Entity::getUpdatedOnForIndex);
-		entityCache.addIndex(Item.FIELD_STATUS, IndexType.STATUS, Entity::getStatusForIndex);
+		entityCache.addIndexStatus(Item.FIELD_STATUS, Entity::getStatusForIndex);
 		
 		entityCache.addIndex(Entity.FIELD_FIELDS, IndexType.EQUAL, Entity::getFieldsForIndex);
 		entityCache.addIndex(Entity.FIELD_FROMHISTORY, IndexType.EQUAL, Entity::getFromHistoryForIndex);

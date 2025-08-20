@@ -120,8 +120,8 @@ public class Entity<K> extends BaseEntity<K> {
 		return entity.getFromHistory().stream().collect(Collectors.toSet());
 	}
 	
-	public static Set<Object> getStatusForIndex(Entity<?> entity) {
-		return Collections.singleton(entity.getStatus());
+	public static BaseStatus getStatusForIndex(Entity<?> entity) {
+		return entity.getStatus();
 	}
 	
 	public static Object fieldValueOf(String fieldName, String str) {

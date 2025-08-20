@@ -29,11 +29,11 @@ import ru.keich.mon.servicemanager.BaseStatus;
 
 public class IndexStatus<K, T extends BaseEntity<K>> implements Index<K, T> {
 	private static final Object PRESENT = new Object();
-	private final Function<T, Set<Object>> mapper;
+	private final Function<T, BaseStatus> mapper;
 	private final AtomicInteger metricObjectsSize = new AtomicInteger(0);
 	private final Map<K, Object> objects[] = new Map[BaseStatus.length];
 	
-	public IndexStatus(Function<T, Set<Object>> mapper) {
+	public IndexStatus(Function<T, BaseStatus> mapper) {
 		this.mapper = mapper;
 		metricObjectsSize.set(BaseStatus.length);
 		for (int i = 0; i < BaseStatus.length; i++) {
@@ -41,18 +41,18 @@ public class IndexStatus<K, T extends BaseEntity<K>> implements Index<K, T> {
 		}
 	}
 	
-	private void put(Object key, K id) {
+	private void put(BaseStatus key, K id) {
 		BaseStatus status = (BaseStatus)key;
 		objects[status.getInt()].put(id, PRESENT);
 	}
 
-	private void del(Object key, K id) {
+	private void del(BaseStatus key, K id) {
 		BaseStatus status = (BaseStatus)key;
 		objects[status.getInt()].remove(id);
 	}
 
 	@Override
-	public synchronized Set<K> findByKey( Predicate<Object> predicate) {
+	public synchronized Set<K> findByKey(Predicate<Object> predicate) {
 		var out = new HashSet<K>();
 		for(var val: BaseStatus.values()) {
 			if(predicate.test(val)) {
@@ -64,12 +64,12 @@ public class IndexStatus<K, T extends BaseEntity<K>> implements Index<K, T> {
 
 	@Override
 	public synchronized void append(T entity) {
-		mapper.apply(entity).forEach(key -> put(key, entity.getId()));
+		put(mapper.apply(entity), entity.getId());
 	}
 
 	@Override
 	public synchronized void remove(final T entity) {
-		mapper.apply(entity).forEach(key -> del(key, entity.getId()));
+		del(mapper.apply(entity), entity.getId());
 	}
 
 	@Override
@@ -125,18 +125,12 @@ public class IndexStatus<K, T extends BaseEntity<K>> implements Index<K, T> {
 	@Override
 	public synchronized void removeOldAndAppend(T oldEntity, T newEntity) {
 		final K id = newEntity.getId();
-		var oldSet = mapper.apply(oldEntity);
-		var newSet = mapper.apply(newEntity);
+		var oldStatus = mapper.apply(oldEntity);
+		var newStatus = mapper.apply(newEntity);
 		
-		for(var key: oldSet) {
-			if(!newSet.contains(key)) {
-				del(key, id);
-			}
-		}
-		for(var key: newSet) {
-			if(!oldSet.contains(key)) {
-				put(key, id);
-			}
+		if(!oldStatus.equals(newStatus)) {
+			del(oldStatus, id);
+			put(newStatus, id);
 		}
 	}
 	
