@@ -94,7 +94,7 @@ public class Item extends Entity<String> {
 			) {
 		super(id, version, source, sourceKey, sourceType, fields, fromHistory, createdOn, updatedOn, deletedOn, status);
 
-		this.name = name;
+		this.name = name == null ? "" : name;
 		
 		this.rules = rules == null ? Collections.emptyMap() : Collections.unmodifiableMap(rules);
 		this.filters = filters == null ? Collections.emptyMap() : Collections.unmodifiableMap(filters);
