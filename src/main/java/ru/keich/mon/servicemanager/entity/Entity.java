@@ -96,8 +96,8 @@ public class Entity<K> extends BaseEntity<K> {
 		return Collections.singleton(entity.getSourceKey());
 	}
 
-	public static Set<Object> getVersionForIndex(Entity<?> entity) {
-		return Collections.singleton(entity.getVersion());
+	public static Long getVersionForIndex(Entity<?> entity) {
+		return entity.getVersion();
 	}
 	
 	public static Set<Object> getDeletedOnForIndex(Entity<?> entity) {

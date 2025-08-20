@@ -175,7 +175,7 @@ public class StoreTest {
 	@Test
 	public void queryLessThanByIndex() {
 		var store = new IndexedHashMap<String, TestEntity>(null, this.getClass().getSimpleName());
-		store.addIndex(Entity.FIELD_VERSION, IndexType.UNIQ_SORTED, Entity::getVersionForIndex);
+		store.addIndexLongUniq(Entity.FIELD_VERSION, Entity::getVersionForIndex);
 		queryLessThan(store);
 	}
 	
@@ -213,7 +213,7 @@ public class StoreTest {
 	@Test
 	public void queryGreaterEqualByIndex() {
 		var store = new IndexedHashMap<String, TestEntity>(null, this.getClass().getSimpleName());
-		store.addIndex(Entity.FIELD_VERSION, IndexType.UNIQ_SORTED, Entity::getVersionForIndex);
+		store.addIndexLongUniq(Entity.FIELD_VERSION, Entity::getVersionForIndex);
 		queryGreaterEqual(store);
 	}
 	
@@ -251,7 +251,7 @@ public class StoreTest {
 	@Test
 	public void queryGreaterThanByIndex() {
 		var store = new IndexedHashMap<String, TestEntity>(null, this.getClass().getSimpleName());
-		store.addIndex(Entity.FIELD_VERSION, IndexType.UNIQ_SORTED, Entity::getVersionForIndex);
+		store.addIndexLongUniq(Entity.FIELD_VERSION, Entity::getVersionForIndex);
 		queryGreaterThan(store);
 	}
 	

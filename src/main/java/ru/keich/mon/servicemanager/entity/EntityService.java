@@ -52,7 +52,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 		entityCache = new IndexedHashMap<>(registry, this.getClass().getSimpleName());
 		entityChangedQueue = new QueueThreadReader<QueueInfo<K>>(registry, this.getClass().getSimpleName(), threadCount, this::queueRead);
 		
-		entityCache.addIndex(Entity.FIELD_VERSION, IndexType.UNIQ_SORTED, Entity::getVersionForIndex);
+		entityCache.addIndexLongUniq(Entity.FIELD_VERSION, Entity::getVersionForIndex);
 		entityCache.addIndex(Entity.FIELD_SOURCE, IndexType.EQUAL, Entity::getSourceForIndex);
 		entityCache.addIndex(Entity.FIELD_SOURCEKEY, IndexType.EQUAL, Entity::getSourceKeyForIndex);
 		entityCache.addIndex(Entity.FIELD_DELETEDON, IndexType.SORTED, Entity::getDeletedOnForIndex);

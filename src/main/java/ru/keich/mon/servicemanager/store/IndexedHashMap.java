@@ -111,6 +111,10 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 		}
 	}
 	
+	public void addIndexLongUniq(String name, Function<T, Long> mapper) {
+		index.put(name, new IndexLongUniq<K, T>(mapper));
+	}
+	
 	public void addIndexStatus(String name, Function<T, BaseStatus> mapper) {
 		index.put(name, new IndexStatus<K, T>(mapper));
 	}
