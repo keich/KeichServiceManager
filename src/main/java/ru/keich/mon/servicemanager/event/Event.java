@@ -12,6 +12,7 @@ import lombok.Getter;
 import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.SourceType;
 import ru.keich.mon.servicemanager.entity.Entity;
+import ru.keich.mon.servicemanager.query.predicates.QueryPredicate;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -63,8 +64,8 @@ public class Event extends Entity<String> {
 			@JsonProperty(value = "endsOn") Instant endsOn) {
 		super(id, version, source, sourceKey, sourceType, fields, fromHistory, createdOn, updatedOn, deletedOn, status);
 		this.type = type;
-		this.node = node;
-		this.summary = summary;
+		this.node = node == null ? "" : node;
+		this.summary = summary == null ? "" : summary;
 		this.endsOn = endsOn;
 	}
 
@@ -72,8 +73,11 @@ public class Event extends Entity<String> {
 		return event.endsOn == null ? Collections.emptySet() : Collections.singleton(event.endsOn);
 	}
 	
-	public static Set<Object> getNodeForIndex(Event event) {
-		return event.node == null ? Collections.emptySet() : Collections.singleton(event.node);
+	public static boolean testNodeForQuery(Event event, QueryPredicate predicate) {
+		if(event.node == null) {
+			return false;
+		}
+		return predicate.test(event.getNode());
 	}
 	
 	@Override
