@@ -90,9 +90,9 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	
 	public List<T> deleteBySourceAndSourceKeyNot(String source, String sourceKey) {
 		var predicate = Predicates.equal(Entity.FIELD_SOURCE, source);
-		var sourceIndex = entityCache.keySet(predicate, -1);
+		var sourceIndex = entityCache.keySet(predicate);
 		predicate = Predicates.equal(Entity.FIELD_SOURCEKEY, sourceKey);
-		var sourceKeyIndex = entityCache.keySet(predicate, -1);
+		var sourceKeyIndex = entityCache.keySet(predicate);
 		sourceIndex.removeAll(sourceKeyIndex);
 		return sourceIndex.stream()
 				.map(this::deleteById)
@@ -103,7 +103,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	
 	public <V extends Comparable<V>> List<T> query(List<QueryPredicate> predicates) {
 		return predicates.stream()
-				.map(p -> entityCache.keySet(p, -1))
+				.map(p -> entityCache.keySet(p))
 				.reduce((result, el) -> { 
 					result.retainAll(el);
 					return result;
@@ -121,7 +121,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	@Scheduled(fixedRateString = "${entity.delete.fixedrate:60}", timeUnit = TimeUnit.SECONDS)
 	public void deleteOldScheduled() {
 		var predicate = Predicates.lessThan(Entity.FIELD_DELETEDON, Instant.now().minusSeconds(seconds));
-		entityCache.keySet(predicate, -1)
+		entityCache.keySet(predicate)
 				.forEach(id -> entityCache.compute(id, () -> null, (o) -> null));
 	}
 	

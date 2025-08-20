@@ -157,7 +157,7 @@ public class ItemService extends EntityService<String, Item> {
 
 	public void eventRemoved(Event event) {
 		var predicate = Predicates.equal(Item.FIELD_EVENTIDS, event.getId());
-		entityCache.keySet(predicate, -1)
+		entityCache.keySet(predicate)
 				.forEach(itemId -> itemUpdateEventsStatus(itemId, m -> m.remove(event.getId())));
 	}
 
@@ -191,7 +191,7 @@ public class ItemService extends EntityService<String, Item> {
 	private Stream<Map.Entry<Item, ItemFilter>> findFiltersByEqualFields(Map<String, String> fields) {
 		return fields.entrySet().stream()
 				.map(e -> Predicates.equal(Item.FIELD_FILTERS_EQL, e))
-				.flatMap(p -> findByIds(entityCache.keySet(p, -1)).stream())
+				.flatMap(p -> findByIds(entityCache.keySet(p)).stream())
 				.filter(Item::isNotDeleted)
 				.map(item -> {
 					return item.getFilters().entrySet().stream()
@@ -205,7 +205,7 @@ public class ItemService extends EntityService<String, Item> {
 	
 	public List<Item> findParentsById(String itemId) {
 		var predicate = Predicates.equal(Item.FIELD_PARENTS, itemId);
-		return findByIds(entityCache.keySet(predicate, -1));
+		return findByIds(entityCache.keySet(predicate));
 	}
 	
 	private List<Item> findChildren(Item parent) {
@@ -262,7 +262,7 @@ public class ItemService extends EntityService<String, Item> {
 	@Scheduled(fixedRateString = "${item.history.all.fixedrate:60}", timeUnit = TimeUnit.SECONDS)
 	public void historyByFixedRate() {
 		var predicate = Predicates.greaterEqual(Item.FIELD_VERSION, 0L);
-		findByIds(entityCache.keySet(predicate, -1)).forEach(itemHistoryService::add);
+		findByIds(entityCache.keySet(predicate)).forEach(itemHistoryService::add);
 		
 	}
 	

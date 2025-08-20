@@ -50,6 +50,8 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 	static final public String METRIC_NAME_REMOVED = "removed";
 	static final public String METRIC_NAME_INDEX = "index";
 	
+	static final public long DEFAULT_LIMIT = -1;
+	
 	private final MeterRegistry registry;
 	private final String serviceName;
 	
@@ -234,6 +236,10 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 		default:
 			return Collections.emptySet();
 		}
+	}
+	
+	public Set<K> keySet(QueryPredicate predicate) {
+		return keySet(predicate, DEFAULT_LIMIT);
 	}
 	
 	public Set<K> keySet(QueryPredicate predicate, long limit) {

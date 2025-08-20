@@ -111,7 +111,7 @@ public class EventService extends EntityService<String, Event>{
 	@Scheduled(fixedRateString = "1", timeUnit = TimeUnit.SECONDS)
 	public void deleteEndsOnScheduled() {
 		var predicate = Predicates.lessThan(Event.FIELD_ENDSON, Instant.now());
-		entityCache.keySet(predicate, -1).forEach(this::deleteById);
+		entityCache.keySet(predicate).forEach(this::deleteById);
 	}
 	
 	public Optional<Event> findByIdHistory(String id) {
