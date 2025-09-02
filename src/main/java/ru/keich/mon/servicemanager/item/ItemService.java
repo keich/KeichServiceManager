@@ -70,15 +70,16 @@ public class ItemService extends EntityService<String, Item> {
 
 	@Override
 	public void addOrUpdate(Item item) {
-		entityCache.compute(item.getId(), () -> {
-			entityChangedQueue.add(new QueueInfo<String>(item.getId(), QueueInfo.QueueInfoType.UPDATE));
-			return new Item.Builder(item)
-					.status(BaseStatus.CLEAR)
-					.version(getNextVersion())
-					.fromHistoryAdd(nodeName)
-					.deletedOn(item.isDeleted() ? Instant.now() : null)
-					.build();
-		}, oldItem -> {
+		entityCache.compute(item.getId(), (oldItem) -> {
+			if(oldItem == null) {
+				entityChangedQueue.add(new QueueInfo<String>(item.getId(), QueueInfo.QueueInfoType.UPDATE));
+				return new Item.Builder(item)
+						.status(BaseStatus.CLEAR)
+						.version(getNextVersion())
+						.fromHistoryAdd(nodeName)
+						.deletedOn(item.isDeleted() ? Instant.now() : null)
+						.build();	
+			}
 			if (item.isDeleted() && oldItem.isDeleted()) {
 				return oldItem;
 			}
@@ -99,7 +100,10 @@ public class ItemService extends EntityService<String, Item> {
 	
 	@Override
 	public Optional<Item> deleteById(String itemId) {
-		return entityCache.compute(itemId, () -> null, oldItem -> {
+		return entityCache.compute(itemId,  oldItem -> {
+			if(oldItem == null) {
+				return oldItem;
+			}
 			if (oldItem.isDeleted()) {
 				return oldItem;
 			}
@@ -117,7 +121,10 @@ public class ItemService extends EntityService<String, Item> {
 	protected void queueRead(QueueInfo<String> info) {
 		switch(info.getType()) {
 		case UPDATE:
-			entityCache.compute(info.getId(), () -> null, oldItem -> {
+			entityCache.compute(info.getId(), oldItem -> {
+				if(oldItem == null) {
+					return oldItem;
+				}
 				var newStatus = BaseStatus.CLEAR;
 				if(oldItem.isNotDeleted()) {
 					newStatus = calculateStatus(oldItem);
@@ -130,7 +137,10 @@ public class ItemService extends EntityService<String, Item> {
 			});
 			break;
 		case UPDATED:
-			entityCache.compute(info.getId(), () -> null, item -> {
+			entityCache.compute(info.getId(), item -> {
+				if(item == null) {
+					return item;
+				}
 				itemHistoryService.add(item);
 				findParentsById(info.getId()).stream()
 						.filter(Item::isNotDeleted)
@@ -147,7 +157,10 @@ public class ItemService extends EntityService<String, Item> {
 	}
 	
 	public void itemUpdateEventsStatus(String itemId, Consumer<Map<String, BaseStatus>> s) {
-		entityCache.compute(itemId, () -> null, item -> {
+		entityCache.compute(itemId,item -> {
+			if(item == null) {
+				return item;
+			}
 			entityChangedQueue.add(new QueueInfo<String>(itemId, QueueInfo.QueueInfoType.UPDATE));
 			return new Item.Builder(item).eventsStatusUpdate(s).build();
 		});

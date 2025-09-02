@@ -11,7 +11,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.micrometer.core.instrument.Counter;
@@ -143,7 +142,12 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 	}
 		
 	public Optional<T> put(T entity) {
-		return compute(entity.getId(), () -> entity, Function.identity());
+		return compute(entity.getId(), (oldEntity) -> {
+			if(oldEntity == null) {
+				return entity;
+			}
+			return oldEntity;
+		});
 	}
 	
 	
@@ -171,22 +175,19 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 		return entity;
 	}
 	
-	public Optional<T> compute(K entityId, Supplier<T> insertTrigger, Function<T,T> updateTrigger) {
+	public Optional<T> compute(K entityId, Function<T,T> updateTrigger) {
 		metricObjectsSize.set(cache.size());
 		return Optional.ofNullable(cache.compute(entityId, (key, oldEntity) -> {
-			if (oldEntity != null) {
-				final var newEntity = updateTrigger.apply(oldEntity);
-				if (newEntity  == null) {
+			var newEntity = updateTrigger.apply(oldEntity);
+			if (newEntity == null) {
+				if (oldEntity != null) {
 					return removeEntity(oldEntity);
-				} else if (newEntity != oldEntity) {
+				}
+			} else if (newEntity != oldEntity) {
+				if (oldEntity != null) {
 					return updateEntity(oldEntity, newEntity);
-				}
-			} else {
-				final var entity = insertTrigger.get();
-				if(entity != null) {
-					return insertEntity(entity);
-				}
-				return null;
+				} 
+				return insertEntity(newEntity);
 			}
 			return oldEntity;
 		}));

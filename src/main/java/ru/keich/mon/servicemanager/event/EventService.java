@@ -56,14 +56,15 @@ public class EventService extends EntityService<String, Event>{
 	
 	@Override
 	public void addOrUpdate(Event event) {
-		entityCache.compute(event.getId(), () -> {
-			entityChangedQueue.add(new QueueInfo<String>(event.getId(), QueueInfo.QueueInfoType.UPDATE));
-			return new Event.Builder(event)
-					.version(getNextVersion())
-					.fromHistoryAdd(nodeName)
-					.deletedOn(event.isDeleted() ? Instant.now() : null)
-					.build();	
-		}, oldEvent -> {
+		entityCache.compute(event.getId(), (oldEvent) -> {
+			if(oldEvent == null) {
+				entityChangedQueue.add(new QueueInfo<String>(event.getId(), QueueInfo.QueueInfoType.UPDATE));
+				return new Event.Builder(event)
+						.version(getNextVersion())
+						.fromHistoryAdd(nodeName)
+						.deletedOn(event.isDeleted() ? Instant.now() : null)
+						.build();	
+			}
 			if (event.isDeleted() && oldEvent.isDeleted()) {
 				return oldEvent;
 			}
@@ -80,7 +81,10 @@ public class EventService extends EntityService<String, Event>{
 
 	@Override
 	public Optional<Event> deleteById(String eventId) {
-		return entityCache.compute(eventId, () -> null, oldEvent -> {
+		return entityCache.compute(eventId, oldEvent -> {
+			if(oldEvent == null) {
+				return oldEvent;
+			}
 			if (oldEvent.isDeleted()) {
 				return oldEvent;
 			}
@@ -96,7 +100,10 @@ public class EventService extends EntityService<String, Event>{
 
 	@Override
 	protected void queueRead(QueueInfo<String> info) {
-		entityCache.compute(info.getId(), () -> null, event -> {
+		entityCache.compute(info.getId(), event -> {
+			if(event == null) {
+				return event;
+			}
 			eventHistoryService.add(event);
 			if (event.isDeleted()) {
 				itemService.eventRemoved(event);
