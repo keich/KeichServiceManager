@@ -71,28 +71,28 @@ public class ItemService extends EntityService<String, Item> {
 	@Override
 	public void addOrUpdate(Item item) {
 		entityCache.compute(item.getId(), (oldItem) -> {
-			if(oldItem == null) {
-				entityChangedQueue.add(new QueueInfo<String>(item.getId(), QueueInfo.QueueInfoType.UPDATE));
-				return new Item.Builder(item)
-						.status(BaseStatus.CLEAR)
-						.version(getNextVersion())
-						.fromHistoryAdd(nodeName)
-						.deletedOn(item.isDeleted() ? Instant.now() : null)
-						.build();	
-			}
-			if (item.isDeleted() && oldItem.isDeleted()) {
-				return oldItem;
+			var eventsStatus = item.getEventsStatus();
+			var status = item.getStatus();
+			var aggStatus = item.getAggStatus();
+			var createdOn = item.getCreatedOn();
+			Instant deletedOn = null;
+			if(oldItem != null) {
+				eventsStatus = oldItem.getEventsStatus();
+				status = oldItem.getStatus();
+				aggStatus = oldItem.getAggStatus();
+				createdOn = oldItem.getCreatedOn();
+				deletedOn = item.isDeleted() ? Instant.now() : null;
 			}
 			entityChangedQueue.add(new QueueInfo<String>(item.getId(), QueueInfo.QueueInfoType.UPDATE));
 			return new Item.Builder(item)
-					.eventsStatus(oldItem.getEventsStatus())
-					.status(oldItem.getStatus())
-					.aggStatus(oldItem.getAggStatus())
+					.eventsStatus(eventsStatus)
+					.status(status)
+					.aggStatus(aggStatus)
 					.version(getNextVersion())
 					.fromHistoryAdd(nodeName)
-					.createdOn(oldItem.getCreatedOn())
+					.createdOn(createdOn)
 					.updatedOn(Instant.now())
-					.deletedOn(item.isDeleted() ? Instant.now() : null)
+					.deletedOn(deletedOn)
 					.build();
 		});
 
