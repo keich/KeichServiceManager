@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.fasterxml.jackson.annotation.JsonFilter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import lombok.Getter;
 import ru.keich.mon.servicemanager.BaseStatus;
@@ -143,10 +144,12 @@ public class Entity<K> extends BaseEntity<K> {
 		return str;
 	}
 	
+	@JsonIgnore
 	public boolean isNotDeleted() {
 		return deletedOn == null;
 	}
 	
+	@JsonIgnore
 	public boolean isDeleted() {
 		return deletedOn != null;
 	}
