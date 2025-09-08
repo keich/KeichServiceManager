@@ -95,6 +95,10 @@ public class Entity<K> extends BaseEntity<K> {
 		return Collections.singleton(entity.getSourceKey());
 	}
 
+	public static Set<Object> getSourceTypeForIndex(Entity<?> entity) {
+		return Collections.singleton(entity.getSourceType());
+	}
+	
 	public static Long getVersionForIndex(Entity<?> entity) {
 		return entity.getVersion();
 	}
@@ -133,6 +137,8 @@ public class Entity<K> extends BaseEntity<K> {
 			return Instant.parse(str);
 		case FIELD_STATUS:
 			return BaseStatus.fromString(str);
+		case FIELD_SOURCETYPE:
+			return SourceType.valueOf(str);
 		}
 		return str;
 	}
