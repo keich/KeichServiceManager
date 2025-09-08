@@ -1,6 +1,7 @@
 package ru.keich.mon.servicemanager.query.predicates;
 
 import java.util.Set;
+import java.util.Map.Entry;
 
 import ru.keich.mon.servicemanager.query.Operator;
 
@@ -31,6 +32,13 @@ public class NotContainPredicate extends QueryPredicate {
 		if (t instanceof Set) {
 			var set = (Set) t;
 			return !set.contains(value);
+		} else if (t instanceof Entry) {
+			var entry1 = (Entry) t;
+			var entry2 = (Entry) this.getValue();
+			if (entry1.getKey().equals(entry2.getKey())) {
+				return !entry1.getValue().toString().contains(entry2.getValue().toString());
+			}
+			return false;
 		}
 		return !t.toString().contains(value.toString());
 	}
