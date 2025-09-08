@@ -128,6 +128,21 @@ public class Entity<K> extends BaseEntity<K> {
 		return entity.getStatus();
 	}
 	
+	public static Object parseKeyValString(String str) {
+		try {
+			var newlinePos = str.indexOf(10);
+			if (str.charAt(0) == '$' && newlinePos > 0) {
+				var len = Integer.valueOf(str.substring(1, newlinePos));
+				var key = str.substring(newlinePos + 1, newlinePos + 1 + len);
+				var value = str.substring(newlinePos + 1 + len);
+				return Map.entry(key, value);
+			}
+		} catch (Exception e) {
+			// Ignore
+		}
+		return str;
+	}
+	
 	public static Object fieldValueOf(String fieldName, String str) {
 		switch (fieldName) {
 		case FIELD_VERSION:
@@ -140,6 +155,8 @@ public class Entity<K> extends BaseEntity<K> {
 			return BaseStatus.fromString(str);
 		case FIELD_SOURCETYPE:
 			return SourceType.valueOf(str);
+		case FIELD_FIELDS:
+			return parseKeyValString(str);
 		}
 		return str;
 	}
