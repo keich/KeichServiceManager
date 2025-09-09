@@ -92,10 +92,7 @@ public class StoreTest {
 		var repdicate = Predicates.equal(Entity.FIELD_SOURCE, SOURCE_VALUE);
 		var retSet1 = store.keySet(repdicate, limit);
 		assertEquals(1, retSet1.size());
-		retSet1.stream().forEach(id -> {
-			var retSource = store.get(id).map(e -> e.getSource()).orElse("");
-			assertEquals(SOURCE_VALUE, retSource);
-		});
+		assertTrue(retSet1.contains("id1"));
 	}
 
 	@Test
@@ -125,10 +122,7 @@ public class StoreTest {
 		var repdicate = Predicates.notEqual(Entity.FIELD_SOURCE, SOURCE_VALUE1);
 		var retSet1 = store.keySet(repdicate, limit);
 		assertEquals(1, retSet1.size());
-		retSet1.stream().forEach(id -> {
-			var retSource = store.get(id).map(e -> e.getSource()).orElse("");
-			assertEquals(SOURCE_VALUE2, retSource);
-		});
+		assertTrue(retSet1.contains("id2"));
 	}
 
 	@Test
@@ -159,10 +153,7 @@ public class StoreTest {
 		var repdicate = Predicates.lessThan(Entity.FIELD_VERSION, VERSION2);
 		var retSet1 = store.keySet(repdicate, limit);
 		assertEquals(1, retSet1.size());
-		retSet1.stream().forEach(id -> {
-			var retVersion = store.get(id).map(e -> e.getVersion()).orElse(100L);
-			assertTrue(retVersion < VERSION2);
-		});
+		assertTrue(retSet1.contains("id1"));
 	}
 
 	@Test
@@ -197,10 +188,8 @@ public class StoreTest {
 		var repdicate = Predicates.greaterEqual(Entity.FIELD_VERSION, VERSION2);
 		var retSet1 = store.keySet(repdicate, limit);
 		assertEquals(2, retSet1.size());
-		retSet1.stream().forEach(id -> {
-			var retVersion = store.get(id).map(e -> e.getVersion()).orElse(0L);
-			assertTrue(retVersion >= VERSION2);
-		});
+		assertTrue(retSet1.contains("id2"));
+		assertTrue(retSet1.contains("id3"));
 	}
 
 	@Test
@@ -235,10 +224,7 @@ public class StoreTest {
 		var repdicate = Predicates.greaterThan(Entity.FIELD_VERSION, VERSION2);
 		var retSet1 = store.keySet(repdicate, limit);
 		assertEquals(1, retSet1.size());
-		retSet1.stream().forEach(id -> {
-			var retVersion = store.get(id).map(e -> e.getVersion()).orElse(0L);
-			assertTrue(retVersion > VERSION2);
-		});
+		assertTrue(retSet1.contains("id3"));
 	}
 
 	@Test
@@ -273,10 +259,7 @@ public class StoreTest {
 		var p1 = Predicates.contain(TestEntity.FIELD_NAME, "Test");
 		var retSet1 = store.keySet(p1, limit);
 		assertEquals(1, retSet1.size());
-		retSet1.stream().forEach(id -> {
-			var retName= store.get(id).map(e -> e.getName()).orElse("");
-			assertEquals(TEST_NAME, retName);
-		});
+		assertTrue(retSet1.contains("id1"));
 	}
 
 	@Test
@@ -311,10 +294,7 @@ public class StoreTest {
 		var p1 = Predicates.notContain(TestEntity.FIELD_NAME, "Test");
 		var retSet1 = store.keySet(p1, limit);
 		assertEquals(1, retSet1.size());
-		retSet1.stream().forEach(id -> {
-			var retName= store.get(id).map(e -> e.getName()).orElse("");
-			assertEquals(OTHER_NAME, retName);
-		});
+		assertTrue(retSet1.contains("id2"));
 	}
 
 	@Test
