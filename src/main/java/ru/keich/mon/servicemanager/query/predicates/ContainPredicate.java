@@ -1,7 +1,6 @@
 package ru.keich.mon.servicemanager.query.predicates;
 
 import java.util.Map.Entry;
-import java.util.Set;
 
 import ru.keich.mon.servicemanager.query.Operator;
 
@@ -29,10 +28,7 @@ public class ContainPredicate extends QueryPredicate {
 
 	@Override
 	public boolean test(Object t) {
-		if (t instanceof Set) {
-			var set = (Set) t;
-			return set.contains(value);
-		} else if (t instanceof Entry) {
+		if (t instanceof Entry) {
 			var entry1 = (Entry) t;
 			var entry2 = (Entry) this.getValue();
 			if (entry1.getKey().equals(entry2.getKey())) {

@@ -1,7 +1,5 @@
 package ru.keich.mon.servicemanager.query.predicates;
 
-import java.util.Set;
-
 import ru.keich.mon.servicemanager.query.Operator;
 
 /*
@@ -28,10 +26,6 @@ public class NotIncludePredicate extends QueryPredicate {
 
 	@Override
 	public boolean test(Object t) {
-		if (t instanceof Set) {
-			var set = (Set) t;
-			return !set.contains(value);
-		}
 		return !t.toString().contains(value.toString());
 	}
 }
