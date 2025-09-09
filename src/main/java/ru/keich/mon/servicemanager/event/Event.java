@@ -12,7 +12,6 @@ import lombok.Getter;
 import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.SourceType;
 import ru.keich.mon.servicemanager.entity.Entity;
-import ru.keich.mon.servicemanager.query.predicates.QueryPredicate;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -72,13 +71,13 @@ public class Event extends Entity<String> {
 	public static Set<Object> getEndsOnForIndex(Event event) {
 		return event.endsOn == null ? Collections.emptySet() : Collections.singleton(event.endsOn);
 	}
-	
-	public static boolean testNodeForQuery(Event event, QueryPredicate predicate) {
-		return predicate.test(event.getNode());
+
+	public static Set<Object> getNodeForQuery(Event event) {
+		return Collections.singleton(event.getNode());
 	}
-	
-	public static boolean testSummaryForQuery(Event event, QueryPredicate predicate) {
-		return predicate.test(event.getSummary());
+
+	public static Set<Object> getSummaryForQuery(Event event) {
+		return Collections.singleton(event.getSummary());
 	}
 	
 	@Override

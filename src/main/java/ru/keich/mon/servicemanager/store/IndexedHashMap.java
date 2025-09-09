@@ -9,7 +9,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -17,6 +16,7 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import ru.keich.mon.servicemanager.BaseStatus;
+import ru.keich.mon.servicemanager.query.Operator;
 import ru.keich.mon.servicemanager.query.predicates.QueryPredicate;
 
 
@@ -87,7 +87,7 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 	
 	private Map<K, T> cache = new ConcurrentHashMap<>();
 	private Map<String , Index<K, T>> index =  new HashMap<>(); 
-	private Map<String , BiFunction<T, QueryPredicate, Boolean>> query =  new HashMap<>(); 
+	private Map<String , Query<T>> query =  new HashMap<>(); 
 
 	public IndexedHashMap(MeterRegistry registry, String serviceName) {
 		super();
@@ -137,8 +137,12 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 		}
 	}
 	
-	public void addQueryField(String name, BiFunction<T, QueryPredicate, Boolean> test) {
-		query.put(name, test);
+	public void addQueryFieldLong(String name, Function<T, Long> mapper) {
+		query.put(name, new QueryLong<T>(mapper));
+	}
+	
+	public void addQueryField(String name, Function<T, Set<Object>> mapper) {
+		query.put(name, new QueryObject<T>(mapper));
 	}
 		
 	public Optional<T> put(T entity) {
@@ -210,9 +214,16 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 	
 	private Set<K> findByQuery(QueryPredicate predicate) {
 		var fieldName = predicate.getName();
-		var test = query.get(fieldName);
+		var mapper = query.get(fieldName);
 		return cache.entrySet().stream()
-				.filter(entry -> test.apply(entry.getValue(), predicate))
+				.filter(entry -> {
+					if(predicate.getOperator() ==  Operator.NI) {
+						return !mapper.apply(entry.getValue()).contains(predicate.getValue());
+					}
+					return mapper.apply(entry.getValue()).stream()
+							.filter(predicate)
+							.findAny().isPresent();
+				})
 				.map(e -> e.getKey())
 				.collect(Collectors.toSet());
 	}

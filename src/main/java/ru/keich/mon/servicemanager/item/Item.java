@@ -18,7 +18,6 @@ import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.SourceType;
 import ru.keich.mon.servicemanager.entity.Entity;
 import ru.keich.mon.servicemanager.event.Event;
-import ru.keich.mon.servicemanager.query.predicates.QueryPredicate;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -120,16 +119,16 @@ public class Item extends Entity<String> {
 		return Collections.unmodifiableSet(item.getChildrenIds());
 	}
 	
-	public static boolean testNameForQuery(Item item, QueryPredicate predicate) {
-		return predicate.test(item.getName().toUpperCase());
+	public static Set<Object> getNameForQuery(Item item) {
+		return Collections.singleton(item.getName().toUpperCase());
 	}
 	
 	public static Set<Object> getEventsIdsForIndex(Item item) {
 		return Collections.unmodifiableSet(item.getEventsStatus().keySet());
 	}
 	
-	public static boolean testAggStatusForQuery(Item item, QueryPredicate predicate) {
-		return predicate.test(item.getAggStatus().getMax());
+	public static Set<Object>  getAggStatusForQuery(Item item) {
+		return Collections.singleton(item.getAggStatus().getMax());
 	}
 	
 	public static Object fieldValueOf(String fieldName, String str) {
