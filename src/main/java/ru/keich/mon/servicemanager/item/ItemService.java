@@ -167,8 +167,7 @@ public class ItemService extends EntityService<String, Item> {
 	}
 
 	public void eventRemoved(Event event) {
-		var predicate = Predicates.equal(Item.FIELD_EVENTIDS, event.getId());
-		entityCache.keySet(predicate)
+		entityCache.keySetIndexEq(Item.FIELD_EVENTIDS, event.getId())
 				.forEach(itemId -> itemUpdateEventsStatus(itemId, m -> m.remove(event.getId())));
 	}
 
@@ -201,8 +200,7 @@ public class ItemService extends EntityService<String, Item> {
 	
 	private Stream<Map.Entry<Item, ItemFilter>> findFiltersByEqualFields(Map<String, String> fields) {
 		return fields.entrySet().stream()
-				.map(e -> Predicates.equal(Item.FIELD_FILTERS_EQL, e))
-				.flatMap(p -> findByIds(entityCache.keySet(p)).stream())
+				.flatMap(e -> findByIds(entityCache.keySetIndexEq(Item.FIELD_FILTERS_EQL, e)).stream())
 				.filter(Item::isNotDeleted)
 				.map(item -> {
 					return item.getFilters().entrySet().stream()
@@ -215,8 +213,7 @@ public class ItemService extends EntityService<String, Item> {
 	}
 	
 	public List<Item> findParentsById(String itemId) {
-		var predicate = Predicates.equal(Item.FIELD_PARENTS, itemId);
-		return findByIds(entityCache.keySet(predicate));
+		return findByIds(entityCache.keySetIndexEq(Item.FIELD_PARENTS, itemId));
 	}
 	
 	private List<Item> findChildren(Item parent) {

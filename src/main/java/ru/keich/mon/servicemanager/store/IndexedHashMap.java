@@ -276,4 +276,8 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 		return ret;
 	}
 	
+	public Set<K> keySetIndexEq(String fieldName, Object value){
+		return index.get(fieldName).get(value);
+	}
+	
 }
