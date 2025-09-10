@@ -52,9 +52,12 @@ public class ItemService extends EntityService<String, Item> {
 			,EventService eventService
 			,ItemHistoryService itemHistoryService
 			,MeterRegistry registry
-			,@Value("${item.thread.count:2}") Integer threadCount) {
+			,@Value("${item.thread.count:2}") Integer threadCount
+			,@Value("${item.aggstatus.seconds:60}") Long aggStatusSeconds) {
 		super(nodeName, registry, threadCount);
-
+		
+		AggregateStatus.setSeconds(aggStatusSeconds);
+		
 		entityCache.addIndex(Item.FIELD_FILTERS_EQL, IndexType.EQUAL, Item::getFiltersForIndex);
 		entityCache.addIndex(Item.FIELD_PARENTS, IndexType.EQUAL, Item::getParentsForIndex);
 
