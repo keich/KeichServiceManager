@@ -1,6 +1,7 @@
 package ru.keich.mon.servicemanager.query.predicates;
 
 import java.util.Map.Entry;
+import java.util.function.Predicate;
 
 import ru.keich.mon.servicemanager.query.Operator;
 
@@ -22,20 +23,27 @@ import ru.keich.mon.servicemanager.query.Operator;
 
 public class NotContainPredicate extends QueryPredicate {
 
+	private final Predicate<Object> func;
+
 	public NotContainPredicate(String name, Object value) {
 		super(name, Operator.NC, value);
+		if (value instanceof Entry) {
+			func = (o) -> {
+				var entry1 = (Entry) o;
+				var entry2 = (Entry) value;
+				if (entry1.getKey().equals(entry2.getKey())) {
+					return !entry1.getValue().toString().contains(entry2.getValue().toString());
+				}
+				return false;
+			};
+		} else {
+			func = (t) -> !t.toString().contains(value.toString());
+		}
 	}
 
 	@Override
-	public boolean test(Object t) {
-		if (t instanceof Entry) {
-			var entry1 = (Entry) t;
-			var entry2 = (Entry) this.getValue();
-			if (entry1.getKey().equals(entry2.getKey())) {
-				return !entry1.getValue().toString().contains(entry2.getValue().toString());
-			}
-			return false;
-		}
-		return !t.toString().contains(value.toString());
+	public boolean test(Object o) {
+		return func.test(o);
 	}
+	
 }
