@@ -2,6 +2,7 @@ package ru.keich.mon.servicemanager.entity;
 
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -104,7 +105,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 				.collect(Collectors.toList());
 	}
 	
-	public <V extends Comparable<V>> List<T> query(List<QueryPredicate> predicates, long limit) {
+	public List<T> query(List<QueryPredicate> predicates, long limit, Set<String> sort, boolean sortRevers) {
 		var data = predicates.stream()
 				.map(p -> entityCache.keySet(p))
 				.reduce((result, el) -> { 
@@ -116,10 +117,22 @@ public abstract class EntityService<K, T extends Entity<K>> {
 				.map(entityCache::get)
 				.filter(Optional::isPresent)
 				.map(Optional::get);
-		if(limit > 0) {
-			data = data.limit(limit);
+		
+		var comparator = sort.stream()
+				.map(this::getSortComparator)
+				.reduce(Comparator::thenComparing)
+				.orElse((e1, e2) -> 0);
+		
+		var result =  data.sorted(comparator).collect(Collectors.toList());
+		
+		if(sortRevers) {
+			Collections.reverse(result);
 		}
-		return data.collect(Collectors.toList());
+		
+		if(limit > 0) {
+			return result.stream().limit(limit).collect(Collectors.toList());
+		}
+		return result;
 	}
 	
 	@Value("${entity.delete.secondsold:30}") Long seconds;
@@ -129,6 +142,28 @@ public abstract class EntityService<K, T extends Entity<K>> {
 		var predicate = Predicates.lessThan(Entity.FIELD_DELETEDON, Instant.now().minusSeconds(seconds));
 		entityCache.keySet(predicate)
 				.forEach(id -> entityCache.compute(id, (o) -> null));
+	}
+	
+	public Comparator<T> getSortComparator(String fieldName) {
+		switch (fieldName) {
+		case Entity.FIELD_STATUS:
+			return (e1, e2) -> e1.getStatus().compareTo(e2.getStatus());
+		case Entity.FIELD_CREATEDON:
+			return (e1, e2) -> e1.getCreatedOn().compareTo(e2.getCreatedOn());
+		case Entity.FIELD_UPDATEDON:
+			return (e1, e2) -> e1.getUpdatedOn().compareTo(e2.getUpdatedOn());
+		case Entity.FIELD_DELETEDON:
+			return (e1, e2) -> e1.getDeletedOn().compareTo(e2.getDeletedOn());
+		case Entity.FIELD_SOURCE:
+			return (e1, e2) -> e1.getSource().compareTo(e2.getSource());
+		case Entity.FIELD_SOURCEKEY:
+			return (e1, e2) -> e1.getSourceKey().compareTo(e2.getSourceKey());
+		case Entity.FIELD_SOURCETYPE:
+			return (e1, e2) -> e1.getSourceType().compareTo(e2.getSourceType());
+		}
+		return (e1, e2) -> {
+			return e1.getVersion().compareTo(e2.getVersion());
+		};
 	}
 	
 }

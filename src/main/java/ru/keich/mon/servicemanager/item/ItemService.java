@@ -2,6 +2,7 @@ package ru.keich.mon.servicemanager.item;
 
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -273,7 +274,15 @@ public class ItemService extends EntityService<String, Item> {
 	public void historyByFixedRate() {
 		var predicate = Predicates.greaterEqual(Item.FIELD_VERSION, 0L);
 		findByIds(entityCache.keySet(predicate)).forEach(itemHistoryService::add);
-		
+	}
+	
+	@Override
+	public Comparator<Item> getSortComparator(String fieldName) {
+		switch (fieldName) {
+		case Item.FIELD_NAME:
+			return (e1, e2) -> e1.getName().compareTo(e2.getName());
+		}
+		return super.getSortComparator(fieldName);
 	}
 	
 }

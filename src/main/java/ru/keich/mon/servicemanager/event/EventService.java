@@ -18,6 +18,7 @@ package ru.keich.mon.servicemanager.event;
 
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -117,6 +118,19 @@ public class EventService extends EntityService<String, Event>{
 	
 	public Optional<Event> findByIdHistory(String id) {
 		return Optional.ofNullable(eventHistoryService.getEventsByIds(Collections.singletonList(id), historyEventSearchLimit).get(id));
+	}
+	
+	@Override
+	public Comparator<Event> getSortComparator(String fieldName) {
+		switch (fieldName) {
+		case Event.FIELD_ENDSON:
+			return (e1, e2) -> e1.getEndsOn().compareTo(e2.getEndsOn());
+		case Event.FIELD_NODE:
+			return (e1, e2) -> e1.getNode().compareTo(e2.getNode());
+		case Event.FIELD_SUMMARY:
+			return (e1, e2) -> e1.getSummary().compareTo(e2.getSummary());
+		}
+		return super.getSortComparator(fieldName);
 	}
 	
 }
