@@ -57,33 +57,28 @@ public enum BaseStatus {
     }
 	
 	public static BaseStatus fromString(String sev) {
+		sev = sev.toLowerCase();
         switch(sev) {
         case "0":
         case "clear":
-        case "CLEAR":
             return CLEAR;
         case "1":
         case "indeterminate":
-        case "INDETERMINATE":
             return INDETERMINATE;
         case "2":
         case "information":
-        case "INFORMATION":
             return INFORMATION;
         case "3":
         case "warning":
-        case "WARNING":
             return WARNING;
         case "4":
         case "major":
-        case "MAJOR":
             return MAJOR;
         case "5":
         case "critical":
-        case "CRITICAL":
             return CRITICAL;
         }
-        return CLEAR; // TODO
+        return CLEAR;
     }
 	
 	public static BaseStatus max(Collection<BaseStatus> statuses) {
