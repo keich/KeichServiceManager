@@ -141,16 +141,11 @@ public class ItemService extends EntityService<String, Item> {
 			break;
 		case UPDATED:
 			entityCache.compute(info.getId(), item -> {
-				if(item == null) {
-					return item;
+				if (item != null) {
+					itemHistoryService.add(item);
+					findParentIdsById(info.getId())
+							.forEach(id -> entityChangedQueue.add(new QueueInfo<String>(id, QueueInfo.QueueInfoType.UPDATE)));
 				}
-				itemHistoryService.add(item);
-				findParentsById(info.getId()).stream()
-						.filter(Item::isNotDeleted)
-						.map(Item::getId)
-						.forEach(parentId -> {
-							entityChangedQueue.add(new QueueInfo<String>(parentId, QueueInfo.QueueInfoType.UPDATE));
-						});
 				return item;
 			});
 			break;
@@ -215,8 +210,12 @@ public class ItemService extends EntityService<String, Item> {
 				.map(Optional::get);
 	}
 	
+	public Set<String> findParentIdsById(String itemId) {
+		return entityCache.keySetIndexEq(Item.FIELD_PARENTS, itemId);
+	}
+
 	public List<Item> findParentsById(String itemId) {
-		return findByIds(entityCache.keySetIndexEq(Item.FIELD_PARENTS, itemId));
+		return findByIds(findParentIdsById(itemId));
 	}
 	
 	private List<Item> findChildren(Item parent) {
