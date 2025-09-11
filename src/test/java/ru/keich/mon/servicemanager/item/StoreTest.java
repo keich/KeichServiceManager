@@ -77,7 +77,6 @@ public class StoreTest {
 	}
 
 	public void queryEqual(IndexedHashMap<String, TestEntity> store) {
-		final long limit = -1;
 		final var SOURCE_VALUE = "source1";
 		var entity1 = new TestEntity("id1", 0L, SOURCE_VALUE, "sourceKey1", SOURCETYPE, Collections.emptyMap(),
 				Collections.emptySet(), Instant.now(), Instant.now(), null);
@@ -86,7 +85,7 @@ public class StoreTest {
 		store.put(entity1);
 		store.put(entity2);
 		var repdicate = Predicates.equal(Entity.FIELD_SOURCE, SOURCE_VALUE);
-		var retSet1 = store.keySet(repdicate, limit);
+		var retSet1 = store.keySet(repdicate);
 		assertEquals(1, retSet1.size());
 		assertTrue(retSet1.contains("id1"));
 	}
@@ -106,7 +105,6 @@ public class StoreTest {
 	}
 	
 	public void queryNotEqual(IndexedHashMap<String, TestEntity> store) {
-		final long limit = -1;
 		final var SOURCE_VALUE1 = "source1";
 		final var SOURCE_VALUE2 = "source2";
 		var entity1 = new TestEntity("id1", 0L, SOURCE_VALUE1, "sourceKey", SOURCETYPE, Collections.emptyMap(),
@@ -116,7 +114,7 @@ public class StoreTest {
 		store.put(entity1);
 		store.put(entity2);
 		var repdicate = Predicates.notEqual(Entity.FIELD_SOURCE, SOURCE_VALUE1);
-		var retSet1 = store.keySet(repdicate, limit);
+		var retSet1 = store.keySet(repdicate);
 		assertEquals(1, retSet1.size());
 		assertTrue(retSet1.contains("id2"));
 	}
@@ -136,7 +134,6 @@ public class StoreTest {
 	}
 	
 	public void queryLessThan(IndexedHashMap<String, TestEntity> store) {
-		final long limit = -1;
 		final var SOURCE_VALUE = "source";
 		final Long VERSION1 = 1L;
 		final Long VERSION2 = 2L;
@@ -147,7 +144,7 @@ public class StoreTest {
 		store.put(entity1);
 		store.put(entity2);
 		var repdicate = Predicates.lessThan(Entity.FIELD_VERSION, VERSION2);
-		var retSet1 = store.keySet(repdicate, limit);
+		var retSet1 = store.keySet(repdicate);
 		assertEquals(1, retSet1.size());
 		assertTrue(retSet1.contains("id1"));
 	}
@@ -167,7 +164,6 @@ public class StoreTest {
 	}
 	
 	public void queryGreaterEqual(IndexedHashMap<String, TestEntity> store) {
-		final long limit = -1;
 		final var SOURCE_VALUE = "source";
 		final Long VERSION1 = 1L;
 		final Long VERSION2 = 2L;
@@ -182,7 +178,7 @@ public class StoreTest {
 		store.put(entity2);
 		store.put(entity3);
 		var repdicate = Predicates.greaterEqual(Entity.FIELD_VERSION, VERSION2);
-		var retSet1 = store.keySet(repdicate, limit);
+		var retSet1 = store.keySet(repdicate);
 		assertEquals(2, retSet1.size());
 		assertTrue(retSet1.contains("id2"));
 		assertTrue(retSet1.contains("id3"));
@@ -203,7 +199,6 @@ public class StoreTest {
 	}
 	
 	public void queryGreaterThan(IndexedHashMap<String, TestEntity> store) {
-		final long limit = -1;
 		final var SOURCE_VALUE = "source";
 		final Long VERSION1 = 1L;
 		final Long VERSION2 = 2L;
@@ -218,7 +213,7 @@ public class StoreTest {
 		store.put(entity2);
 		store.put(entity3);
 		var repdicate = Predicates.greaterThan(Entity.FIELD_VERSION, VERSION2);
-		var retSet1 = store.keySet(repdicate, limit);
+		var retSet1 = store.keySet(repdicate);
 		assertEquals(1, retSet1.size());
 		assertTrue(retSet1.contains("id3"));
 	}
@@ -238,7 +233,6 @@ public class StoreTest {
 	}
 	
 	public void queryContainString(IndexedHashMap<String, TestEntity> store) {
-		final long limit = -1;
 		final var SOURCE_VALUE = "source";
 		final var TEST_NAME = "SomeTestName";
 		final var OTHER_NAME = "OtherName";
@@ -253,7 +247,7 @@ public class StoreTest {
 		store.put(entity1);
 		store.put(entity2);
 		var p1 = Predicates.contain(TestEntity.FIELD_NAME, "Test");
-		var retSet1 = store.keySet(p1, limit);
+		var retSet1 = store.keySet(p1);
 		assertEquals(1, retSet1.size());
 		assertTrue(retSet1.contains("id1"));
 	}
@@ -273,7 +267,6 @@ public class StoreTest {
 	}
 	
 	public void queryNotContainString(IndexedHashMap<String, TestEntity> store) {
-		final long limit = -1;
 		final var SOURCE_VALUE = "source";
 		final var TEST_NAME = "SomeTestName";
 		final var OTHER_NAME = "OtherName";
@@ -288,7 +281,7 @@ public class StoreTest {
 		store.put(entity1);
 		store.put(entity2);
 		var p1 = Predicates.notContain(TestEntity.FIELD_NAME, "Test");
-		var retSet1 = store.keySet(p1, limit);
+		var retSet1 = store.keySet(p1);
 		assertEquals(1, retSet1.size());
 		assertTrue(retSet1.contains("id2"));
 	}
@@ -308,7 +301,6 @@ public class StoreTest {
 	}
 
 	public void queryNotInclude(IndexedHashMap<String, TestEntity> store) {
-		final long limit = -1;
 		final var SOURCE_VALUE = "source";
 		final var TEST_NAME = "SomeTestName";
 		final var OTHER_NAME = "OtherName";
@@ -343,7 +335,7 @@ public class StoreTest {
 		store.put(entity2);
 		store.put(entity3);
 		var p1 = Predicates.notInclude(TestEntity.FIELD_SOMESET, "Test4");
-		var retSet1 = store.keySet(p1, limit);
+		var retSet1 = store.keySet(p1);
 
 		assertEquals(2, retSet1.size());
 		assertTrue(retSet1.contains("id1"));

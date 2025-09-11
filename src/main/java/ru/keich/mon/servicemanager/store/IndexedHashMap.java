@@ -50,8 +50,6 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 	static final public String METRIC_NAME_REMOVED = "removed";
 	static final public String METRIC_NAME_INDEX = "index";
 	
-	static final public long DEFAULT_LIMIT = -1;
-	
 	private final MeterRegistry registry;
 	private final String serviceName;
 	
@@ -257,10 +255,6 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 	}
 	
 	public Set<K> keySet(QueryPredicate predicate) {
-		return keySet(predicate, DEFAULT_LIMIT);
-	}
-	
-	public Set<K> keySet(QueryPredicate predicate, long limit) {
 		var fieldName = predicate.getName();
 		Set<K> ret;
 		if (index.containsKey(fieldName)) {
@@ -269,9 +263,6 @@ public class IndexedHashMap<K, T extends BaseEntity<K>> {
 			ret = findByQuery(predicate);
 		} else {
 			throw new RuntimeException("Can't query by field \"" + fieldName + "\"");
-		}
-		if (limit > 0) {
-			ret = ret.stream().limit(limit).collect(Collectors.toSet());
 		}
 		return ret;
 	}

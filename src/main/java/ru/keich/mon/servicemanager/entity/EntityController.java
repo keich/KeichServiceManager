@@ -37,6 +37,7 @@ public class EntityController<K, T extends Entity<K>> {
 
 	private EntityService<K, T> entityService;
 	public static final String QUERY_PROPERTY = "property";
+	public static final String QUERY_LIMIT = "limit";
 	public static final String QUERY_ID = "id";
 	public static final String FILTER_NAME = "propertiesFilter";
 	
@@ -81,11 +82,17 @@ public class EntityController<K, T extends Entity<K>> {
 	public <C> ResponseEntity<MappingJacksonValue> find(MultiValueMap<String, String> reqParam, BiFunction<String, String, Object> valueConverter) {
 		var filters = reqParam.entrySet().stream()
 				.filter(p -> !p.getKey().toLowerCase().equals(QUERY_PROPERTY))
+				.filter(p -> !p.getKey().toLowerCase().equals(QUERY_LIMIT))
 				.flatMap(param -> {
 					return param.getValue().stream()
 							.map(value -> Predicates.fromParam(param.getKey(), value, valueConverter));
 				}).collect(Collectors.toList());
-		return applyFilter(new MappingJacksonValue(entityService.query(filters)), reqParam);
+		long limit = reqParam.entrySet().stream()
+				.filter(p -> p.getKey().toLowerCase().equals(QUERY_LIMIT))
+				.findFirst()
+				.map(l -> Long.valueOf(l.getValue().get(0)))
+				.orElse(-1L);
+		return applyFilter(new MappingJacksonValue(entityService.query(filters, limit)), reqParam);
 	}
 
 	public ResponseEntity<MappingJacksonValue> findById(@PathVariable K id, @RequestParam MultiValueMap<String, String> reqParam) {

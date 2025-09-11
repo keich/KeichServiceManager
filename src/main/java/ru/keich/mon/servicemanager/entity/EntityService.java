@@ -104,8 +104,8 @@ public abstract class EntityService<K, T extends Entity<K>> {
 				.collect(Collectors.toList());
 	}
 	
-	public <V extends Comparable<V>> List<T> query(List<QueryPredicate> predicates) {
-		return predicates.stream()
+	public <V extends Comparable<V>> List<T> query(List<QueryPredicate> predicates, long limit) {
+		var data = predicates.stream()
 				.map(p -> entityCache.keySet(p))
 				.reduce((result, el) -> { 
 					result.retainAll(el);
@@ -115,8 +115,11 @@ public abstract class EntityService<K, T extends Entity<K>> {
 				.stream()
 				.map(entityCache::get)
 				.filter(Optional::isPresent)
-				.map(Optional::get)
-				.collect(Collectors.toList());
+				.map(Optional::get);
+		if(limit > 0) {
+			data = data.limit(limit);
+		}
+		return data.collect(Collectors.toList());
 	}
 	
 	@Value("${entity.delete.secondsold:30}") Long seconds;
