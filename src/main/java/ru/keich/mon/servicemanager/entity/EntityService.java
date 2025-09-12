@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -105,8 +106,8 @@ public abstract class EntityService<K, T extends Entity<K>> {
 				.collect(Collectors.toList());
 	}
 	
-	public List<T> query(List<QueryPredicate> predicates, long limit, Set<String> sort, boolean sortRevers) {
-		var data = predicates.stream()
+	public Stream<T> query(List<QueryPredicate> predicates) {
+		return predicates.stream()
 				.map(p -> entityCache.keySet(p))
 				.reduce((result, el) -> { 
 					result.retainAll(el);
@@ -117,22 +118,6 @@ public abstract class EntityService<K, T extends Entity<K>> {
 				.map(entityCache::get)
 				.filter(Optional::isPresent)
 				.map(Optional::get);
-		
-		var comparator = sort.stream()
-				.map(this::getSortComparator)
-				.reduce(Comparator::thenComparing)
-				.orElse((e1, e2) -> 0);
-		
-		var result =  data.sorted(comparator).collect(Collectors.toList());
-		
-		if(sortRevers) {
-			Collections.reverse(result);
-		}
-		
-		if(limit > 0) {
-			return result.stream().limit(limit).collect(Collectors.toList());
-		}
-		return result;
 	}
 	
 	@Value("${entity.delete.secondsold:30}") Long seconds;
@@ -144,26 +129,43 @@ public abstract class EntityService<K, T extends Entity<K>> {
 				.forEach(id -> entityCache.compute(id, (o) -> null));
 	}
 	
-	public Comparator<T> getSortComparator(String fieldName) {
+	public Comparator<T> getSortComparator(String fieldName, boolean revers) {
+		final int mult = revers ? -1 : 1;
 		switch (fieldName) {
 		case Entity.FIELD_STATUS:
-			return (e1, e2) -> e1.getStatus().compareTo(e2.getStatus());
+			return (e1, e2) -> e1.getStatus().compareTo(e2.getStatus()) * mult;
 		case Entity.FIELD_CREATEDON:
-			return (e1, e2) -> e1.getCreatedOn().compareTo(e2.getCreatedOn());
+			return (e1, e2) -> e1.getCreatedOn().compareTo(e2.getCreatedOn()) * mult;
 		case Entity.FIELD_UPDATEDON:
-			return (e1, e2) -> e1.getUpdatedOn().compareTo(e2.getUpdatedOn());
+			return (e1, e2) -> e1.getUpdatedOn().compareTo(e2.getUpdatedOn()) * mult;
 		case Entity.FIELD_DELETEDON:
-			return (e1, e2) -> e1.getDeletedOn().compareTo(e2.getDeletedOn());
+			return (e1, e2) -> e1.getDeletedOn().compareTo(e2.getDeletedOn()) * mult;
 		case Entity.FIELD_SOURCE:
-			return (e1, e2) -> e1.getSource().compareTo(e2.getSource());
+			return (e1, e2) -> e1.getSource().compareTo(e2.getSource()) * mult;
 		case Entity.FIELD_SOURCEKEY:
-			return (e1, e2) -> e1.getSourceKey().compareTo(e2.getSourceKey());
+			return (e1, e2) -> e1.getSourceKey().compareTo(e2.getSourceKey()) * mult;
 		case Entity.FIELD_SOURCETYPE:
-			return (e1, e2) -> e1.getSourceType().compareTo(e2.getSourceType());
+			return (e1, e2) -> e1.getSourceType().compareTo(e2.getSourceType()) * mult;
 		}
 		return (e1, e2) -> {
-			return e1.getVersion().compareTo(e2.getVersion());
+			return e1.getVersion().compareTo(e2.getVersion()) * mult;
 		};
+	}
+	
+	public Stream<T> sortAndLimit(Stream<T> data, QueryParams queryParams) {
+		if(!queryParams.getSort().isEmpty()) {
+			var comparator = queryParams.getSort().stream()
+					.map(name -> getSortComparator(name, queryParams.isSortRevers()))
+					.reduce(Comparator::thenComparing)
+					.orElse((e1, e2) -> 0);
+			data = data.sorted(comparator);
+		}
+
+		var limit = queryParams.getLimit();
+		if (limit > 0) {
+			return data.limit(limit);
+		}
+		return data;
 	}
 	
 }

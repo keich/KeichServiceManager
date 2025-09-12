@@ -1,9 +1,7 @@
 package ru.keich.mon.servicemanager.entity;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
@@ -83,6 +81,20 @@ public class EntityController<K, T extends Entity<K>> {
 		return find(reqParam, Entity::fieldValueOf);
 	}
 	
+	public QueryParams getQueryParams(MultiValueMap<String, String> reqParam) {
+		var queryParams = new QueryParams();
+		if (reqParam.containsKey(QUERY_LIMIT)) {
+			queryParams.setLimit(Long.valueOf(reqParam.get(QUERY_LIMIT).get(0)));
+		}
+		if (reqParam.containsKey(QUERY_SORT_ASC)) {
+			queryParams.setSort(reqParam.get(QUERY_SORT_ASC).stream().collect(Collectors.toSet()));
+		} else if (reqParam.containsKey(QUERY_SORT_DESC)) {
+			queryParams.setSort(reqParam.get(QUERY_SORT_DESC).stream().collect(Collectors.toSet()));
+			queryParams.setSortRevers(true);
+		}
+		return queryParams;
+	}
+	
 	public <C> ResponseEntity<MappingJacksonValue> find(MultiValueMap<String, String> reqParam, BiFunction<String, String, Object> valueConverter) {
 		var filters = reqParam.entrySet().stream()
 				.filter(p -> !p.getKey().toLowerCase().equals(QUERY_PROPERTY))
@@ -93,22 +105,9 @@ public class EntityController<K, T extends Entity<K>> {
 					return param.getValue().stream()
 							.map(value -> Predicates.fromParam(param.getKey(), value, valueConverter));
 				}).collect(Collectors.toList());
-		
-		long limit = -1;
-		if(reqParam.containsKey(QUERY_LIMIT)) {
-			limit = Long.valueOf(reqParam.get(QUERY_LIMIT).get(0));
-		}
-		
-		var sortRevers= false;
-		Set<String> sort = Collections.emptySet();
-		if(reqParam.containsKey(QUERY_SORT_ASC)) {
-			sort = reqParam.get(QUERY_SORT_ASC).stream().collect(Collectors.toSet());
-		} else if(reqParam.containsKey(QUERY_SORT_DESC)) {
-			sort = reqParam.get(QUERY_SORT_DESC).stream().collect(Collectors.toSet());;
-			sortRevers = true;
-		}
-
-		return applyFilter(new MappingJacksonValue(entityService.query(filters, limit, sort, sortRevers)), reqParam);
+		var data = entityService.sortAndLimit(entityService.query(filters), getQueryParams(reqParam))
+				.collect(Collectors.toList());
+		return applyFilter(new MappingJacksonValue(data), reqParam);
 	}
 
 	public ResponseEntity<MappingJacksonValue> findById(@PathVariable K id, @RequestParam MultiValueMap<String, String> reqParam) {
@@ -137,4 +136,5 @@ public class EntityController<K, T extends Entity<K>> {
 		}
 		return ResponseEntity.notFound().build();
 	}
+	
 }

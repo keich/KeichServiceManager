@@ -1,11 +1,9 @@
 package ru.keich.mon.servicemanager.item;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -27,6 +25,7 @@ import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 
 import lombok.extern.java.Log;
 import ru.keich.mon.servicemanager.entity.EntityController;
+import ru.keich.mon.servicemanager.event.EventService;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -55,12 +54,14 @@ public class ItemController extends EntityController<String, Item> {
 	public static final String JSON_FILTER_FIELD = "parents";
 	
 	private final ItemService itemService;
+	private final EventService eventService;
 	
-	public ItemController(ItemService itemService) {
+	public ItemController(ItemService itemService, EventService eventService) {
 		super(itemService, new SimpleFilterProvider()
 				.addFilter(FILTER_NAME, SimpleBeanPropertyFilter
 						.serializeAllExcept(Set.of(Item.FIELD_EVENTSSTATUS, Item.FIELD_EVENTS))));
 		this.itemService = itemService;
+		this.eventService = eventService;
 	}
 
 	@Override
@@ -77,14 +78,18 @@ public class ItemController extends EntityController<String, Item> {
 	}
 
 	boolean isNeedEvents(MultiValueMap<String, String> reqParam) {
-		return Optional.ofNullable(reqParam.get(QUERY_PROPERTY))
-				.map(p -> p.stream().collect(Collectors.toSet()).contains(Item.FIELD_EVENTS))
-				.orElse(false);
+		if(reqParam.containsKey(QUERY_PROPERTY)) {
+			var property = reqParam.get(QUERY_PROPERTY);
+			if(property.contains(Item.FIELD_EVENTS)) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
-	Item fillEvents(Item item) {
+	Item fillEvents(Item item) { //TODO sort?
 		return new Item.Builder(item)
-				.setEvents(itemService.findAllEventsById(item.getId()))
+				.setEvents(itemService.findAllEventsById(item.getId()).toList())
 				.build();
 	}
 	
@@ -94,19 +99,17 @@ public class ItemController extends EntityController<String, Item> {
 				.toList();
 	}
 	
-	List<Item> fillEvents(List<Item> items, MultiValueMap<String, String> reqParam) {
-		if(isNeedEvents(reqParam)) {
-			return fillEvents(items);
-		}
-		return items;
-	}
-	
 	@Override
 	@GetMapping("/item/{id}")
 	@CrossOrigin(origins = "*")
 	public ResponseEntity<MappingJacksonValue> findById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
 		return itemService.findById(id)
-				.map(i -> fillEvents(Collections.singletonList(i), reqParam).get(0))
+				.map(item -> {
+					if(isNeedEvents(reqParam)) {
+						return fillEvents(item);
+					}
+					return item;
+				})
 				.map(MappingJacksonValue::new)
 				.map(value -> applyFilter(value, reqParam))
 				.orElse(ResponseEntity.notFound().build());
@@ -115,21 +118,29 @@ public class ItemController extends EntityController<String, Item> {
 	@GetMapping("/item/{id}/children")
 	@CrossOrigin(origins = "*")
 	ResponseEntity<MappingJacksonValue> findChildrenById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
-		return Optional.of(itemService.findChildrenById(id))
-				.map(l -> fillEvents(l, reqParam))
-				.map(MappingJacksonValue::new)
-				.map(value -> applyFilter(value, reqParam))
-				.orElse(ResponseEntity.notFound().build());
+		var opt = itemService.findChildrenById(id);
+		if(opt.isEmpty()) {
+			return ResponseEntity.notFound().build();
+		}
+		var data = itemService.sortAndLimit(opt.get(), getQueryParams(reqParam));
+		if(isNeedEvents(reqParam)) {
+			data = data.map(this::fillEvents);
+		}
+		return applyFilter(new MappingJacksonValue(data.collect(Collectors.toSet())), reqParam);
 	}
 	
 	@GetMapping("/item/{id}/parents")
 	@CrossOrigin(origins = "*")
 	ResponseEntity<MappingJacksonValue> findParentsById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
-		return Optional.of(itemService.findParentsById(id))
-				.map(l -> fillEvents(l, reqParam))
-				.map(MappingJacksonValue::new)
-				.map(value -> applyFilter(value, reqParam))
-				.orElse(ResponseEntity.notFound().build());
+		var opt = itemService.findParentsById(id);
+		if(opt.isEmpty()) {
+			return ResponseEntity.notFound().build();
+		}
+		var data = itemService.sortAndLimit(opt.get(), getQueryParams(reqParam));
+		if(isNeedEvents(reqParam)) {
+			data = data.map(this::fillEvents);
+		}
+		return applyFilter(new MappingJacksonValue(data.collect(Collectors.toSet())), reqParam);
 	}
 
 	@Override
@@ -142,7 +153,9 @@ public class ItemController extends EntityController<String, Item> {
 	@GetMapping("/item/{id}/events")
 	@CrossOrigin(origins = "*")
 	public ResponseEntity<MappingJacksonValue> findAllEventsById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
-		return applyFilter(new MappingJacksonValue(itemService.findAllEventsById(id)), reqParam);
+		var data = itemService.findAllEventsById(id);
+		data = eventService.sortAndLimit(data, getQueryParams(reqParam));
+		return applyFilter(new MappingJacksonValue(data), reqParam);
 	}
 	
 	@GetMapping("/item/{id}/events/history")
@@ -174,17 +187,15 @@ public class ItemController extends EntityController<String, Item> {
 		var parentId = parent.getId();
 		history.add(parentId);
 		var outItem = new Item.Builder(parent);
-		var l = parent.getChildrenIds().stream()
-				.filter(childId -> {
-					if (history.contains(childId)) {
-						log.warning("setChildren: circle found from " + parentId + " to " + childId);
+		var l = itemService.findChildren(parent).stream()
+				.filter(child -> {
+					if (history.contains(child.getId())) {
+						log.warning("setChildren: circle found from " + parentId + " to " + child.getId());
 						return false;
 					}
 					return true;
 				})
-				.map(itemService::findById)
-				.filter(Optional::isPresent)
-				.map(opt -> setChildren(opt.get(), history))
+				.map(child -> setChildren(child, history))
 				.toList();
 		outItem.setChildren(l);
 		history.remove(parentId);
@@ -207,17 +218,18 @@ public class ItemController extends EntityController<String, Item> {
 		var childId = child.getId();
 		history.add(childId);
 		var outItem = new Item.Builder(child);
-		var l = itemService.findParentsById(childId).stream()
-				.filter(parent -> {
-					if (history.contains(parent.getId())) {
-						log.warning("setParents: circle found from " + parent.getId() + " to " + childId);
-						return false;
-					}
-					return true;
-				})
-				.map(parent -> setParents(parent, history))
-				.toList();
-		outItem.setParents(l);
+		itemService.findParentsById(childId).ifPresent(stream -> {
+			var l = stream.filter(parent -> {
+				if (history.contains(parent.getId())) {
+					log.warning("setParents: circle found from " + parent.getId() + " to " + childId);
+					return false;
+				}
+				return true;
+			})
+			.map(parent -> setParents(parent, history))
+			.toList();
+			outItem.setParents(l);
+		});
 		history.remove(childId);
 		return outItem.build();
 	}

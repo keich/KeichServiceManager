@@ -121,16 +121,17 @@ public class EventService extends EntityService<String, Event>{
 	}
 	
 	@Override
-	public Comparator<Event> getSortComparator(String fieldName) {
+	public Comparator<Event> getSortComparator(String fieldName, boolean revers) {
+		final int mult = revers ? -1 : 1;
 		switch (fieldName) {
 		case Event.FIELD_ENDSON:
-			return (e1, e2) -> e1.getEndsOn().compareTo(e2.getEndsOn());
+			return (e1, e2) -> e1.getEndsOn().compareTo(e2.getEndsOn()) * mult;
 		case Event.FIELD_NODE:
-			return (e1, e2) -> e1.getNode().compareTo(e2.getNode());
+			return (e1, e2) -> e1.getNode().compareTo(e2.getNode()) * mult;
 		case Event.FIELD_SUMMARY:
-			return (e1, e2) -> e1.getSummary().compareTo(e2.getSummary());
+			return (e1, e2) -> e1.getSummary().compareTo(e2.getSummary()) * mult;
 		}
-		return super.getSortComparator(fieldName);
+		return super.getSortComparator(fieldName, revers);
 	}
 	
 }

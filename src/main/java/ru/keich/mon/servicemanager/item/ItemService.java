@@ -211,22 +211,38 @@ public class ItemService extends EntityService<String, Item> {
 				.map(Optional::get);
 	}
 	
-	public Set<String> findParentIdsById(String itemId) {
+	private Set<String> findParentIdsById(String itemId) {
 		return entityCache.keySetIndexEq(Item.FIELD_PARENTS, itemId);
 	}
-
-	public List<Item> findParentsById(String itemId) {
-		return findByIds(findParentIdsById(itemId));
+	
+	private Set<String> findParentIds(Item item) {
+		return findParentIdsById(item.getId());
 	}
 	
-	private List<Item> findChildren(Item parent) {
+	public Optional<Stream<Item>> findParentsById(String itemId) {
+		return findById(itemId)
+				.map(this::findParentIds)
+				.map(set -> {
+					return set.stream()
+							.map(this::findById)
+							.filter(Optional::isPresent)
+							.map(Optional::get);
+				});
+	}
+	
+	public List<Item> findChildren(Item parent) {
 		return findByIds(parent.getChildrenIds());
 	}
 	
-	public List<Item> findChildrenById(String id) {
+	public Optional<Stream<Item>> findChildrenById(String id) {
 		return findById(id)
-				.map(this::findChildren)
-				.orElse(Collections.emptyList());
+				.map(Item::getChildrenIds)
+				.map(set -> {
+					return set.stream()
+							.map(this::findById)
+							.filter(Optional::isPresent)
+							.map(Optional::get);
+				});
 	}
 	
 	private Set<Item> findAllChildrenById(String parentId) {
@@ -254,15 +270,14 @@ public class ItemService extends EntityService<String, Item> {
 		});
 	}
 
-	public List<Event> findAllEventsById(String id) {
+	public Stream<Event> findAllEventsById(String id) {
 		return findAllChildrenById(id).stream()
 				.map(Item::getEventsStatus)
 				.map(Map::keySet)
 				.flatMap(Set::stream)
 				.map(eventService::findById)
 				.filter(Optional::isPresent)
-				.map(Optional::get)
-				.toList();
+				.map(Optional::get);
 	}
 	
 	public List<Event> findAllHistoryEventsById(String id, Instant from, Instant to) {
@@ -277,12 +292,13 @@ public class ItemService extends EntityService<String, Item> {
 	}
 	
 	@Override
-	public Comparator<Item> getSortComparator(String fieldName) {
+	public Comparator<Item> getSortComparator(String fieldName, boolean revers) {
+		final int mult = revers ? -1 : 1;
 		switch (fieldName) {
 		case Item.FIELD_NAME:
-			return (e1, e2) -> e1.getName().compareTo(e2.getName());
+			return (e1, e2) -> e1.getName().compareTo(e2.getName()) * mult;
 		}
-		return super.getSortComparator(fieldName);
+		return super.getSortComparator(fieldName, revers);
 	}
 	
 }
