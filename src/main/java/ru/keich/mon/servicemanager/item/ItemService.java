@@ -23,6 +23,8 @@ import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.entity.EntityService;
 import ru.keich.mon.servicemanager.event.Event;
 import ru.keich.mon.servicemanager.event.EventService;
+import ru.keich.mon.servicemanager.query.Operator;
+import ru.keich.mon.servicemanager.query.QuerySort;
 import ru.keich.mon.servicemanager.query.predicates.Predicates;
 import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
 
@@ -292,13 +294,13 @@ public class ItemService extends EntityService<String, Item> {
 	}
 	
 	@Override
-	public Comparator<Item> getSortComparator(String fieldName, boolean revers) {
-		final int mult = revers ? -1 : 1;
-		switch (fieldName) {
+	public Comparator<Item> getSortComparator(QuerySort sort) {
+		final int mult = sort.getOperator() == Operator.SORTDESC ? -1 : 1;
+		switch (sort.getName()) {
 		case Item.FIELD_NAME:
 			return (e1, e2) -> e1.getName().compareTo(e2.getName()) * mult;
 		}
-		return super.getSortComparator(fieldName, revers);
+		return super.getSortComparator(sort);
 	}
 	
 }

@@ -18,6 +18,8 @@ import io.micrometer.core.instrument.MeterRegistry;
 import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.QueueThreadReader;
 import ru.keich.mon.servicemanager.item.Item;
+import ru.keich.mon.servicemanager.query.Operator;
+import ru.keich.mon.servicemanager.query.QuerySort;
 import ru.keich.mon.servicemanager.query.predicates.Predicates;
 import ru.keich.mon.servicemanager.query.predicates.QueryPredicate;
 import ru.keich.mon.servicemanager.store.IndexedHashMap;
@@ -129,9 +131,9 @@ public abstract class EntityService<K, T extends Entity<K>> {
 				.forEach(id -> entityCache.compute(id, (o) -> null));
 	}
 	
-	public Comparator<T> getSortComparator(String fieldName, boolean revers) {
-		final int mult = revers ? -1 : 1;
-		switch (fieldName) {
+	public Comparator<T> getSortComparator(QuerySort sort) {
+		final int mult = sort.getOperator() == Operator.SORTDESC ? -1 : 1;
+		switch (sort.getName()) {
 		case Entity.FIELD_STATUS:
 			return (e1, e2) -> e1.getStatus().compareTo(e2.getStatus()) * mult;
 		case Entity.FIELD_CREATEDON:
@@ -152,16 +154,14 @@ public abstract class EntityService<K, T extends Entity<K>> {
 		};
 	}
 	
-	public Stream<T> sortAndLimit(Stream<T> data, QueryParams queryParams) {
-		if(!queryParams.getSort().isEmpty()) {
-			var comparator = queryParams.getSort().stream()
-					.map(name -> getSortComparator(name, queryParams.isSortRevers()))
+	public Stream<T> sortAndLimit(Stream<T> data, List<QuerySort> sorts, long limit) {
+		if(!sorts.isEmpty()) {
+			var comparator = sorts.stream()
+					.map(s -> getSortComparator(s))
 					.reduce(Comparator::thenComparing)
 					.orElse((e1, e2) -> 0);
 			data = data.sorted(comparator);
 		}
-
-		var limit = queryParams.getLimit();
 		if (limit > 0) {
 			return data.limit(limit);
 		}

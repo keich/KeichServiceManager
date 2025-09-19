@@ -17,7 +17,7 @@ package ru.keich.mon.servicemanager.query;
  */
 
 public enum Operator {
-	NE, EQ, LT, GT, GE, CO, NC, NI, ERROR, ALL;
+	NE, EQ, LT, GT, GE, CO, NC, NI, ERROR, ALL, SORT, SORTDESC;
 	
 	public static Operator fromString(String str) {
         switch(str.toUpperCase()) {
@@ -37,6 +37,10 @@ public enum Operator {
             return NC;
         case "NI":
             return NI;
+        case "SORT":
+            return SORT;
+        case "SORTDESC":
+            return SORTDESC;
         }
         return ERROR;
 	}

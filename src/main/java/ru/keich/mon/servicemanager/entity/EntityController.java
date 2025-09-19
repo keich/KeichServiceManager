@@ -1,7 +1,9 @@
 package ru.keich.mon.servicemanager.entity;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
@@ -15,7 +17,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 
+import lombok.Getter;
+import ru.keich.mon.servicemanager.query.Operator;
+import ru.keich.mon.servicemanager.query.QuerySort;
 import ru.keich.mon.servicemanager.query.predicates.Predicates;
+import ru.keich.mon.servicemanager.query.predicates.QueryPredicate;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -38,8 +44,6 @@ public class EntityController<K, T extends Entity<K>> {
 	private EntityService<K, T> entityService;
 	public static final String QUERY_PROPERTY = "property";
 	public static final String QUERY_LIMIT = "limit";
-	public static final String QUERY_SORT_ASC = "sort";
-	public static final String QUERY_SORT_DESC = "sortdesc";
 	public static final String QUERY_ID = "id";
 	public static final String FILTER_NAME = "propertiesFilter";
 	
@@ -62,17 +66,15 @@ public class EntityController<K, T extends Entity<K>> {
 		return ResponseEntity.ok("ok");
 	}
 	
-	protected SimpleFilterProvider getJsonFilter(MultiValueMap<String, String> reqParam){
-		if(reqParam.containsKey(QUERY_PROPERTY)) {
-			var properties = reqParam.get(QUERY_PROPERTY).stream().collect(Collectors.toSet());
-			properties.add(QUERY_ID);
+	protected SimpleFilterProvider getJsonFilter(Set<String> properties){
+		if(!properties.isEmpty()) {
 			return new SimpleFilterProvider().addFilter(FILTER_NAME, SimpleBeanPropertyFilter.filterOutAllExcept(properties));
 		}
 		return jsonDefaultFilter;
 	}
 	
-	protected ResponseEntity<MappingJacksonValue> applyFilter(MappingJacksonValue data, MultiValueMap<String, String> reqParam) {
-		final SimpleFilterProvider jsonFilter = getJsonFilter(reqParam);
+	protected ResponseEntity<MappingJacksonValue> applyFilter(MappingJacksonValue data, Set<String> properties) {
+		final SimpleFilterProvider jsonFilter = getJsonFilter(properties);
 		data.setFilters(jsonFilter);
 		return ResponseEntity.ok(data);
 	}
@@ -81,39 +83,18 @@ public class EntityController<K, T extends Entity<K>> {
 		return find(reqParam, Entity::fieldValueOf);
 	}
 	
-	public QueryParams getQueryParams(MultiValueMap<String, String> reqParam) {
-		var queryParams = new QueryParams();
-		if (reqParam.containsKey(QUERY_LIMIT)) {
-			queryParams.setLimit(Long.valueOf(reqParam.get(QUERY_LIMIT).get(0)));
-		}
-		if (reqParam.containsKey(QUERY_SORT_ASC)) {
-			queryParams.setSort(reqParam.get(QUERY_SORT_ASC).stream().collect(Collectors.toSet()));
-		} else if (reqParam.containsKey(QUERY_SORT_DESC)) {
-			queryParams.setSort(reqParam.get(QUERY_SORT_DESC).stream().collect(Collectors.toSet()));
-			queryParams.setSortRevers(true);
-		}
-		return queryParams;
-	}
-	
 	public <C> ResponseEntity<MappingJacksonValue> find(MultiValueMap<String, String> reqParam, BiFunction<String, String, Object> valueConverter) {
-		var filters = reqParam.entrySet().stream()
-				.filter(p -> !p.getKey().toLowerCase().equals(QUERY_PROPERTY))
-				.filter(p -> !p.getKey().toLowerCase().equals(QUERY_LIMIT))
-				.filter(p -> !p.getKey().toLowerCase().equals(QUERY_SORT_ASC))
-				.filter(p -> !p.getKey().toLowerCase().equals(QUERY_SORT_DESC))
-				.flatMap(param -> {
-					return param.getValue().stream()
-							.map(value -> Predicates.fromParam(param.getKey(), value, valueConverter));
-				}).collect(Collectors.toList());
-		var data = entityService.sortAndLimit(entityService.query(filters), getQueryParams(reqParam))
+		var qp = new QueryParse(reqParam, valueConverter);		
+		var data = entityService.sortAndLimit(entityService.query(qp.getFilters()), qp.getSorts(), qp.getLimit())
 				.collect(Collectors.toList());
-		return applyFilter(new MappingJacksonValue(data), reqParam);
+		return applyFilter(new MappingJacksonValue(data), qp.getProperties());
 	}
 
-	public ResponseEntity<MappingJacksonValue> findById(@PathVariable K id, @RequestParam MultiValueMap<String, String> reqParam) {
+	public ResponseEntity<MappingJacksonValue> findById(@PathVariable K id, @RequestParam MultiValueMap<String, String> reqParam, BiFunction<String, String, Object> valueConverter) {
+		var qp = new QueryParse(reqParam, valueConverter);	
 		return entityService.findById(id)
 				.map(MappingJacksonValue::new)
-				.map(value -> applyFilter(value, reqParam))
+				.map(value -> applyFilter(value, qp.getProperties()))
 				.orElse(ResponseEntity.notFound().build());
 	}
 
@@ -135,6 +116,51 @@ public class EntityController<K, T extends Entity<K>> {
 			}
 		}
 		return ResponseEntity.notFound().build();
+	}
+	
+	@Getter
+	public static class QueryParse {
+		private final List<QueryPredicate> filters;
+		private final List<QuerySort> sorts;
+		private final Set<String> properties;
+		private final long limit;
+		
+		public QueryParse(MultiValueMap<String, String> reqParam, BiFunction<String, String, Object> valueConverter) {	
+			if (reqParam.containsKey(QUERY_LIMIT)) {
+				limit = Long.valueOf(reqParam.get(QUERY_LIMIT).get(0));
+			} else {
+				limit = -1;
+			}
+			
+			if(reqParam.containsKey(QUERY_PROPERTY)) {
+				properties = reqParam.get(QUERY_PROPERTY).stream().collect(Collectors.toSet());
+				properties.add(QUERY_ID);
+			} else {
+				properties = Collections.emptySet();
+			}
+			
+			var filteredPrams = reqParam.entrySet().stream()
+					.filter(p -> !p.getKey().toLowerCase().equals(QUERY_PROPERTY))
+					.filter(p -> !p.getKey().toLowerCase().equals(QUERY_LIMIT))
+					.collect(Collectors.toList());
+			
+			this.filters = filteredPrams.stream()
+					.flatMap(param -> {
+						return param.getValue().stream()
+								.map(value -> Predicates.fromParam(param.getKey(), value, valueConverter));
+					})
+					.filter(p -> p.getOperator() != Operator.ERROR)
+					.collect(Collectors.toList());
+			
+			this.sorts = filteredPrams.stream()
+					.flatMap(param -> {
+						return param.getValue().stream().map(value -> QuerySort.fromParam(param.getKey(), value));
+					})
+					.filter(s -> s.getOperator() != Operator.ERROR)
+					.sorted(QuerySort::compareTo)
+					.collect(Collectors.toList());
+		}
+		
 	}
 	
 }

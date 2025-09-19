@@ -30,6 +30,8 @@ import io.micrometer.core.instrument.MeterRegistry;
 import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.entity.EntityService;
 import ru.keich.mon.servicemanager.item.ItemService;
+import ru.keich.mon.servicemanager.query.Operator;
+import ru.keich.mon.servicemanager.query.QuerySort;
 import ru.keich.mon.servicemanager.query.predicates.Predicates;
 import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
 
@@ -121,9 +123,9 @@ public class EventService extends EntityService<String, Event>{
 	}
 	
 	@Override
-	public Comparator<Event> getSortComparator(String fieldName, boolean revers) {
-		final int mult = revers ? -1 : 1;
-		switch (fieldName) {
+	public Comparator<Event> getSortComparator(QuerySort sort) {
+		final int mult = sort.getOperator() == Operator.SORTDESC ? -1 : 1;
+		switch (sort.getName()) {
 		case Event.FIELD_ENDSON:
 			return (e1, e2) -> e1.getEndsOn().compareTo(e2.getEndsOn()) * mult;
 		case Event.FIELD_NODE:
@@ -131,7 +133,7 @@ public class EventService extends EntityService<String, Event>{
 		case Event.FIELD_SUMMARY:
 			return (e1, e2) -> e1.getSummary().compareTo(e2.getSummary()) * mult;
 		}
-		return super.getSortComparator(fieldName, revers);
+		return super.getSortComparator(sort);
 	}
 	
 }

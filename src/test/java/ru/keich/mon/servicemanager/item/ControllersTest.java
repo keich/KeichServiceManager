@@ -71,6 +71,21 @@ public class ControllersTest {
 		return result.getBody();
 	}
 	
+	private  List<Item> itemGetBySourceAndSortBySourceKey(String source, boolean order, int limit) {
+		String orderStr = "";
+		if(order) {
+			orderStr = "DESC";
+		}
+		String limitStr = "";
+		if(limit > 0) {
+			limitStr = "&limit=" + limit;
+		}
+		var result = restTemplate.exchange("/api/v1/item?source=eq:" + source + "&sourceKey=sort" + orderStr + ":1" + limitStr,
+				HttpMethod.GET, null, new ParameterizedTypeReference<List<Item>>() {});
+		assertEquals(HttpStatus.OK, result.getStatusCode());
+		return result.getBody();
+	}
+	
 	private  List<Item> itemGetBySourceEqual(String source) {
 		var result = restTemplate.exchange("/api/v1/item?source=eq:" + source,
 				HttpMethod.GET, null, new ParameterizedTypeReference<List<Item>>() {});
@@ -889,9 +904,78 @@ public class ControllersTest {
 	}
 	
 	
+	@Test
+	public void itemSortAndLimit()  throws IOException, InterruptedException {
+		System.out.println("DEBUG1 " );
+		var json = """
+				 [{
+			        "id": "itemSort1",
+			        "source": "src_itemSort",
+			        "sourceKey": "src_key_itemSorts1",
+			        "fields": {
+			            "name": "Hello",
+			            "description": "World"
+			        }
+			    }]
+			""";
+		var items1  = mapper.readValue(json, Item[].class);
+		entityAdd("/item", items1);
+		
+		json = """
+				 [{
+			        "id": "itemSort3",
+			        "source": "src_itemSort",
+			        "sourceKey": "src_key_itemSorts3",
+			        "fields": {
+			            "name": "Hello",
+			            "description": "World"
+			        }
+			    }]
+			""";
+		var items3  = mapper.readValue(json, Item[].class);
+		entityAdd("/item", items3);
+		
+		json = """
+				 [{
+			        "id": "itemSort2",
+			        "source": "src_itemSort",
+			        "sourceKey": "src_key_itemSorts2",
+			        "fields": {
+			            "name": "Hello",
+			            "description": "World"
+			        }
+			    }]
+			""";
+		var items2  = mapper.readValue(json, Item[].class);
+		entityAdd("/item", items2);
+		
+		var ret1 = itemGetBySourceAndSortBySourceKey("src_itemSort", false, 0);
+		
+		assertEquals(3, ret1.size());
+		
+		assertEquals(items1[0].getSourceKey(), ret1.get(0).getSourceKey());
+		assertEquals(items2[0].getSourceKey(), ret1.get(1).getSourceKey());
+		assertEquals(items3[0].getSourceKey(), ret1.get(2).getSourceKey());
+		
+		
+		var ret2 = itemGetBySourceAndSortBySourceKey("src_itemSort", true, 0);
+		
+		assertEquals(3, ret2.size());
+		
+		assertEquals(items3[0].getSourceKey(), ret2.get(0).getSourceKey());
+		assertEquals(items2[0].getSourceKey(), ret2.get(1).getSourceKey());
+		assertEquals(items1[0].getSourceKey(), ret2.get(2).getSourceKey());
+		
+		var ret3 = itemGetBySourceAndSortBySourceKey("src_itemSort", true, 1);
+		
+		assertEquals(1, ret3.size());
+		
+		assertEquals(items3[0].getSourceKey(), ret2.get(0).getSourceKey());
+
+	}
+	
 	// TODO test update not clear internal fields
 	// TODO search test
-	// TODO check query params
 	// TODO check tree
 
 }

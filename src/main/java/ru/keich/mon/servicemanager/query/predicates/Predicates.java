@@ -26,31 +26,36 @@ public class Predicates {
 		var arr = value.split(":", 2);
 		if (arr.length == 2) {
 			var operator = Operator.fromString(arr[0]);
-			var objValue = valueConverter.apply(name, arr[1]);
 			switch (operator) {
+			case EQ:
+				return equal(name, valueConverter.apply(name, arr[1]));
 			case NE:
-				return notEqual(name, objValue);
+				return notEqual(name, valueConverter.apply(name, arr[1]));
 			case LT:
-				return lessThan(name, objValue);
+				return lessThan(name, valueConverter.apply(name, arr[1]));
 			case GT:
-				return greaterThan(name, objValue);
+				return greaterThan(name, valueConverter.apply(name, arr[1]));
 			case GE:
-				return greaterEqual(name, objValue);
+				return greaterEqual(name, valueConverter.apply(name, arr[1]));
 			case CO:
-				return contain(name, objValue);
+				return contain(name, valueConverter.apply(name, arr[1]));
 			case NC:
-				return notContain(name, objValue);
+				return notContain(name, valueConverter.apply(name, arr[1]));
 			case NI:
-				return notInclude(name, objValue);
+				return notInclude(name, valueConverter.apply(name, arr[1]));
 			default:
-				return equal(name, objValue);
+				return error(name, value);
 			}
 		} else {
 			return equal(name, valueConverter.apply(name, value));
 		}
 	}
 	
-	public static  QueryPredicate equal(String name, Object value) {
+	public static QueryPredicate error(String name, Object value) {
+		return new ErrorPredicate(name, value);
+	}
+	
+	public static QueryPredicate equal(String name, Object value) {
 		return new EqualPredicate(name, value);
 	}
 	
@@ -58,19 +63,19 @@ public class Predicates {
 		return new NotEqualPredicate(name, value);
 	}
 	
-	public static  QueryPredicate greaterEqual(String name, Object value) {
+	public static QueryPredicate greaterEqual(String name, Object value) {
 		return new GreaterEqualPredicate(name, value);
 	}
 	
-	public static  QueryPredicate greaterThan(String name, Object value) {
+	public static QueryPredicate greaterThan(String name, Object value) {
 		return new GreaterThanPredicate(name, value);
 	}
 	
-	public static  QueryPredicate lessThan(String name, Object value) {
+	public static QueryPredicate lessThan(String name, Object value) {
 		return new LessThanPredicate(name, value);
 	}
 	
-	public static  QueryPredicate contain(String name, Object value) {
+	public static QueryPredicate contain(String name, Object value) {
 		return new ContainPredicate(name, value);
 	}
 	
