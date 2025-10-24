@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.Getter;
-import ru.keich.mon.servicemanager.BaseStatus;
+import ru.keich.mon.indexedhashmap.BaseStatus;
 import ru.keich.mon.servicemanager.event.Event;
 
 /*

@@ -27,13 +27,13 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import ru.keich.mon.indexedhashmap.IndexedHashMap.IndexType;
+import ru.keich.mon.indexedhashmap.query.Operator;
+import ru.keich.mon.indexedhashmap.query.QuerySort;
+import ru.keich.mon.indexedhashmap.query.predicates.Predicates;
 import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.entity.EntityService;
 import ru.keich.mon.servicemanager.item.ItemService;
-import ru.keich.mon.servicemanager.query.Operator;
-import ru.keich.mon.servicemanager.query.QuerySort;
-import ru.keich.mon.servicemanager.query.predicates.Predicates;
-import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
 
 @Service
 public class EventService extends EntityService<String, Event>{

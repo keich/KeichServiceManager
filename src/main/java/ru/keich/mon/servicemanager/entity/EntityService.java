@@ -15,15 +15,15 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import ru.keich.mon.indexedhashmap.IndexedHashMap;
+import ru.keich.mon.indexedhashmap.IndexedHashMap.IndexType;
+import ru.keich.mon.indexedhashmap.query.Operator;
+import ru.keich.mon.indexedhashmap.query.QuerySort;
+import ru.keich.mon.indexedhashmap.query.predicates.Predicates;
+import ru.keich.mon.indexedhashmap.query.predicates.QueryPredicate;
 import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.QueueThreadReader;
 import ru.keich.mon.servicemanager.item.Item;
-import ru.keich.mon.servicemanager.query.Operator;
-import ru.keich.mon.servicemanager.query.QuerySort;
-import ru.keich.mon.servicemanager.query.predicates.Predicates;
-import ru.keich.mon.servicemanager.query.predicates.QueryPredicate;
-import ru.keich.mon.servicemanager.store.IndexedHashMap;
-import ru.keich.mon.servicemanager.store.IndexedHashMap.IndexType;
 
 /*
  * Copyright 2024 the original author or authors.

@@ -7,7 +7,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.function.Consumer;
 
 import io.micrometer.core.instrument.Counter;
-import ru.keich.mon.servicemanager.store.IndexedHashMap.EmptyCounter;
+import ru.keich.mon.indexedhashmap.IndexedHashMap.EmptyCounter;
 
 public class HistoryQueueImp<T> implements HistoryQueue<T> {
 	private BlockingQueue<T> queue = new LinkedBlockingDeque<T>();

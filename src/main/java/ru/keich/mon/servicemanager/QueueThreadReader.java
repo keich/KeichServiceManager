@@ -8,7 +8,7 @@ import java.util.function.Consumer;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
-import ru.keich.mon.servicemanager.store.IndexedHashMap.EmptyCounter;
+import ru.keich.mon.indexedhashmap.IndexedHashMap.EmptyCounter;
 
 /*
  * Copyright 2024 the original author or authors.

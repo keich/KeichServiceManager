@@ -13,9 +13,9 @@ import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import lombok.Getter;
-import ru.keich.mon.servicemanager.BaseStatus;
+import ru.keich.mon.indexedhashmap.BaseEntity;
+import ru.keich.mon.indexedhashmap.BaseStatus;
 import ru.keich.mon.servicemanager.SourceType;
-import ru.keich.mon.servicemanager.store.BaseEntity;
 
 /*
  * Copyright 2024 the original author or authors.

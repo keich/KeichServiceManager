@@ -18,10 +18,10 @@ import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 
 import lombok.Getter;
-import ru.keich.mon.servicemanager.query.Operator;
-import ru.keich.mon.servicemanager.query.QuerySort;
-import ru.keich.mon.servicemanager.query.predicates.Predicates;
-import ru.keich.mon.servicemanager.query.predicates.QueryPredicate;
+import ru.keich.mon.indexedhashmap.query.Operator;
+import ru.keich.mon.indexedhashmap.query.QuerySort;
+import ru.keich.mon.indexedhashmap.query.predicates.Predicates;
+import ru.keich.mon.indexedhashmap.query.predicates.QueryPredicate;
 
 /*
  * Copyright 2024 the original author or authors.

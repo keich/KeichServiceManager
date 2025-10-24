@@ -26,7 +26,7 @@ import org.springframework.http.MediaType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import ru.keich.mon.servicemanager.BaseStatus;
+import ru.keich.mon.indexedhashmap.BaseStatus;
 import ru.keich.mon.servicemanager.entity.Entity;
 import ru.keich.mon.servicemanager.event.Event;
 import ru.keich.mon.servicemanager.event.Event.EventType;

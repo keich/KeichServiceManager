@@ -29,7 +29,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.extern.java.Log;
-import ru.keich.mon.servicemanager.BaseStatus;
+import ru.keich.mon.indexedhashmap.BaseStatus;
 import ru.keich.mon.servicemanager.event.Event;
 import ru.keich.mon.servicemanager.event.EventHistoryService;
 import ru.keich.mon.servicemanager.history.HistoryQueue;
