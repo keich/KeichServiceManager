@@ -1,0 +1,17 @@
+[Unit]
+Description=KeichServiceManager
+After=network.target
+
+[Service]
+SuccessExitStatus=143
+User=ksm
+Group=ksm
+
+Type=simple
+
+ExecStart=/usr/bin/java -jar /home/ksm/bin/KeichServiceManager-0.0.2-exec.jar --spring.config.location=file:///home/ksm/etc/ksm.properties
+
+ExecStop=/bin/kill -15 $MAINPID
+
+[Install]
+WantedBy=multi-user.target
