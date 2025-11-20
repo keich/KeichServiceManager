@@ -13,7 +13,6 @@ import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import lombok.Getter;
-import ru.keich.mon.indexedhashmap.BaseEntity;
 import ru.keich.mon.indexedhashmap.BaseStatus;
 import ru.keich.mon.servicemanager.SourceType;
 
@@ -35,7 +34,7 @@ import ru.keich.mon.servicemanager.SourceType;
 
 @Getter
 @JsonFilter("propertiesFilter")
-public class Entity<K> extends BaseEntity<K> {
+public class Entity<K> {
 	
 	public static final String FIELD_VERSION = "version";
 	public static final String FIELD_CREATEDON = "createdOn";
@@ -47,6 +46,9 @@ public class Entity<K> extends BaseEntity<K> {
 	public static final String FIELD_FIELDS = "fields";
 	public static final String FIELD_FROMHISTORY = "fromHistory";
 	public static final String FIELD_STATUS = "status";
+	public static final String FIELD_ID = "id";
+
+	private final K id;
 	
 	private final Long version;
 	private final String source;
@@ -73,7 +75,8 @@ public class Entity<K> extends BaseEntity<K> {
 			Instant updatedOn,
 			Instant deletedOn,
 			BaseStatus status) {
-		super(id);
+		
+		this.id = id;
 		this.version = version;
 		this.source = source;
 		this.sourceKey = sourceKey;
