@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -80,7 +81,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	public abstract Optional<T> deleteById(K entityId);
 	
 	public Optional<T> findById(K id) {
-		return entityCache.get(id);
+		return Optional.ofNullable(entityCache.get(id));
 	}
 	
 	public List<T> findByIds(Set<K> ids) {
@@ -118,8 +119,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 				.orElse(Collections.emptySet())
 				.stream()
 				.map(entityCache::get)
-				.filter(Optional::isPresent)
-				.map(Optional::get);
+				.filter(Objects::nonNull);
 	}
 	
 	@Value("${entity.delete.secondsold:30}") Long seconds;
@@ -127,8 +127,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	@Scheduled(fixedRateString = "${entity.delete.fixedrate:60}", timeUnit = TimeUnit.SECONDS)
 	public void deleteOldScheduled() {
 		var predicate = Predicates.lessThan(Entity.FIELD_DELETEDON, Instant.now().minusSeconds(seconds));
-		entityCache.keySet(predicate)
-				.forEach(id -> entityCache.compute(id, (o) -> null));
+		entityCache.keySet(predicate).forEach(entityCache::remove);
 	}
 	
 	public Comparator<T> getSortComparator(QuerySort sort) {

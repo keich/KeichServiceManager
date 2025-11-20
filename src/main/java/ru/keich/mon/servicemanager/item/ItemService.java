@@ -75,7 +75,7 @@ public class ItemService extends EntityService<String, Item> {
 
 	@Override
 	public void addOrUpdate(Item item) {
-		entityCache.compute(item.getId(), (oldItem) -> {
+		entityCache.compute(item.getId(), (k, oldItem) -> {
 			var eventsStatus = item.getEventsStatus();
 			var status = item.getStatus();
 			var aggStatus = item.getAggStatus();
@@ -105,49 +105,41 @@ public class ItemService extends EntityService<String, Item> {
 	
 	@Override
 	public Optional<Item> deleteById(String itemId) {
-		return entityCache.compute(itemId,  oldItem -> {
-			if(oldItem == null) {
-				return oldItem;
-			}
-			if (oldItem.isDeleted()) {
-				return oldItem;
+		return Optional.ofNullable(entityCache.computeIfPresent(itemId,  (k, item) -> {
+			if (item.isDeleted()) {
+				return item;
 			}
 			entityChangedQueue.add(new QueueInfo<String>(itemId, QueueInfo.QueueInfoType.UPDATE));
-			return new Item.Builder(oldItem)
+			return new Item.Builder(item)
 					.version(getNextVersion())
 					.fromHistory(Collections.singleton(nodeName))
 					.updatedOn(Instant.now())
 					.deletedOn(Instant.now())
 					.build();
-		});
+		}));
 	}
 	
 	@Override
 	protected void queueRead(QueueInfo<String> info) {
 		switch(info.getType()) {
 		case UPDATE:
-			entityCache.compute(info.getId(), oldItem -> {
-				if(oldItem == null) {
-					return oldItem;
-				}
+			entityCache.computeIfPresent(info.getId(), (id, item) -> {
 				var newStatus = BaseStatus.CLEAR;
-				if(oldItem.isNotDeleted()) {
-					newStatus = calculateStatus(oldItem);
+				if(item.isNotDeleted()) {
+					newStatus = calculateStatus(item);
 				}
-				if(oldItem.getStatus() == newStatus) {
-					return oldItem;
+				if(item.getStatus() != newStatus) {
+					entityChangedQueue.add(new QueueInfo<String>(id, QueueInfo.QueueInfoType.UPDATED));
+					return new Item.Builder(item).status(newStatus).build();
 				}
-				entityChangedQueue.add(new QueueInfo<String>(info.getId(), QueueInfo.QueueInfoType.UPDATED));
-				return new Item.Builder(oldItem).status(newStatus).build();
+				return item;
 			});
 			break;
 		case UPDATED:
-			entityCache.compute(info.getId(), item -> {
-				if (item != null) {
-					itemHistoryService.add(item);
-					findParentIdsById(info.getId())
-							.forEach(id -> entityChangedQueue.add(new QueueInfo<String>(id, QueueInfo.QueueInfoType.UPDATE)));
-				}
+			entityCache.computeIfPresent(info.getId(), (id, item) -> {
+				itemHistoryService.add(item);
+				findParentIdsById(info.getId())
+						.forEach(parentId -> entityChangedQueue.add(new QueueInfo<String>(parentId, QueueInfo.QueueInfoType.UPDATE)));
 				return item;
 			});
 			break;
@@ -157,10 +149,7 @@ public class ItemService extends EntityService<String, Item> {
 	}
 	
 	public void itemUpdateEventsStatus(String itemId, Consumer<Map<String, BaseStatus>> s) {
-		entityCache.compute(itemId,item -> {
-			if(item == null) {
-				return item;
-			}
+		entityCache.computeIfPresent(itemId, (k, item) -> {
 			entityChangedQueue.add(new QueueInfo<String>(itemId, QueueInfo.QueueInfoType.UPDATE));
 			return new Item.Builder(item).eventsStatusUpdate(s).build();
 		});
