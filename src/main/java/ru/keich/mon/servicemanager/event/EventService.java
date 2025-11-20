@@ -61,10 +61,9 @@ public class EventService extends EntityService<String, Event>{
 	public void addOrUpdate(Event event) {
 		entityCache.compute(event.getId(), (k, oldEvent) -> {
 			var createdOn = event.getCreatedOn();
-			Instant deletedOn = null;
+			Instant deletedOn = event.isDeleted() ? Instant.now() : null;
 			if(oldEvent != null) {
 				createdOn = oldEvent.getCreatedOn();
-				deletedOn = event.isDeleted() ? Instant.now() : null;
 			}
 			entityChangedQueue.add(new QueueInfo<String>(event.getId(), QueueInfo.QueueInfoType.UPDATE));
 			return new Event.Builder(event)

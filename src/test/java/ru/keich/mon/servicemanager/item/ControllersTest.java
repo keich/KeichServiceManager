@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -238,6 +239,23 @@ public class ControllersTest {
 		assertNotNull(retEntity1.getDeletedOn());
 		var retEntity2 = entityGetById(path, entity2.getId().toString(), entityType);
 		assertNull(retEntity2.getDeletedOn());
+	}
+	
+	private <T extends Entity<String>> void entityDeleteLogic(String path, T entity,T entityDeleted,Class<T> entityType) throws IOException {		
+		entityAddAndGet(path, entityDeleted.getId(), entityDeleted, entityType, i -> {
+			assertNotNull(i.getDeletedOn());
+		});
+		
+		entityAddAndGet(path, entity.getId(), entity, entityType, i -> {
+			assertNull(i.getDeletedOn());
+		});
+
+		entityAddAndGet(path, entityDeleted.getId(), entityDeleted, entityType, i -> {
+			assertNotNull(i.getDeletedOn());
+		});
+		entityAddAndGet(path, entity.getId(), entity, entityType, i -> {
+			assertNull(i.getDeletedOn());
+		});
 	}
 
 	@Test
@@ -973,6 +991,41 @@ public class ControllersTest {
 		assertEquals(items3[0].getSourceKey(), ret2.get(0).getSourceKey());
 
 	}
+	
+	@Test
+	public void eventDeleteLogic() throws IOException {		
+		var json = """
+				    {
+				    	"id": "id_eventDeleteLogic",
+				        "type": "PROBLEM",
+				        "status": "WARNING",
+				        "source": "source_eventDeleteLogic",
+				        "sourceKey": "sourceKey_eventDeleteLogic"
+				    }
+				""";
+		var event = mapper.readValue(json, Event.class);
+		var eventDeleted = new Event.Builder(event).deletedOn(Instant.now()).build();
+		entityDeleteLogic("/event", event, eventDeleted, Event.class);
+	}
+	
+	@Test
+	public void itemDeleteLogic() throws IOException {	
+		var json = """
+			    {
+			    	"id": "id_itemDeleteLogic",
+			        "source": "source_itemDeleteLogic",
+			        "sourceKey": "sourceKey_itemDeleteLogic",
+			        "fields": {
+			            "name": "Hello",
+			            "description": "World"
+			        }
+			    }
+			""";
+		var item = mapper.readValue(json, Item.class);
+		var itemDeleted = new Item.Builder(item).deletedOn(Instant.now()).build();
+		entityDeleteLogic("/item", item, itemDeleted, Item.class);
+	}
+	
 	
 	// TODO test update not clear internal fields
 	// TODO search test

@@ -80,13 +80,12 @@ public class ItemService extends EntityService<String, Item> {
 			var status = item.getStatus();
 			var aggStatus = item.getAggStatus();
 			var createdOn = item.getCreatedOn();
-			Instant deletedOn = null;
+			Instant deletedOn = item.isDeleted() ? Instant.now() : null;
 			if(oldItem != null) {
 				eventsStatus = oldItem.getEventsStatus();
 				status = oldItem.getStatus();
 				aggStatus = oldItem.getAggStatus();
 				createdOn = oldItem.getCreatedOn();
-				deletedOn = item.isDeleted() ? Instant.now() : null;
 			}
 			entityChangedQueue.add(new QueueInfo<String>(item.getId(), QueueInfo.QueueInfoType.UPDATE));
 			return new Item.Builder(item)
