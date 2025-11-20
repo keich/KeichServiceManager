@@ -188,7 +188,9 @@ public class ItemService extends EntityService<String, Item> {
 	
 	private Stream<Map.Entry<Item, ItemFilter>> findFiltersByEqualFields(Map<String, String> fields) {
 		return fields.entrySet().stream()
-				.flatMap(e -> findByIds(entityCache.keySetIndexEq(Item.FIELD_FILTERS_EQL, e)).stream())
+				.map(e -> entityCache.keySetIndexEq(Item.FIELD_FILTERS_EQL, e))
+				.map(this::findByIds)
+				.flatMap(List::stream)
 				.filter(Item::isNotDeleted)
 				.map(item -> {
 					return item.getFilters().entrySet().stream()
