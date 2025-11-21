@@ -26,6 +26,8 @@ public class EntityReplicationState {
 	private Long minVersion = Long.MAX_VALUE;
 	private Long added = 0L;
 	private Long deleted = 0L;
+	private Instant startTime = Instant.now();
+	private Instant endTime = Instant.now();
 	
 	public EntityReplicationState() {
 		setFirstRunTrue();
@@ -61,10 +63,12 @@ public class EntityReplicationState {
 
 	public void setActiveTrue() {
 		this.active = true;
+		startTime = Instant.now();
 	}
 
 	public void setActiveFalse() {
 		this.active = false;
+		endTime = Instant.now();
 	}
 	
 	public void updateVersion(Long version) {
@@ -108,8 +112,14 @@ public class EntityReplicationState {
 	
 	@Override
 	public String toString() {
+		final Instant time;
+		if(active) {
+			time = Instant.now();
+		} else {
+			time = endTime;
+		}
 		return " minVersion: " + minVersion + " maxVersion: " + maxVersion + " added: " + added + " deleted: "
-				+ deleted;
+				+ deleted + " time spent " + (time.toEpochMilli() - startTime.toEpochMilli()) + " milliseconds";
 	}
 	
 }
