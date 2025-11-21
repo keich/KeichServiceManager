@@ -4,7 +4,6 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -81,7 +80,7 @@ public class Entity<K> {
 		this.source = source;
 		this.sourceKey = sourceKey;
 		this.sourceType = sourceType == null ? SourceType.OTHER : (sourceType);
-		this.fromHistory = Optional.ofNullable(fromHistory).map(Collections::unmodifiableSet).orElse(Collections.emptySet());
+		this.fromHistory = fromHistory == null ? Collections.emptySet() : Collections.unmodifiableSet(fromHistory);
 		this.createdOn = createdOn == null ? Instant.now() : createdOn;
 		this.updatedOn = updatedOn == null ? Instant.now() : updatedOn;
 		this.deletedOn = deletedOn;
