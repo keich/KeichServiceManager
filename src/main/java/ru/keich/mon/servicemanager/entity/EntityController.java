@@ -19,9 +19,9 @@ import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 
 import lombok.Getter;
 import ru.keich.mon.indexedhashmap.query.Operator;
-import ru.keich.mon.indexedhashmap.query.QuerySort;
 import ru.keich.mon.indexedhashmap.query.predicates.Predicates;
 import ru.keich.mon.indexedhashmap.query.predicates.QueryPredicate;
+import ru.keich.mon.servicemanager.QuerySort;
 
 /*
  * Copyright 2024 the original author or authors.
