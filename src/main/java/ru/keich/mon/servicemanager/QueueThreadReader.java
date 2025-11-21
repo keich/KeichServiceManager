@@ -1,6 +1,5 @@
 package ru.keich.mon.servicemanager;
 
-import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
@@ -58,7 +57,11 @@ public class QueueThreadReader<K> {
 		var thread = new Thread(() -> {
 			try {
 				while (true) {
-					Optional.ofNullable(queue.poll(POLL_SECONDS, TimeUnit.SECONDS)).ifPresent(this::remove);
+					var entityId = queue.poll(POLL_SECONDS, TimeUnit.SECONDS);
+					if(entityId != null) {
+						metricRemoved.increment();
+						consumer.accept(entityId);
+					}
 				}
 			} catch (Exception v) {
 				v.printStackTrace();
@@ -71,11 +74,6 @@ public class QueueThreadReader<K> {
 	public void add(K value) {
 		metricAdded.increment();
 		queue.add(value);
-	}
-
-	public void remove(K value) {
-		metricRemoved.increment();
-		consumer.accept(value);
 	}
 
 }
