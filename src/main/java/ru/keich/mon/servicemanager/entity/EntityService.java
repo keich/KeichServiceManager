@@ -21,7 +21,7 @@ import ru.keich.mon.indexedhashmap.IndexedHashMap.IndexType;
 import ru.keich.mon.indexedhashmap.query.Operator;
 import ru.keich.mon.indexedhashmap.query.predicates.Predicates;
 import ru.keich.mon.indexedhashmap.query.predicates.QueryPredicate;
-import ru.keich.mon.servicemanager.QuerySort;
+import ru.keich.mon.servicemanager.query.QuerySort;
 import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.QueueThreadReader;
 import ru.keich.mon.servicemanager.item.Item;

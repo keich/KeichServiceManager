@@ -1,4 +1,4 @@
-package ru.keich.mon.servicemanager;
+package ru.keich.mon.servicemanager.query;
 
 import ru.keich.mon.indexedhashmap.query.Operator;
 

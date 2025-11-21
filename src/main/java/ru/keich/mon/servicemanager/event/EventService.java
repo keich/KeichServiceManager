@@ -30,7 +30,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import ru.keich.mon.indexedhashmap.IndexedHashMap.IndexType;
 import ru.keich.mon.indexedhashmap.query.Operator;
 import ru.keich.mon.indexedhashmap.query.predicates.Predicates;
-import ru.keich.mon.servicemanager.QuerySort;
+import ru.keich.mon.servicemanager.query.QuerySort;
 import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.entity.EntityService;
 import ru.keich.mon.servicemanager.item.ItemService;
