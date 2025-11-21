@@ -57,10 +57,10 @@ public class QueueThreadReader<K> {
 		var thread = new Thread(() -> {
 			try {
 				while (true) {
-					var entityId = queue.poll(POLL_SECONDS, TimeUnit.SECONDS);
-					if(entityId != null) {
+					var info = queue.poll(POLL_SECONDS, TimeUnit.SECONDS);
+					if(info != null) {
 						metricRemoved.increment();
-						consumer.accept(entityId);
+						consumer.accept(info);
 					}
 				}
 			} catch (Exception v) {
