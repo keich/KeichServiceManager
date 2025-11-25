@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -207,7 +208,7 @@ public class ItemHistoryService {
 		return Collections.emptyList();
 	}
 	
-	public List<Event> getEventsByItemId(List<String> itemIds, Instant from, Instant to) {
+	public List<Event> getEventsByItemId(Set<String> itemIds, Instant from, Instant to) {
 		if (itemIds.size() == 0 || !enable) {
 			return Collections.emptyList();
 		}

@@ -4,12 +4,14 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -22,11 +24,13 @@ import ru.keich.mon.indexedhashmap.BaseStatus;
 import ru.keich.mon.indexedhashmap.IndexedHashMap.IndexType;
 import ru.keich.mon.indexedhashmap.query.Operator;
 import ru.keich.mon.indexedhashmap.query.predicates.Predicates;
-import ru.keich.mon.servicemanager.query.QuerySort;
 import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.entity.EntityService;
 import ru.keich.mon.servicemanager.event.Event;
 import ru.keich.mon.servicemanager.event.EventService;
+import ru.keich.mon.servicemanager.query.QuerySort;
+
+
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -42,6 +46,7 @@ import ru.keich.mon.servicemanager.event.EventService;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 
 @Service
 @Log
@@ -170,8 +175,7 @@ public class ItemService extends EntityService<String, Item> {
 	
 	private BaseStatus calculateStatusByChild(Item parent) {	
 		var rules = parent.getRules().values();
-		var statuses = findChildren(parent).stream()
-				.filter(Item::isNotDeleted)
+		var statuses = findChildren(parent)
 				.map(Item::getStatus)
 				.toList();
 		if(rules.isEmpty()) {
@@ -213,65 +217,53 @@ public class ItemService extends EntityService<String, Item> {
 	public Optional<Stream<Item>> findParentsById(String itemId) {
 		return findById(itemId)
 				.map(this::findParentIds)
-				.map(set -> {
-					return set.stream()
-							.map(this::findById)
-							.filter(Optional::isPresent)
-							.map(Optional::get);
-				});
+				.map(this::findByIds)
+				.map(List::stream);
 	}
 	
-	public List<Item> findChildren(Item parent) {
-		return findByIds(parent.getChildrenIds());
+	public Stream<Item> findChildren(Item parent) {
+		return findByIds(parent.getChildrenIds()).stream()
+				.filter(Item::isNotDeleted);
+				
 	}
 	
 	public Optional<Stream<Item>> findChildrenById(String id) {
 		return findById(id)
-				.map(Item::getChildrenIds)
-				.map(set -> {
-					return set.stream()
-							.map(this::findById)
-							.filter(Optional::isPresent)
-							.map(Optional::get);
-				});
+				.map(this::findChildren);
 	}
 	
-	private Set<Item> findAllChildrenById(String parentId) {
-		var items = new HashSet<Item>();
+	private Set<String> findAllChildrenById(String parentId) {
+		var queue = new LinkedList<String>();
 		var history = new HashSet<String>();
-		findAllChildrenById(parentId, items, history);
-		return items;
-	}
-	
-	private void findAllChildrenById(String parentId, Set<Item> out, Set<String> history) {
-		findById(parentId)
-				.filter(Item::isNotDeleted)
-				.ifPresent(parent -> {
-					history.add(parentId);
-					out.add(parent);
-					parent.getChildrenIds().forEach(childId -> {
-						if (history.contains(childId)) {
-							log.warning("findAllEventsById: circle found from " + parentId + " to " + childId);
-						} else {
-							findAllChildrenById(childId, out, history);
-						}
+		queue.add(parentId);
+		while(!queue.isEmpty()) {
+			var id = queue.poll();
+			if(history.contains(id)) {
+				continue;
+			}
+			findById(id)
+					.filter(Item::isNotDeleted)
+					.ifPresent(parent -> {
+						history.add(id);
+						queue.addAll(parent.getChildrenIds());
 					});
-					history.remove(parentId);
-				});
+		}
+		return history;
 	}
 
 	public Stream<Event> findAllEventsById(String id) {
-		return findAllChildrenById(id).stream()
+		 var ids = findByIds(findAllChildrenById(id)).stream()
 				.map(Item::getEventsStatus)
 				.map(Map::keySet)
 				.flatMap(Set::stream)
-				.map(eventService::findById)
-				.filter(Optional::isPresent)
-				.map(Optional::get);
+				.collect(Collectors.toSet());
+		
+		 return eventService.findByIds(ids).stream()
+				 .filter(Event::isNotDeleted);
 	}
 	
 	public List<Event> findAllHistoryEventsById(String id, Instant from, Instant to) {
-		var ietmIds = findAllChildrenById(id).stream().map(Item::getId).toList();
+		var ietmIds = findAllChildrenById(id);
 		return itemHistoryService.getEventsByItemId(ietmIds, from, to);
 	}
 	
