@@ -244,21 +244,20 @@ public class ItemService extends EntityService<String, Item> {
 	}
 	
 	private void findAllChildrenById(String parentId, Set<Item> out, Set<String> history) {
-		findById(parentId).ifPresent(parent -> {
-			if (parent.isDeleted()) {
-				return;
-			}
-			history.add(parentId);
-			out.add(parent);
-			parent.getChildrenIds().forEach(childId -> {
-				if (history.contains(childId)) {
-					log.warning("findAllEventsById: circle found from " + parentId + " to " + childId);
-				} else {
-					findAllChildrenById(childId, out, history);
-				}
-			});
-			history.remove(parentId);
-		});
+		findById(parentId)
+				.filter(Item::isNotDeleted)
+				.ifPresent(parent -> {
+					history.add(parentId);
+					out.add(parent);
+					parent.getChildrenIds().forEach(childId -> {
+						if (history.contains(childId)) {
+							log.warning("findAllEventsById: circle found from " + parentId + " to " + childId);
+						} else {
+							findAllChildrenById(childId, out, history);
+						}
+					});
+					history.remove(parentId);
+				});
 	}
 
 	public Stream<Event> findAllEventsById(String id) {

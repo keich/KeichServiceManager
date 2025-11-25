@@ -156,7 +156,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	public Stream<T> sortAndLimit(Stream<T> data, List<QuerySort> sorts, long limit) {
 		if(!sorts.isEmpty()) {
 			var comparator = sorts.stream()
-					.map(s -> getSortComparator(s))
+					.map(this::getSortComparator)
 					.reduce(Comparator::thenComparing)
 					.orElse((e1, e2) -> 0);
 			data = data.sorted(comparator);
