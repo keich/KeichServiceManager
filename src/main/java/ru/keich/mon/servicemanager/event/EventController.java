@@ -63,16 +63,6 @@ public class EventController extends EntityController<String, Event> {
 		return super.findById(id, reqParam, Event::fieldValueOf);
 	}
 	
-	@GetMapping("/event/{id}/history")
-	@CrossOrigin(origins = "*")
-	public ResponseEntity<MappingJacksonValue> findByIdHistory(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
-		var qp = new QueryParse(reqParam, Event::fieldValueOf);	
-		return eventService.findByIdHistory(id)
-				.map(MappingJacksonValue::new)
-				.map(value -> applyFilter(value, qp.getProperties()))
-				.orElse(ResponseEntity.notFound().build());
-	}
-
 	@Override
 	@DeleteMapping("/event")
 	@CrossOrigin(origins = "*")

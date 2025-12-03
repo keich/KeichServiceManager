@@ -9,13 +9,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import io.micrometer.core.instrument.MeterRegistry;
@@ -23,7 +21,6 @@ import lombok.extern.java.Log;
 import ru.keich.mon.indexedhashmap.BaseStatus;
 import ru.keich.mon.indexedhashmap.IndexedHashMap.IndexType;
 import ru.keich.mon.indexedhashmap.query.Operator;
-import ru.keich.mon.indexedhashmap.query.predicates.Predicates;
 import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.entity.EntityService;
 import ru.keich.mon.servicemanager.event.Event;
@@ -53,11 +50,9 @@ import ru.keich.mon.servicemanager.query.QuerySort;
 public class ItemService extends EntityService<String, Item> {
 	
 	private final EventService eventService;
-	private final ItemHistoryService itemHistoryService;
 	
 	public ItemService(@Value("${replication.nodename}") String nodeName
 			,EventService eventService
-			,ItemHistoryService itemHistoryService
 			,MeterRegistry registry
 			,@Value("${item.thread.count:2}") Integer threadCount
 			,@Value("${item.aggstatus.seconds:60}") Long aggStatusSeconds) {
@@ -74,7 +69,6 @@ public class ItemService extends EntityService<String, Item> {
 		entityCache.addQueryField(Item.FIELD_NAME, Item::getNameForQuery);
 		
 		this.eventService = eventService;
-		this.itemHistoryService = itemHistoryService;
 		eventService.setItemService(this);
 	}
 
@@ -141,7 +135,6 @@ public class ItemService extends EntityService<String, Item> {
 			break;
 		case UPDATED:
 			entityCache.computeIfPresent(info.getId(), (id, item) -> {
-				itemHistoryService.add(item);
 				findParentIdsById(info.getId())
 						.forEach(parentId -> entityChangedQueue.add(new QueueInfo<String>(parentId, QueueInfo.QueueInfoType.UPDATE)));
 				return item;
@@ -260,17 +253,6 @@ public class ItemService extends EntityService<String, Item> {
 		
 		 return eventService.findByIds(ids).stream()
 				 .filter(Event::isNotDeleted);
-	}
-	
-	public List<Event> findAllHistoryEventsById(String id, Instant from, Instant to) {
-		var ietmIds = findAllChildrenById(id);
-		return itemHistoryService.getEventsByItemId(ietmIds, from, to);
-	}
-	
-	@Scheduled(fixedRateString = "${item.history.all.fixedrate:60}", timeUnit = TimeUnit.SECONDS)
-	public void historyByFixedRate() {
-		var predicate = Predicates.greaterEqual(Item.FIELD_VERSION, 0L);
-		findByIds(entityCache.keySet(predicate)).forEach(itemHistoryService::add);
 	}
 	
 	@Override

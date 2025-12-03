@@ -153,16 +153,6 @@ public class ItemController extends EntityController<String, Item> {
 		return applyFilter(new MappingJacksonValue(data), qp.getProperties());
 	}
 	
-	@GetMapping("/item/{id}/events/history")
-	@CrossOrigin(origins = "*")
-	public ResponseEntity<MappingJacksonValue> findAllHistoryEventsById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
-		var qp = new QueryParseItem(reqParam, Item::fieldValueOf);
-		if (qp.getFrom() == null) {
-			return ResponseEntity.badRequest().build();
-		}
-		return applyFilter(new MappingJacksonValue(itemService.findAllHistoryEventsById(id, qp.getFrom(), qp.getTo())), qp.getProperties());
-	}
-
 	@GetMapping("/item/{id}/tree")
 	@CrossOrigin(origins = "*")
 	// TODO rename children/tree

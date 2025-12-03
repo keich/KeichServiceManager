@@ -39,8 +39,6 @@ import ru.keich.mon.servicemanager.item.ItemService;
 public class EventService extends EntityService<String, Event>{
 	
 	private ItemService itemService;
-	private final EventHistoryService eventHistoryService;
-	private final Integer historyEventSearchLimit = 1000;
 	
 	public void setItemService(ItemService itemService) {
 		this.itemService = itemService;
@@ -50,11 +48,9 @@ public class EventService extends EntityService<String, Event>{
 	}
 
 	public EventService(@Value("${replication.nodename}") String nodeName
-			,EventHistoryService eventHistoryService
 			,MeterRegistry registry
 			,@Value("${event.thread.count:2}") Integer threadCount) {
 		super(nodeName, registry, threadCount);
-		this.eventHistoryService = eventHistoryService;
 	}
 	
 	@Override
@@ -95,7 +91,6 @@ public class EventService extends EntityService<String, Event>{
 	@Override
 	protected void queueRead(QueueInfo<String> info) {
 		entityCache.computeIfPresent(info.getId(), (k, event) -> {
-			eventHistoryService.add(event);
 			if (event.isDeleted()) {
 				itemService.eventRemoved(event);
 			} else {
@@ -109,10 +104,6 @@ public class EventService extends EntityService<String, Event>{
 	public void deleteEndsOnScheduled() {
 		var predicate = Predicates.lessThan(Event.FIELD_ENDSON, Instant.now());
 		entityCache.keySet(predicate).forEach(this::deleteById);
-	}
-	
-	public Optional<Event> findByIdHistory(String id) {
-		return Optional.ofNullable(eventHistoryService.getEventsByIds(Collections.singletonList(id), historyEventSearchLimit).get(id));
 	}
 	
 	@Override
