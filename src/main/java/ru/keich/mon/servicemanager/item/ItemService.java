@@ -216,8 +216,12 @@ public class ItemService extends EntityService<String, Item> {
 	
 	public Stream<Item> findChildren(Item parent) {
 		return findByIds(parent.getChildrenIds()).stream()
-				.filter(Item::isNotDeleted);
-				
+				.filter(Item::isNotDeleted);	
+	}
+	
+	public Stream<Item> findParents(Item child) {
+		return findByIds(findParentIds(child)).stream()
+				.filter(Item::isNotDeleted);	
 	}
 	
 	public Optional<Stream<Item>> findChildrenById(String id) {
