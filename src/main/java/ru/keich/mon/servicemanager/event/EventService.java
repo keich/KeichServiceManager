@@ -50,7 +50,7 @@ public class EventService extends EntityService<String, Event>{
 	public EventService(@Value("${replication.nodename}") String nodeName
 			,MeterRegistry registry
 			,@Value("${event.thread.count:2}") Integer threadCount) {
-		super(nodeName, registry, threadCount);
+		super(nodeName, registry, threadCount, Event::fieldValueOf);
 	}
 	
 	@Override

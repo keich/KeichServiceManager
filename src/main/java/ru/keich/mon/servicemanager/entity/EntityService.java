@@ -1,7 +1,6 @@
 package ru.keich.mon.servicemanager.entity;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -9,9 +8,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 
@@ -20,11 +23,12 @@ import ru.keich.mon.indexedhashmap.IndexedHashMap;
 import ru.keich.mon.indexedhashmap.IndexedHashMap.IndexType;
 import ru.keich.mon.indexedhashmap.query.Operator;
 import ru.keich.mon.indexedhashmap.query.predicates.Predicates;
-import ru.keich.mon.indexedhashmap.query.predicates.QueryPredicate;
-import ru.keich.mon.servicemanager.query.QuerySort;
+import ru.keich.mon.servicemanager.KQueryLexer;
+import ru.keich.mon.servicemanager.KQueryParser;
 import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.QueueThreadReader;
 import ru.keich.mon.servicemanager.item.Item;
+import ru.keich.mon.servicemanager.query.QuerySort;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -49,11 +53,13 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	
 	final protected IndexedHashMap<K, T> entityCache;
 	final protected QueueThreadReader<QueueInfo<K>> entityChangedQueue;
+	final protected BiFunction<String, String, Object> valueConverter;
 	
 	final public String nodeName;
 
-	public EntityService(String nodeName, MeterRegistry registry, Integer threadCount) {
+	public EntityService(String nodeName, MeterRegistry registry, Integer threadCount, BiFunction<String, String, Object> valueConverter) {
 		this.nodeName = nodeName;
+		this.valueConverter = valueConverter;
 		entityCache = new IndexedHashMap<>(registry, this.getClass().getSimpleName());
 		entityChangedQueue = new QueueThreadReader<QueueInfo<K>>(registry, this.getClass().getSimpleName(), threadCount, this::queueRead);
 		
@@ -109,14 +115,15 @@ public abstract class EntityService<K, T extends Entity<K>> {
 				.collect(Collectors.toList());
 	}
 	
-	public Stream<T> query(List<QueryPredicate> predicates) {
-		return predicates.stream()
-				.map(p -> entityCache.keySet(p))
-				.reduce((result, el) -> { 
-					result.retainAll(el);
-					return result;
-				})
-				.orElse(Collections.emptySet())
+	public Stream<T> query(String search) {
+		var lexer = new KQueryLexer(CharStreams.fromString(search));
+		var tokens = new CommonTokenStream(lexer);
+		var parser = new KQueryParser(tokens);
+		var tree = parser.parse();
+		var walker = new ParseTreeWalker();
+		var q = new EntityQueryListener<K, T>(entityCache, valueConverter);
+		walker.walk(q, tree);
+		return q.getResult()
 				.stream()
 				.map(entityCache::get)
 				.filter(Objects::nonNull);

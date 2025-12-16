@@ -56,7 +56,7 @@ public class ItemService extends EntityService<String, Item> {
 			,MeterRegistry registry
 			,@Value("${item.thread.count:2}") Integer threadCount
 			,@Value("${item.aggstatus.seconds:60}") Long aggStatusSeconds) {
-		super(nodeName, registry, threadCount);
+		super(nodeName, registry, threadCount, Item::fieldValueOf);
 		
 		AggregateStatus.setSeconds(aggStatusSeconds);
 		

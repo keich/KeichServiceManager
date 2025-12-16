@@ -45,28 +45,28 @@ public class ControllersTest {
 	private TestRestTemplate restTemplate;
 
 	private List<Event> eventGetBySourceEqual(String source) {
-		var result = restTemplate.exchange("/api/v1/event?source=eq:" + source,
+		var result = restTemplate.exchange("/api/v1/event?search=\"source\"=\"" + source + "\"",
 				HttpMethod.GET, null, new ParameterizedTypeReference<List<Event>>() {});
 		assertEquals(HttpStatus.OK, result.getStatusCode());
 		return result.getBody();
 	}
 	
 	private List<Event> eventGetBySourceNotEqual(String source) {
-		var result = restTemplate.exchange("/api/v1/event?source=ne:" + source,
+		var result = restTemplate.exchange("/api/v1/event?search=\"source\"!=\"" + source + "\"",
 				HttpMethod.GET, null, new ParameterizedTypeReference<List<Event>>() {});
 		assertEquals(HttpStatus.OK, result.getStatusCode());
 		return result.getBody();
 	}
 	
 	private List<Event> eventGetBySourceKeyEqual(String sourceKey) {
-		var result = restTemplate.exchange("/api/v1/event?sourceKey=eq:" + sourceKey,
+		var result = restTemplate.exchange("/api/v1/event?search=\"sourceKey\"=\"" + sourceKey + "\"",
 				HttpMethod.GET, null, new ParameterizedTypeReference<List<Event>>() {});
 		assertEquals(HttpStatus.OK, result.getStatusCode());
 		return result.getBody();
 	}
 	
 	private List<Event> eventGetBySourceKeyNotEqual(String sourceKey) {
-		var result = restTemplate.exchange("/api/v1/event?sourceKey=ne:" + sourceKey,
+		var result = restTemplate.exchange("/api/v1/event?search=\"sourceKey\"!=\"" + sourceKey + "\"",
 				HttpMethod.GET, null, new ParameterizedTypeReference<List<Event>>() {});
 		assertEquals(HttpStatus.OK, result.getStatusCode());
 		return result.getBody();
@@ -81,35 +81,35 @@ public class ControllersTest {
 		if(limit > 0) {
 			limitStr = "&limit=" + limit;
 		}
-		var result = restTemplate.exchange("/api/v1/item?source=eq:" + source + "&sourceKey=sort" + orderStr + ":1" + limitStr,
+		var result = restTemplate.exchange("/api/v1/item?search=\"source\"=\"" + source + "\"&sourceKey=sort" + orderStr + ":1" + limitStr,
 				HttpMethod.GET, null, new ParameterizedTypeReference<List<Item>>() {});
 		assertEquals(HttpStatus.OK, result.getStatusCode());
 		return result.getBody();
 	}
 	
 	private  List<Item> itemGetBySourceEqual(String source) {
-		var result = restTemplate.exchange("/api/v1/item?source=eq:" + source,
+		var result = restTemplate.exchange("/api/v1/item?search=\"source\"=\"" + source + "\"",
 				HttpMethod.GET, null, new ParameterizedTypeReference<List<Item>>() {});
 		assertEquals(HttpStatus.OK, result.getStatusCode());
 		return result.getBody();
 	}
 	
 	private List<Item> itemGetBySourceNotEqual(String source) {
-		var result = restTemplate.exchange("/api/v1/item?source=ne:" + source,
+		var result = restTemplate.exchange("/api/v1/item?search=\"source\"!=\"" + source + "\"",
 				HttpMethod.GET, null, new ParameterizedTypeReference<List<Item>>() {});
 		assertEquals(HttpStatus.OK, result.getStatusCode());
 		return result.getBody();
 	}
 	
 	private  List<Item> itemGetBySourceKeyEqual(String sourceKey) {
-		var result = restTemplate.exchange("/api/v1/item?sourceKey=eq:" + sourceKey,
+		var result = restTemplate.exchange("/api/v1/item?search=\"sourceKey\"=\"" + sourceKey + "\"",
 				HttpMethod.GET, null, new ParameterizedTypeReference<List<Item>>() {});
 		assertEquals(HttpStatus.OK, result.getStatusCode());
 		return result.getBody();
 	}
 	
 	private List<Item> itemGetBySourceKeyNotEqual(String sourceKey) {
-		var result = restTemplate.exchange("/api/v1/item?sourceKey=ne:" + sourceKey,
+		var result = restTemplate.exchange("/api/v1/item?search=\"sourceKey\"!=\"" + sourceKey + "\"",
 				HttpMethod.GET, null, new ParameterizedTypeReference<List<Item>>() {});
 		assertEquals(HttpStatus.OK, result.getStatusCode());
 		return result.getBody();
@@ -183,7 +183,7 @@ public class ControllersTest {
 	// TODO use Entity<K> with ParameterizedTypeReference
 	private <K, T extends Entity<K>> List<T> entityGetByVersionGreaterThan(String path, Long version, String nodename,
 			Class<T> responseType) {
-		var result = restTemplate.exchange("/api/v1" + path + "?fromHistory=nc:" + nodename + "&version=gt:" + version,
+		var result = restTemplate.exchange("/api/v1" + path + "?search=\"fromHistory\"!*\"" + nodename + "\" and \"version\">" + version,
 				HttpMethod.GET, null, new ParameterizedTypeReference<List<T>>() {
 				});
 		assertEquals(HttpStatus.OK, result.getStatusCode());
