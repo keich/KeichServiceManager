@@ -1,6 +1,7 @@
 package ru.keich.mon.servicemanager.entity;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -23,12 +24,14 @@ import ru.keich.mon.indexedhashmap.IndexedHashMap;
 import ru.keich.mon.indexedhashmap.IndexedHashMap.IndexType;
 import ru.keich.mon.indexedhashmap.query.Operator;
 import ru.keich.mon.indexedhashmap.query.predicates.Predicates;
+import ru.keich.mon.indexedhashmap.query.predicates.QueryPredicate;
 import ru.keich.mon.servicemanager.KQueryLexer;
 import ru.keich.mon.servicemanager.KQueryParser;
 import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.QueueThreadReader;
 import ru.keich.mon.servicemanager.item.Item;
 import ru.keich.mon.servicemanager.query.QueryListener;
+import ru.keich.mon.servicemanager.query.QueryParamsParser;
 import ru.keich.mon.servicemanager.query.QuerySort;
 
 /*
@@ -115,8 +118,28 @@ public abstract class EntityService<K, T extends Entity<K>> {
 				.map(Optional::get)
 				.collect(Collectors.toList());
 	}
+
+	public Stream<T> query(QueryParamsParser qp) {
+		if(qp.isHasSearch()) {
+			return queryBySearch(qp.getSearch());
+		}
+		return queryByPredicates(qp.getPredicates(valueConverter));
+	}
+
+	public Stream<T> queryByPredicates(List<QueryPredicate> predicates) {
+		return predicates.stream()
+				.map(p -> entityCache.keySet(p))
+				.reduce((result, el) -> { 
+					result.retainAll(el);
+					return result;
+				})
+				.orElse(Collections.emptySet())
+				.stream()
+				.map(entityCache::get)
+				.filter(Objects::nonNull);
+	}
 	
-	public Stream<T> query(String search) {
+	public Stream<T> queryBySearch(String search) {
 		var lexer = new KQueryLexer(CharStreams.fromString(search));
 		var tokens = new CommonTokenStream(lexer);
 		var parser = new KQueryParser(tokens);

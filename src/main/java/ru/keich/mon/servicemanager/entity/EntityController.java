@@ -73,7 +73,8 @@ public class EntityController<K, T extends Entity<K>> {
 	
 	public ResponseEntity<MappingJacksonValue> find(MultiValueMap<String, String> reqParam) {
 		var qp = new QueryParamsParser(reqParam);		
-		var data = entityService.sortAndLimit(entityService.query(qp.getSearch()), qp.getSorts(), qp.getLimit())
+		var data = entityService
+				.sortAndLimit(entityService.query(qp), qp.getSorts(), qp.getLimit())
 				.collect(Collectors.toList());
 		return applyFilter(new MappingJacksonValue(data), qp.getProperties());
 	}

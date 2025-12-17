@@ -3,13 +3,17 @@ package ru.keich.mon.servicemanager.query;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import org.springframework.util.MultiValueMap;
 
 import lombok.Getter;
 import ru.keich.mon.indexedhashmap.query.Operator;
+import ru.keich.mon.indexedhashmap.query.predicates.Predicates;
+import ru.keich.mon.indexedhashmap.query.predicates.QueryPredicate;
 import ru.keich.mon.servicemanager.item.Item;
 
 @Getter
@@ -23,6 +27,8 @@ public class QueryParamsParser {
 	private final long limit;
 	private final String search;
 	private final boolean needEvents;
+	private final boolean hasSearch;
+	private final List<Entry<String, List<String>>> filteredPrams;
 	
 	public QueryParamsParser(MultiValueMap<String, String> reqParam) {	
 		if (reqParam.containsKey(QUERY_LIMIT)) {
@@ -33,8 +39,10 @@ public class QueryParamsParser {
 		
 		if(reqParam.containsKey(QUERY_SEARCH)) {
 			search = reqParam.get(QUERY_SEARCH).get(0);
+			hasSearch = true;
 		} else {
 			search = "";
+			hasSearch = false;
 		}
 		
 		if(reqParam.containsKey(QUERY_PROPERTY)) {
@@ -50,7 +58,7 @@ public class QueryParamsParser {
 			this.needEvents = false;
 		}
 		
-		var filteredPrams = reqParam.entrySet().stream()
+		this.filteredPrams = reqParam.entrySet().stream()
 				.filter(p -> !p.getKey().toLowerCase().equals(QUERY_PROPERTY))
 				.filter(p -> !p.getKey().toLowerCase().equals(QUERY_LIMIT))
 				.filter(p -> !p.getKey().toLowerCase().equals(QUERY_SEARCH))
@@ -72,6 +80,16 @@ public class QueryParamsParser {
 			return ret;
 		}
 		return this.getProperties();
+	}
+	
+	public List<QueryPredicate> getPredicates(BiFunction<String, String, Object> valueConverter) {
+		return filteredPrams.stream()
+				.flatMap(param -> {
+					return param.getValue().stream()
+							.map(value -> Predicates.fromParam(param.getKey(), value, valueConverter));
+				})
+				.filter(p -> p.getOperator() != Operator.ERROR)
+				.collect(Collectors.toList());
 	}
 
 }
