@@ -1,4 +1,4 @@
-package ru.keich.mon.servicemanager.entity;
+package ru.keich.mon.servicemanager.query;
 
 import java.util.Set;
 import java.util.Stack;
@@ -19,13 +19,13 @@ import ru.keich.mon.servicemanager.KQueryParser.ExprNotEqualContext;
 import ru.keich.mon.servicemanager.KQueryParser.ExprNotIncludeContext;
 import ru.keich.mon.servicemanager.KQueryParser.ExprORContext;
 
-public class EntityQueryListener<K, T> extends KQueryBaseListener {
+public class QueryListener<K, T> extends KQueryBaseListener {
 
 	private final IndexedHashMap<K, T> entityCache;
 	private final Stack<Set<K>> stack = new Stack<>();
 	private final BiFunction<String, String, Object> valueConverter;
 
-	public EntityQueryListener(IndexedHashMap<K, T> entityCache, BiFunction<String, String, Object> valueConverter) {
+	public QueryListener(IndexedHashMap<K, T> entityCache, BiFunction<String, String, Object> valueConverter) {
 		this.entityCache = entityCache;
 		this.valueConverter = valueConverter;
 	}

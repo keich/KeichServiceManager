@@ -1,6 +1,7 @@
-package ru.keich.mon.servicemanager.entity;
+package ru.keich.mon.servicemanager.query;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -9,10 +10,10 @@ import org.springframework.util.MultiValueMap;
 
 import lombok.Getter;
 import ru.keich.mon.indexedhashmap.query.Operator;
-import ru.keich.mon.servicemanager.query.QuerySort;
+import ru.keich.mon.servicemanager.item.Item;
 
 @Getter
-public class EntityQueryParamsParser {
+public class QueryParamsParser {
 	public static final String QUERY_SEARCH = "search";
 	public static final String QUERY_PROPERTY = "property";
 	public static final String QUERY_LIMIT = "limit";
@@ -21,8 +22,9 @@ public class EntityQueryParamsParser {
 	private final Set<String> properties;
 	private final long limit;
 	private final String search;
+	private final boolean needEvents;
 	
-	public EntityQueryParamsParser(MultiValueMap<String, String> reqParam) {	
+	public QueryParamsParser(MultiValueMap<String, String> reqParam) {	
 		if (reqParam.containsKey(QUERY_LIMIT)) {
 			limit = Long.valueOf(reqParam.get(QUERY_LIMIT).get(0));
 		} else {
@@ -42,6 +44,12 @@ public class EntityQueryParamsParser {
 			properties = Collections.emptySet();
 		}
 		
+		if (this.getProperties().contains(Item.FIELD_EVENTS)) {
+			this.needEvents = true;
+		} else {
+			this.needEvents = false;
+		}
+		
 		var filteredPrams = reqParam.entrySet().stream()
 				.filter(p -> !p.getKey().toLowerCase().equals(QUERY_PROPERTY))
 				.filter(p -> !p.getKey().toLowerCase().equals(QUERY_LIMIT))
@@ -55,6 +63,15 @@ public class EntityQueryParamsParser {
 				.filter(s -> s.getOperator() != Operator.ERROR)
 				.sorted(QuerySort::compareTo)
 				.collect(Collectors.toList());
+	}
+	
+	public Set<String> getPropertiesWith(String name) {
+		if (!this.getProperties().isEmpty()) {
+			var ret = new HashSet<String>(this.getProperties());
+			ret.add(name);
+			return ret;
+		}
+		return this.getProperties();
 	}
 
 }

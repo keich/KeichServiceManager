@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 
+import ru.keich.mon.servicemanager.query.QueryParamsParser;
+
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -70,14 +72,14 @@ public class EntityController<K, T extends Entity<K>> {
 	}
 	
 	public ResponseEntity<MappingJacksonValue> find(MultiValueMap<String, String> reqParam) {
-		var qp = new EntityQueryParamsParser(reqParam);		
+		var qp = new QueryParamsParser(reqParam);		
 		var data = entityService.sortAndLimit(entityService.query(qp.getSearch()), qp.getSorts(), qp.getLimit())
 				.collect(Collectors.toList());
 		return applyFilter(new MappingJacksonValue(data), qp.getProperties());
 	}
 
 	public ResponseEntity<MappingJacksonValue> findById(@PathVariable K id, @RequestParam MultiValueMap<String, String> reqParam) {
-		var qp = new EntityQueryParamsParser(reqParam);	
+		var qp = new QueryParamsParser(reqParam);	
 		return entityService.findById(id)
 				.map(MappingJacksonValue::new)
 				.map(value -> applyFilter(value, qp.getProperties()))

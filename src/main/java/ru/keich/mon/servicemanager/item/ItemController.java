@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import lombok.extern.java.Log;
 import ru.keich.mon.servicemanager.entity.EntityController;
 import ru.keich.mon.servicemanager.event.EventService;
+import ru.keich.mon.servicemanager.query.QueryParamsParser;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -91,7 +92,7 @@ public class ItemController extends EntityController<String, Item> {
 	@GetMapping("/item/{id}")
 	@CrossOrigin(origins = "*")
 	public ResponseEntity<MappingJacksonValue> findById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
-		var qp = new ItemQueryParamsParser(reqParam);	
+		var qp = new QueryParamsParser(reqParam);	
 		return itemService.findById(id)
 				.map(item -> {
 					if(qp.isNeedEvents()) {
@@ -111,7 +112,7 @@ public class ItemController extends EntityController<String, Item> {
 		if(opt.isEmpty()) {
 			return ResponseEntity.notFound().build();
 		}
-		var qp = new ItemQueryParamsParser(reqParam);
+		var qp = new QueryParamsParser(reqParam);
 		var data = itemService.sortAndLimit(opt.get(), qp.getSorts(), qp.getLimit());
 		if(qp.isNeedEvents()) {
 			data = data.map(this::fillEvents);
@@ -126,7 +127,7 @@ public class ItemController extends EntityController<String, Item> {
 		if(opt.isEmpty()) {
 			return ResponseEntity.notFound().build();
 		}
-		var qp = new ItemQueryParamsParser(reqParam);
+		var qp = new QueryParamsParser(reqParam);
 		var data = itemService.sortAndLimit(opt.get(), qp.getSorts(), qp.getLimit());
 		if(qp.isNeedEvents()) {
 			data = data.map(this::fillEvents);
@@ -144,7 +145,7 @@ public class ItemController extends EntityController<String, Item> {
 	@GetMapping("/item/{id}/events")
 	@CrossOrigin(origins = "*")
 	public ResponseEntity<MappingJacksonValue> findAllEventsById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
-		var qp = new ItemQueryParamsParser(reqParam);
+		var qp = new QueryParamsParser(reqParam);
 		var data = itemService.findAllEventsById(id);
 		data = eventService.sortAndLimit(data, qp.getSorts(), qp.getLimit());
 		return applyFilter(new MappingJacksonValue(data), qp.getProperties());
@@ -154,7 +155,7 @@ public class ItemController extends EntityController<String, Item> {
 	@CrossOrigin(origins = "*")
 	// TODO rename children/tree
 	ResponseEntity<MappingJacksonValue> getTree(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
-		var qp = new ItemQueryParamsParser(reqParam);
+		var qp = new QueryParamsParser(reqParam);
 		return itemService.findById(id)
 				.map(parent -> setChildren(parent, new HashSet<String>()))
 				.map(parent -> applyFilter(new MappingJacksonValue(parent), qp.getPropertiesWith(QUERY_CHILDREN)))
@@ -183,7 +184,7 @@ public class ItemController extends EntityController<String, Item> {
 	@GetMapping("/item/{id}/parents/tree")
 	@CrossOrigin(origins = "*")
 	ResponseEntity<MappingJacksonValue> findParentsTreeById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
-		var qp = new ItemQueryParamsParser(reqParam);
+		var qp = new QueryParamsParser(reqParam);
 		return itemService.findById(id)
 				.map(child -> setParents(child, new HashSet<String>()))
 				.map(child -> applyFilter(new MappingJacksonValue(child), qp.getPropertiesWith(QUERY_PARENTS)))

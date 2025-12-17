@@ -28,6 +28,7 @@ import ru.keich.mon.servicemanager.KQueryParser;
 import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.QueueThreadReader;
 import ru.keich.mon.servicemanager.item.Item;
+import ru.keich.mon.servicemanager.query.QueryListener;
 import ru.keich.mon.servicemanager.query.QuerySort;
 
 /*
@@ -121,7 +122,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 		var parser = new KQueryParser(tokens);
 		var tree = parser.parse();
 		var walker = new ParseTreeWalker();
-		var q = new EntityQueryListener<K, T>(entityCache, valueConverter);
+		var q = new QueryListener<K, T>(entityCache, valueConverter);
 		walker.walk(q, tree);
 		return q.getResult()
 				.stream()
