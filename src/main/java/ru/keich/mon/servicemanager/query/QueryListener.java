@@ -4,7 +4,6 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.function.BiFunction;
 
-import ru.keich.mon.indexedhashmap.IndexedHashMap;
 import ru.keich.mon.indexedhashmap.query.predicates.Predicates;
 import ru.keich.mon.servicemanager.KQueryBaseListener;
 import ru.keich.mon.servicemanager.KQueryParser.ExprANDContext;
@@ -18,15 +17,33 @@ import ru.keich.mon.servicemanager.KQueryParser.ExprNotContainContext;
 import ru.keich.mon.servicemanager.KQueryParser.ExprNotEqualContext;
 import ru.keich.mon.servicemanager.KQueryParser.ExprNotIncludeContext;
 import ru.keich.mon.servicemanager.KQueryParser.ExprORContext;
+import ru.keich.mon.servicemanager.entity.Entity;
+import ru.keich.mon.servicemanager.entity.EntityService;
 
-public class QueryListener<K, T> extends KQueryBaseListener {
+/*
+ * Copyright 2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-	private final IndexedHashMap<K, T> entityCache;
+public class QueryListener<K, T extends Entity<K>> extends KQueryBaseListener {
+
+	private final EntityService<K, T> entityService;
 	private final Stack<Set<K>> stack = new Stack<>();
 	private final BiFunction<String, String, Object> valueConverter;
 
-	public QueryListener(IndexedHashMap<K, T> entityCache, BiFunction<String, String, Object> valueConverter) {
-		this.entityCache = entityCache;
+	public QueryListener(EntityService<K, T> entityService, BiFunction<String, String, Object> valueConverter) {
+		this.entityService = entityService;
 		this.valueConverter = valueConverter;
 	}
 
@@ -49,7 +66,7 @@ public class QueryListener<K, T> extends KQueryBaseListener {
 		var name = pullString(ctx, 0);
 		var value = pullString(ctx, 2);
 		var p = Predicates.notEqual(name, valueConverter.apply(name, value));
-		var r = entityCache.keySet(p);
+		var r = entityService.find(p);
 		stack.push(r);
 	}
 
@@ -58,7 +75,7 @@ public class QueryListener<K, T> extends KQueryBaseListener {
 		var name = pullString(ctx, 0);
 		var value = pullString(ctx, 2);
 		var p = Predicates.equal(name, valueConverter.apply(name, value));
-		var r = entityCache.keySet(p);
+		var r = entityService.find(p);
 		stack.push(r);
 	}
 
@@ -67,7 +84,7 @@ public class QueryListener<K, T> extends KQueryBaseListener {
 		var name = pullString(ctx, 0);
 		var value = pullString(ctx, 2);
 		var p = Predicates.notContain(name, valueConverter.apply(name, value));
-		var r = entityCache.keySet(p);
+		var r = entityService.find(p);
 		stack.push(r);
 	}
 
@@ -76,7 +93,7 @@ public class QueryListener<K, T> extends KQueryBaseListener {
 		var name = pullString(ctx, 0);
 		var value = pullString(ctx, 2);
 		var p = Predicates.notInclude(name, valueConverter.apply(name, value));
-		var r = entityCache.keySet(p);
+		var r = entityService.find(p);
 		stack.push(r);
 	}
 
@@ -85,7 +102,7 @@ public class QueryListener<K, T> extends KQueryBaseListener {
 		var name = pullString(ctx, 0);
 		var value = pullString(ctx, 2);
 		var p = Predicates.lessThan(name, valueConverter.apply(name, value));
-		var r = entityCache.keySet(p);
+		var r = entityService.find(p);
 		stack.push(r);
 	}
 
@@ -94,7 +111,7 @@ public class QueryListener<K, T> extends KQueryBaseListener {
 		var name = pullString(ctx, 0);
 		var value = pullString(ctx, 2);
 		var p = Predicates.greaterEqual(name, valueConverter.apply(name, value));
-		var r = entityCache.keySet(p);
+		var r = entityService.find(p);
 		stack.push(r);
 	}
 
@@ -103,7 +120,7 @@ public class QueryListener<K, T> extends KQueryBaseListener {
 		var name = pullString(ctx, 0);
 		var value = pullString(ctx, 2);
 		var p = Predicates.contain(name, valueConverter.apply(name, value));
-		var r = entityCache.keySet(p);
+		var r = entityService.find(p);
 		stack.push(r);
 	}
 
@@ -112,7 +129,7 @@ public class QueryListener<K, T> extends KQueryBaseListener {
 		var name = pullString(ctx, 0);
 		var value = pullString(ctx, 2);
 		var p = Predicates.greaterThan(name, valueConverter.apply(name, value));
-		var r = entityCache.keySet(p);
+		var r = entityService.find(p);
 		stack.push(r);
 	}
 

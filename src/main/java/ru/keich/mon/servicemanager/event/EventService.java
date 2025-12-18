@@ -37,9 +37,9 @@ import ru.keich.mon.servicemanager.item.ItemService;
 
 @Service
 public class EventService extends EntityService<String, Event>{
-	
+
 	private ItemService itemService;
-	
+
 	public void setItemService(ItemService itemService) {
 		this.itemService = itemService;
 		entityCache.addIndex(Event.FIELD_ENDSON, IndexType.SORTED, Event::getEndsOnForIndex);
@@ -50,9 +50,9 @@ public class EventService extends EntityService<String, Event>{
 	public EventService(@Value("${replication.nodename}") String nodeName
 			,MeterRegistry registry
 			,@Value("${event.thread.count:2}") Integer threadCount) {
-		super(nodeName, registry, threadCount, Event::fieldValueOf);
+		super(nodeName, registry, threadCount);
 	}
-	
+
 	@Override
 	public void addOrUpdate(Event event) {
 		entityCache.compute(event.getId(), (k, oldEvent) -> {
@@ -99,13 +99,13 @@ public class EventService extends EntityService<String, Event>{
 			return event;
 		});
 	}
-	
+
 	@Scheduled(fixedRateString = "1", timeUnit = TimeUnit.SECONDS)
 	public void deleteEndsOnScheduled() {
 		var predicate = Predicates.lessThan(Event.FIELD_ENDSON, Instant.now());
 		entityCache.keySet(predicate).forEach(this::deleteById);
 	}
-	
+
 	@Override
 	public Comparator<Event> getSortComparator(QuerySort sort) {
 		final int mult = sort.getOperator() == Operator.SORTDESC ? -1 : 1;
@@ -119,5 +119,5 @@ public class EventService extends EntityService<String, Event>{
 		}
 		return super.getSortComparator(sort);
 	}
-	
+
 }

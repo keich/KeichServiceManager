@@ -56,7 +56,7 @@ public class ItemService extends EntityService<String, Item> {
 			,MeterRegistry registry
 			,@Value("${item.thread.count:2}") Integer threadCount
 			,@Value("${item.aggstatus.seconds:60}") Long aggStatusSeconds) {
-		super(nodeName, registry, threadCount, Item::fieldValueOf);
+		super(nodeName, registry, threadCount);
 		
 		AggregateStatus.setSeconds(aggStatusSeconds);
 		
@@ -100,7 +100,7 @@ public class ItemService extends EntityService<String, Item> {
 		});
 
 	}
-	
+
 	@Override
 	public Optional<Item> deleteById(String itemId) {
 		return Optional.ofNullable(entityCache.computeIfPresent(itemId,  (k, item) -> {
@@ -116,7 +116,7 @@ public class ItemService extends EntityService<String, Item> {
 					.build();
 		}));
 	}
-	
+
 	@Override
 	protected void queueRead(QueueInfo<String> info) {
 		switch(info.getType()) {
@@ -144,7 +144,7 @@ public class ItemService extends EntityService<String, Item> {
 			break;
 		}
 	}
-	
+
 	public void itemUpdateEventsStatus(String itemId, Consumer<Map<String, BaseStatus>> s) {
 		entityCache.computeIfPresent(itemId, (k, item) -> {
 			entityChangedQueue.add(new QueueInfo<String>(itemId, QueueInfo.QueueInfoType.UPDATE));
@@ -165,7 +165,7 @@ public class ItemService extends EntityService<String, Item> {
 					itemUpdateEventsStatus(itemId, m -> m.put(event.getId(), newStatus));
 				});
 	}
-	
+
 	private BaseStatus calculateStatusByChild(Item parent) {	
 		var rules = parent.getRules().values();
 		var statuses = findChildren(parent)
@@ -176,13 +176,13 @@ public class ItemService extends EntityService<String, Item> {
 		}
 		return ItemRule.max(rules, statuses);
 	}
-	
+
 	private BaseStatus calculateStatus(Item item) {
 		var statusByChild = calculateStatusByChild(item);
 		var statusByEvents = BaseStatus.max(item.getEventsStatus().values());
 		return statusByChild.max(statusByEvents);
 	}
-	
+
 	private Stream<Map.Entry<Item, ItemFilter>> findFiltersByEqualFields(Map<String, String> fields) {
 		return fields.entrySet().stream()
 				.map(e -> entityCache.keySetIndexEq(Item.FIELD_FILTERS_EQL, e))
@@ -198,37 +198,37 @@ public class ItemService extends EntityService<String, Item> {
 				.filter(Optional::isPresent)
 				.map(Optional::get);
 	}
-	
+
 	private Set<String> findParentIdsById(String itemId) {
 		return entityCache.keySetIndexEq(Item.FIELD_PARENTS, itemId);
 	}
-	
+
 	private Set<String> findParentIds(Item item) {
 		return findParentIdsById(item.getId());
 	}
-	
+
 	public Optional<Stream<Item>> findParentsById(String itemId) {
 		return findById(itemId)
 				.map(this::findParentIds)
 				.map(this::findByIds)
 				.map(List::stream);
 	}
-	
+
 	public Stream<Item> findChildren(Item parent) {
 		return findByIds(parent.getChildrenIds()).stream()
 				.filter(Item::isNotDeleted);	
 	}
-	
+
 	public Stream<Item> findParents(Item child) {
 		return findByIds(findParentIds(child)).stream()
 				.filter(Item::isNotDeleted);	
 	}
-	
+
 	public Optional<Stream<Item>> findChildrenById(String id) {
 		return findById(id)
 				.map(this::findChildren);
 	}
-	
+
 	private Set<String> findAllChildrenById(String parentId) {
 		var queue = new LinkedList<String>();
 		var history = new HashSet<String>();
@@ -258,7 +258,7 @@ public class ItemService extends EntityService<String, Item> {
 		 return eventService.findByIds(ids).stream()
 				 .filter(Event::isNotDeleted);
 	}
-	
+
 	@Override
 	public Comparator<Item> getSortComparator(QuerySort sort) {
 		final int mult = sort.getOperator() == Operator.SORTDESC ? -1 : 1;
@@ -268,5 +268,5 @@ public class ItemService extends EntityService<String, Item> {
 		}
 		return super.getSortComparator(sort);
 	}
-	
+
 }

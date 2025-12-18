@@ -1,10 +1,17 @@
 package ru.keich.mon.servicemanager.entity;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.json.MappingJacksonValue;
 import org.springframework.util.MultiValueMap;
@@ -15,6 +22,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 
+import ru.keich.mon.indexedhashmap.query.predicates.QueryPredicate;
+import ru.keich.mon.servicemanager.KQueryLexer;
+import ru.keich.mon.servicemanager.KQueryParser;
+import ru.keich.mon.servicemanager.query.QueryListener;
 import ru.keich.mon.servicemanager.query.QueryParamsParser;
 
 /*
@@ -36,20 +47,23 @@ import ru.keich.mon.servicemanager.query.QueryParamsParser;
 public class EntityController<K, T extends Entity<K>> {
 
 	private EntityService<K, T> entityService;
+	final protected BiFunction<String, String, Object> valueConverter;
 
 	public static final String FILTER_NAME = "propertiesFilter";
 	
 	protected final SimpleFilterProvider jsonDefaultFilter;
 	
-	public EntityController(EntityService<K, T> entityService, SimpleFilterProvider jsonDefaultFilter) {
+	public EntityController(EntityService<K, T> entityService, SimpleFilterProvider jsonDefaultFilter, BiFunction<String, String, Object> valueConverter) {
 		super();
 		this.entityService = entityService;
+		this.valueConverter = valueConverter;
 		this.jsonDefaultFilter = jsonDefaultFilter;
 	}
 	
-	public EntityController(EntityService<K, T> entityService) {
+	public EntityController(EntityService<K, T> entityService, BiFunction<String, String, Object> valueConverter) {
 		super();
 		this.entityService = entityService;
+		this.valueConverter = valueConverter;
 		this.jsonDefaultFilter = new SimpleFilterProvider().addFilter(FILTER_NAME, SimpleBeanPropertyFilter.serializeAll());
 	}
 	
@@ -70,12 +84,47 @@ public class EntityController<K, T extends Entity<K>> {
 		data.setFilters(jsonFilter);
 		return ResponseEntity.ok(data);
 	}
+
+	protected Stream<T> findByPredicates(List<QueryPredicate> predicates) {
+		return predicates.stream()
+				.map(p -> entityService.find(p))
+				.reduce((result, el) -> { 
+					result.retainAll(el);
+					return result;
+				})
+				.orElse(Collections.emptySet())
+				.stream()
+				.map(entityService::findById)
+				.filter(Optional::isPresent)
+				.map(Optional::get);
+	}
+
+	protected Stream<T> findBySearch(String search) {
+		var lexer = new KQueryLexer(CharStreams.fromString(search));
+		var tokens = new CommonTokenStream(lexer);
+		var parser = new KQueryParser(tokens);
+		var tree = parser.parse();
+		var walker = new ParseTreeWalker();
+		var q = new QueryListener<K, T>(entityService, valueConverter);
+		walker.walk(q, tree);
+		return q.getResult()
+				.stream()
+				.map(entityService::findById)
+				.filter(Optional::isPresent)
+				.map(Optional::get);
+	}
 	
+	protected Stream<T> find(QueryParamsParser qp) {
+		if(qp.isHasSearch()) {
+			return findBySearch(qp.getSearch());
+		} else {
+			return findByPredicates(qp.getPredicates(valueConverter));
+		}
+	}
+
 	public ResponseEntity<MappingJacksonValue> find(MultiValueMap<String, String> reqParam) {
-		var qp = new QueryParamsParser(reqParam);		
-		var data = entityService
-				.sortAndLimit(entityService.query(qp), qp.getSorts(), qp.getLimit())
-				.collect(Collectors.toList());
+		var qp = new QueryParamsParser(reqParam);	
+		var data = entityService.sortAndLimit(find(qp), qp.getSorts(), qp.getLimit()).collect(Collectors.toList());
 		return applyFilter(new MappingJacksonValue(data), qp.getProperties());
 	}
 

@@ -57,9 +57,11 @@ public class ItemController extends EntityController<String, Item> {
 	private final EventService eventService;
 	
 	public ItemController(ItemService itemService, EventService eventService) {
-		super(itemService, new SimpleFilterProvider()
-				.addFilter(FILTER_NAME, SimpleBeanPropertyFilter
-						.serializeAllExcept(Set.of(Item.FIELD_EVENTSSTATUS, Item.FIELD_EVENTS))));
+		super(itemService,
+				new SimpleFilterProvider().addFilter(FILTER_NAME,
+						SimpleBeanPropertyFilter
+								.serializeAllExcept(Set.of(Item.FIELD_EVENTSSTATUS, Item.FIELD_EVENTS))),
+				Item::fieldValueOf);
 		this.itemService = itemService;
 		this.eventService = eventService;
 	}
