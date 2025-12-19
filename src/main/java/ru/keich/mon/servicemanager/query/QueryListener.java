@@ -1,5 +1,6 @@
 package ru.keich.mon.servicemanager.query;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 import java.util.function.BiFunction;
@@ -10,6 +11,8 @@ import ru.keich.mon.servicemanager.KQueryParser.ExprANDContext;
 import ru.keich.mon.servicemanager.KQueryParser.ExprContainContext;
 import ru.keich.mon.servicemanager.KQueryParser.ExprContext;
 import ru.keich.mon.servicemanager.KQueryParser.ExprEqualContext;
+import ru.keich.mon.servicemanager.KQueryParser.ExprFieldsContainContext;
+import ru.keich.mon.servicemanager.KQueryParser.ExprFieldsEqualContext;
 import ru.keich.mon.servicemanager.KQueryParser.ExprGreaterEqualContext;
 import ru.keich.mon.servicemanager.KQueryParser.ExprGreaterThanContext;
 import ru.keich.mon.servicemanager.KQueryParser.ExprLessThanContext;
@@ -140,7 +143,27 @@ public class QueryListener<K, T extends Entity<K>> extends KQueryBaseListener {
 		}
 		return value;
 	}
-	
+
+	@Override
+	public void exitExprFieldsContain(ExprFieldsContainContext ctx) {
+		var key = pullString(ctx, 2);
+		var value = pullString(ctx, 4);
+		var entry = Map.entry(key, value);
+		var p = Predicates.contain(Entity.FIELD_FIELDS, entry);
+		var r = entityService.find(p);
+		stack.push(r);
+	}
+
+	@Override
+	public void exitExprFieldsEqual(ExprFieldsEqualContext ctx) {
+		var key = pullString(ctx, 2);
+		var value = pullString(ctx, 4);
+		var entry = Map.entry(key, value);
+		var p = Predicates.equal(Entity.FIELD_FIELDS, entry);
+		var r = entityService.find(p);
+		stack.push(r);
+	}
+
 	public Set<K> getResult() {
 		return stack.pop();
 	}

@@ -6,17 +6,19 @@ parse
  
  
 expr 
- : expr_props '='  expr_val  # ExprEqual
- | expr_props '!=' expr_val  # ExprNotEqual
- | expr_props '<'  expr_val  # ExprLessThan
- | expr_props '>'  expr_val  # ExprGreaterThan
- | expr_props '>=' expr_val  # ExprGreaterEqual
- | expr_props '=*' expr_val  # ExprContain
- | expr_props '!*' expr_val  # ExprNotContain
- | expr_props '!+' expr_val  # ExprNotInclude
- | '(' expr ')'              # ExprParentheses
- | expr 'and' expr           # ExprAND
- | expr 'or' expr            # ExprOR
+ : expr_props '='  expr_val        # ExprEqual
+ | expr_props '!=' expr_val        # ExprNotEqual
+ | expr_props '<'  expr_val        # ExprLessThan
+ | expr_props '>'  expr_val        # ExprGreaterThan
+ | expr_props '>=' expr_val        # ExprGreaterEqual
+ | expr_props '=*' expr_val        # ExprContain
+ | expr_props '!*' expr_val        # ExprNotContain
+ | expr_props '!+' expr_val        # ExprNotInclude
+ | FIELDS '.' STRING '='  STRING   # ExprFieldsEqual
+ | FIELDS '.' STRING '=*' STRING   # ExprFieldsContain
+ | '(' expr ')'                    # ExprParentheses
+ | expr 'and' expr                 # ExprAND
+ | expr 'or' expr                  # ExprOR
  ;
 
 expr_val
