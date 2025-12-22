@@ -1,9 +1,14 @@
 package ru.keich.mon.servicemanager.query;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 import java.util.function.BiFunction;
+
+import org.antlr.v4.runtime.tree.ParseTree;
 
 import ru.keich.mon.indexedhashmap.query.predicates.Predicates;
 import ru.keich.mon.servicemanager.KQueryBaseListener;
@@ -15,6 +20,7 @@ import ru.keich.mon.servicemanager.KQueryParser.ExprFieldsContainContext;
 import ru.keich.mon.servicemanager.KQueryParser.ExprFieldsEqualContext;
 import ru.keich.mon.servicemanager.KQueryParser.ExprGreaterEqualContext;
 import ru.keich.mon.servicemanager.KQueryParser.ExprGreaterThanContext;
+import ru.keich.mon.servicemanager.KQueryParser.ExprInEqualContext;
 import ru.keich.mon.servicemanager.KQueryParser.ExprLessThanContext;
 import ru.keich.mon.servicemanager.KQueryParser.ExprNotContainContext;
 import ru.keich.mon.servicemanager.KQueryParser.ExprNotEqualContext;
@@ -66,7 +72,7 @@ public class QueryListener<K, T extends Entity<K>> extends KQueryBaseListener {
 
 	@Override
 	public void exitExprNotEqual(ExprNotEqualContext ctx) {
-		var name = pullString(ctx, 0);
+		var name = getFieldName(ctx, 0);
 		var value = pullString(ctx, 2);
 		var p = Predicates.notEqual(name, valueConverter.apply(name, value));
 		var r = entityService.find(p);
@@ -75,7 +81,7 @@ public class QueryListener<K, T extends Entity<K>> extends KQueryBaseListener {
 
 	@Override
 	public void exitExprEqual(ExprEqualContext ctx) {
-		var name = pullString(ctx, 0);
+		var name = getFieldName(ctx, 0);
 		var value = pullString(ctx, 2);
 		var p = Predicates.equal(name, valueConverter.apply(name, value));
 		var r = entityService.find(p);
@@ -84,7 +90,7 @@ public class QueryListener<K, T extends Entity<K>> extends KQueryBaseListener {
 
 	@Override
 	public void exitExprNotContain(ExprNotContainContext ctx) {
-		var name = pullString(ctx, 0);
+		var name = getFieldName(ctx, 0);
 		var value = pullString(ctx, 2);
 		var p = Predicates.notContain(name, valueConverter.apply(name, value));
 		var r = entityService.find(p);
@@ -93,7 +99,7 @@ public class QueryListener<K, T extends Entity<K>> extends KQueryBaseListener {
 
 	@Override
 	public void exitExprNotInclude(ExprNotIncludeContext ctx) {
-		var name = pullString(ctx, 0);
+		var name = getFieldName(ctx, 0);
 		var value = pullString(ctx, 2);
 		var p = Predicates.notInclude(name, valueConverter.apply(name, value));
 		var r = entityService.find(p);
@@ -102,7 +108,7 @@ public class QueryListener<K, T extends Entity<K>> extends KQueryBaseListener {
 
 	@Override
 	public void exitExprLessThan(ExprLessThanContext ctx) {
-		var name = pullString(ctx, 0);
+		var name = getFieldName(ctx, 0);
 		var value = pullString(ctx, 2);
 		var p = Predicates.lessThan(name, valueConverter.apply(name, value));
 		var r = entityService.find(p);
@@ -111,7 +117,7 @@ public class QueryListener<K, T extends Entity<K>> extends KQueryBaseListener {
 
 	@Override
 	public void exitExprGreaterEqual(ExprGreaterEqualContext ctx) {
-		var name = pullString(ctx, 0);
+		var name = getFieldName(ctx, 0);
 		var value = pullString(ctx, 2);
 		var p = Predicates.greaterEqual(name, valueConverter.apply(name, value));
 		var r = entityService.find(p);
@@ -120,7 +126,7 @@ public class QueryListener<K, T extends Entity<K>> extends KQueryBaseListener {
 
 	@Override
 	public void exitExprContain(ExprContainContext ctx) {
-		var name = pullString(ctx, 0);
+		var name = getFieldName(ctx, 0);
 		var value = pullString(ctx, 2);
 		var p = Predicates.contain(name, valueConverter.apply(name, value));
 		var r = entityService.find(p);
@@ -129,17 +135,21 @@ public class QueryListener<K, T extends Entity<K>> extends KQueryBaseListener {
 
 	@Override
 	public void exitExprGreaterThan(ExprGreaterThanContext ctx) {
-		var name = pullString(ctx, 0);
+		var name = getFieldName(ctx, 0);
 		var value = pullString(ctx, 2);
 		var p = Predicates.greaterThan(name, valueConverter.apply(name, value));
 		var r = entityService.find(p);
 		stack.push(r);
 	}
 
+	private String getFieldName(ExprContext ctx, int idx) {
+		return pullString(ctx, idx);
+	}
+
 	private String pullString(ExprContext ctx, int idx) {
 		var value = ctx.getChild(idx).getText();
-		if('"' == value.charAt(0)) {
-			return value.substring(1, value.length()-1);
+		if ('"' == value.charAt(0)) {
+			return value.substring(1, value.length() - 1);
 		}
 		return value;
 	}
@@ -161,6 +171,38 @@ public class QueryListener<K, T extends Entity<K>> extends KQueryBaseListener {
 		var entry = Map.entry(key, value);
 		var p = Predicates.equal(Entity.FIELD_FIELDS, entry);
 		var r = entityService.find(p);
+		stack.push(r);
+	}
+
+	private void childToList(ParseTree child, List<String> out) {
+		if (child.getChildCount() == 0) {
+			var val = child.getText();
+			if (!",".equals(val)) {
+				if ('"' == val.charAt(0)) {
+					val = val.substring(1, val.length() - 1);
+				}
+				out.add(val);
+			}
+			return;
+		}
+		for (int i = 0; i < child.getChildCount(); i++) {
+			childToList(child.getChild(i), out);
+		}
+	}
+
+	@Override
+	public void exitExprInEqual(ExprInEqualContext ctx) {
+		var name = getFieldName(ctx, 0);
+		var list = new ArrayList<String>();
+		childToList(ctx.getChild(3), list);
+		var r = list.stream().map(value -> {
+			var p = Predicates.equal(name, valueConverter.apply(name, value));
+			return entityService.find(p);
+		}).reduce((result, el) -> {
+			result.addAll(el);
+			return result;
+		}).orElse(Collections.emptySet());
+
 		stack.push(r);
 	}
 

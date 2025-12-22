@@ -14,17 +14,23 @@ expr
  | expr_props '=*' expr_val        # ExprContain
  | expr_props '!*' expr_val        # ExprNotContain
  | expr_props '!+' expr_val        # ExprNotInclude
+ | expr_props IN '(' expr_str_list ')' # ExprInEqual
  | FIELDS '.' STRING '='  STRING   # ExprFieldsEqual
  | FIELDS '.' STRING '=*' STRING   # ExprFieldsContain
  | '(' expr ')'                    # ExprParentheses
- | expr 'and' expr                 # ExprAND
- | expr 'or' expr                  # ExprOR
+ | expr AND expr                 # ExprAND
+ | expr OR expr                  # ExprOR
  ;
 
 expr_val
  : STRING
  | num
  | base_status
+ ;
+ 
+expr_str_list
+ : STRING
+ | STRING ',' expr_str_list
  ;
  
 expr_props
@@ -40,6 +46,8 @@ expr_props
  | UPDATEDON
  | DELETEDON
  | AGGSTATUS
+ | SUMMARY
+ | NODE
  ;
 
 base_status
@@ -51,12 +59,18 @@ base_status
  | CRITICAL
  ;
 
+AND: A N D;
+OR: O R;
+IN: I N;
+
 CLEAR: C L E A R;
 INDETERMINATE: I N D E T E R M I N A T E;
 INFORMATION: I N F O R M A T I O N;
 WARNING: W A R N I N G;
 MAJOR: M A J O R;
 CRITICAL: C R I T I C A L;
+SUMMARY: S U M M A R Y;
+NODE: N O D E;
 
 VERSION: V E R S I O N;
 SOURCE: S O U R C E;
