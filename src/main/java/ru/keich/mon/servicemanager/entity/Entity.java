@@ -187,6 +187,7 @@ public class Entity<K> {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
+		@SuppressWarnings("unchecked")
 		Entity<K> other = (Entity<K>) obj;
 		return Objects.equals(id, other.id);
 	}
@@ -213,87 +214,87 @@ public class Entity<K> {
 		}
 		
 		public Builder(B entity) {
-			this.id = entity.getId();
-			this.version = entity.getVersion();
-			this.source = entity.getSource();
-			this.sourceKey = entity.getSourceKey();
-			this.sourceType = entity.getSourceType();
-			this.fields = entity.getFields();
-			this.createdOn = entity.getCreatedOn();
-			this.updatedOn = entity.getUpdatedOn();
-			this.deletedOn = entity.getDeletedOn();
-			this.fromHistory = new HashSet<String>(entity.getFromHistory());
-			this.fields = entity.getFields();
-			this.status = entity.getStatus();
+			id = entity.getId();
+			version = entity.getVersion();
+			source = entity.getSource();
+			sourceKey = entity.getSourceKey();
+			sourceType = entity.getSourceType();
+			fields = entity.getFields();
+			createdOn = entity.getCreatedOn();
+			updatedOn = entity.getUpdatedOn();
+			deletedOn = entity.getDeletedOn();
+			fromHistory = new HashSet<String>(entity.getFromHistory());
+			fields = entity.getFields();
+			status = entity.getStatus();
 		}
 		
 		public abstract B build();
 		
 		public Builder<K, B> source(String source) {
 			this.source = source;
-			this.changed = true;
+			changed = true;
 			return this;
 		}
 		
 		public  Builder<K, B> sourceKey(String sourceKey) {
 			this.sourceKey = sourceKey;
-			this.changed = true;
+			changed = true;
 			return this;
 		}
 		
 		public  Builder<K, B> sourceType(SourceType sourceType) {
 			this.sourceType = sourceType;
-			this.changed = true;
+			changed = true;
 			return this;
 		}
 		
 		public Builder<K, B> version(Long version) {
 			this.version = version;
-			this.changed = true;
+			changed = true;
 			return this;
 		}
 
 		public Builder<K, B> createdOn(Instant createdOn) {
 			this.createdOn = createdOn;
-			this.changed = true;
+			changed = true;
 			return this;
 		}
 		
 		public Builder<K, B> updatedOn(Instant updatedOn) {
 			this.updatedOn = updatedOn;
-			this.changed = true;
+			changed = true;
 			return this;
 		}
 
 		public Builder<K, B> deletedOn(Instant deletedOn) {
 			this.deletedOn = deletedOn;
-			this.changed = true;
+			changed = true;
 			return this;
 		}
 
 		public Builder<K, B> fromHistory(Set<String> fromHistory) {
 			this.fromHistory.clear();
 			this.fromHistory.addAll(fromHistory);
-			this.changed = true;
+			changed = true;
 			return this;
 		}
 		
 		public Builder<K, B> fromHistoryAdd(String value) {
 			this.fromHistory.add(value);
-			this.changed = true;
+			changed = true;
 			return this;
 		}
 		
 		public Builder<K, B> fields(Map<String, String> fields) {
 			this.fields = fields;
-			this.changed = true;
+			changed = true;
 			return this;
 		}
 		
 		public Builder<K, B> status(BaseStatus status) {
 			if(this.status != status) {
 				this.status = status;
-				this.changed = true;
+				changed = true;
 			}
 			return this;
 		}

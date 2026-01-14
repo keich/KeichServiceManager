@@ -101,24 +101,24 @@ public class Event extends Entity<String> {
 		
 		public Builder(Event event) {
 			super(event);
-			this.summary = event.getSummary();
-			this.type = event.getType();
-			this.status = event.getStatus();
-			this.endsOn = event.getEndsOn();
+			summary = event.getSummary();
+			type = event.getType();
+			status = event.getStatus();
+			endsOn = event.getEndsOn();
 
-			this.node = event.getNode();
-			if (this.node == null) {
+			node = event.getNode();
+			if (node == null) {
 				var fieldsNode = event.getFields().get("node");
 				if (fieldsNode != null) {
-					this.node = fieldsNode;
+					node = fieldsNode;
 				}
 			}
 
-			this.summary = event.getSummary();
+			summary = event.getSummary();
 			if (summary == null) {
 				var fieldsSummary = event.getFields().get("summary");
 				if (fieldsSummary != null) {
-					this.summary = fieldsSummary;
+					summary = fieldsSummary;
 				}
 			}
 		}
@@ -126,49 +126,49 @@ public class Event extends Entity<String> {
 		@Override
 		public Event build() {
 			return new Event(this.id,
-			this.version,
-			this.source,
-			this.sourceKey,
-			this.sourceType,
-			this.node,
-			this.summary,
-			this.type,
-			this.status,
-			this.fields,
-			this.fromHistory,
-			this.createdOn,
-			this.updatedOn,
-			this.deletedOn,
-			this.endsOn);
+			version,
+			source,
+			sourceKey,
+			sourceType,
+			node,
+			summary,
+			type,
+			status,
+			fields,
+			fromHistory,
+			createdOn,
+			updatedOn,
+			deletedOn,
+			endsOn);
 		}
 
 		public Builder type(EventType type) {
 			this.type = type;
-			this.changed = true;
+			changed = true;
 			return this;
 		}
 		
 		public Builder status(BaseStatus status) {
 			this.status = status;
-			this.changed = true;
+			changed = true;
 			return this;
 		}
 		
 		public Builder summary(String summary) {
 			this.summary = summary;
-			this.changed = true;
+			changed = true;
 			return this;
 		}
 		
 		public Builder node(String node) {
 			this.node = node;
-			this.changed = true;
+			changed = true;
 			return this;
 		}
 		
 		public Builder endsOn(Instant endsOn) {
 			this.endsOn = endsOn;
-			this.changed = true;
+			changed = true;
 			return this;
 		}
 

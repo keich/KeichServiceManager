@@ -185,37 +185,37 @@ public class Item extends Entity<String> {
 		
 		public Builder(Item item) {
 			super(item);
-			this.name = item.getName();
-			this.rules = item.getRules();
-			this.filters = item.getFilters();
-			this.childrenIds = item.getChildrenIds();
-			this.eventsStatus = new HashMap<>(item.getEventsStatus());
-			this.children = item.getChildren();
-			this.parents = item.getParents();
-			this.events = item.getEvents();
-			this.aggStatus = new AggregateStatus(item.getAggStatus());
-			this.maintenance = item.maintenance;
+			name = item.getName();
+			rules = item.getRules();
+			filters = item.getFilters();
+			childrenIds = item.getChildrenIds();
+			eventsStatus = new HashMap<>(item.getEventsStatus());
+			children = item.getChildren();
+			parents = item.getParents();
+			events = item.getEvents();
+			aggStatus = new AggregateStatus(item.getAggStatus());
+			maintenance = item.maintenance;
 		}
 		
 		@Override
 		public Item build() {
 			return new Item(this.id,
-			this.version,
-			this.source,
-			this.sourceKey,
-			this.sourceType,
-			this.status,
-			this.name,
-			this.fields,
-			this.rules,
-			this.filters,
-			this.childrenIds,
-			this.fromHistory,
-			this.createdOn,
-			this.updatedOn,
-			this.deletedOn,
-			this.eventsStatus,
-			this.aggStatus,
+			version,
+			source,
+			sourceKey,
+			sourceType,
+			status,
+			name,
+			fields,
+			rules,
+			filters,
+			childrenIds,
+			fromHistory,
+			createdOn,
+			updatedOn,
+			deletedOn,
+			eventsStatus,
+			aggStatus,
 			children,
 			parents,
 			events,
@@ -224,20 +224,20 @@ public class Item extends Entity<String> {
 		
 		public Builder name(String name) {
 			this.name = name;
-			this.changed = true;
+			changed = true;
 			return this;
 		}
 		
 		public Builder eventsStatus(Map<String, BaseStatus> eventsStatus) {
 			this.eventsStatus.clear();
 			this.eventsStatus.putAll(eventsStatus);
-			this.changed = true;
+			changed = true;
 			return this;
 		}
 		
 		public Builder eventsStatusUpdate(Consumer<Map<String, BaseStatus>> s) {
 			s.accept(eventsStatus);
-			this.changed = true;
+			changed = true;
 			return this;
 		}
 		
@@ -318,7 +318,7 @@ public class Item extends Entity<String> {
 		
 		public Builder aggStatus(AggregateStatus aggStatus) {
 			this.aggStatus = new AggregateStatus(aggStatus);
-			this.changed = true;
+			changed = true;
 			return this;
 		}
 		
