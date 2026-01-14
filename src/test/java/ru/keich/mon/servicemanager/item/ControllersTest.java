@@ -2,6 +2,7 @@ package ru.keich.mon.servicemanager.item;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -9,6 +10,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -26,6 +29,7 @@ import org.springframework.http.MediaType;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import ru.keich.mon.indexedhashmap.BaseStatus;
 import ru.keich.mon.servicemanager.entity.Entity;
@@ -37,9 +41,13 @@ public class ControllersTest {
 	@Autowired  
 	ItemService itemService;
 	
-	ObjectMapper mapper = new ObjectMapper();
+	private final ObjectMapper mapper;
 	
 
+	public ControllersTest() {
+		mapper = new ObjectMapper();
+		mapper.registerModule(new JavaTimeModule());
+	}
 
 	@Autowired
 	private TestRestTemplate restTemplate;
@@ -1025,6 +1033,70 @@ public class ControllersTest {
 		var itemDeleted = new Item.Builder(item).deletedOn(Instant.now()).build();
 		entityDeleteLogic("/item", item, itemDeleted, Item.class);
 	}
+	
+	@Test
+	public void itemMaintenanceAbsolute() throws IOException {	
+		var startsOn = Instant.now().minus(1, ChronoUnit.HOURS);
+		var endsOn = Instant.now().plus(1, ChronoUnit.HOURS);
+		var startsOnStr = "\"" + startsOn + "\"";
+		var endsOnStr = "\"" + endsOn+ "\"";
+		var json = """
+			    {
+			    	"id": "itemMaintenanceAbsolute",
+			        "source": "source_itemMaintenanceAbsolute",
+			        "sourceKey": "sourceKey_itemMaintenanceAbsolute",
+			        "fields": {
+			            "name": "Hello",
+			            "description": "World"
+			        },
+			        "maintenance": {
+				        "absolute": {
+					        "startsOn": """
+				+ startsOnStr + """
+						 , "endsOn": """
+				+ endsOnStr + """
+				        }
+			        }
+			    }	
+				""";
+		var item = mapper.readValue(json, Item.class);
+		entityAddAndGet("/item", item.getId(), item, Item.class, i -> {
+			assertEquals(item.getMaintenance().getAbsolute().getStartsOn(), i.getMaintenance().getAbsolute().getStartsOn());
+			assertEquals(item.getMaintenance().getAbsolute().getEndsOn(), i.getMaintenance().getAbsolute().getEndsOn());
+			assertTrue(i.isMaintenanceOn());
+		});
+		
+		var startsOn1 = Instant.now().minus(2, ChronoUnit.HOURS);
+		var endsOn1 = Instant.now().minus(1, ChronoUnit.HOURS);
+		var startsOnStr1 = "\"" + startsOn1 + "\"";
+		var endsOnStr1 = "\"" + endsOn1+ "\"";
+		var json1 = """
+			    {
+			    	"id": "itemMaintenanceAbsolute",
+			        "source": "source_itemMaintenanceAbsolute",
+			        "sourceKey": "sourceKey_itemMaintenanceAbsolute",
+			        "fields": {
+			            "name": "Hello",
+			            "description": "World"
+			        },
+			        "maintenance": {
+				        "absolute": {
+					        "startsOn": """
+				+ startsOnStr1 + """
+						 , "endsOn": """
+				+ endsOnStr1 + """
+				        }
+			        }
+			    }	
+				""";
+		var item1 = mapper.readValue(json1, Item.class);
+		entityAddAndGet("/item", item1.getId(), item1, Item.class, i -> {
+			assertEquals(item1.getMaintenance().getAbsolute().getStartsOn(), i.getMaintenance().getAbsolute().getStartsOn());
+			assertEquals(item1.getMaintenance().getAbsolute().getEndsOn(), i.getMaintenance().getAbsolute().getEndsOn());
+			assertFalse(i.isMaintenanceOn());
+		});
+	}
+	
 	
 	
 	// TODO test update not clear internal fields

@@ -68,6 +68,8 @@ public class Item extends Entity<String> {
 	
 	private final List<Event> events;
 	
+	private final ItemMaintenance maintenance;
+	
 	@JsonCreator
 	public Item(
 			@JsonProperty(value = "id", required = true) String id,
@@ -89,7 +91,8 @@ public class Item extends Entity<String> {
 			@JsonProperty(value = "aggStatus", access = JsonProperty.Access.READ_ONLY) AggregateStatus aggStatus,
 			@JsonProperty(value = "children") List<Item> children,
 			@JsonProperty(value = "parents") List<Item> parents,
-			@JsonProperty(value = "events") List<Event> events
+			@JsonProperty(value = "events") List<Event> events,
+			@JsonProperty(value = "maintenance", required = false) ItemMaintenance maintenance
 			) {
 		super(id, version, source, sourceKey, sourceType, fields, fromHistory, createdOn, updatedOn, deletedOn, status);
 
@@ -104,6 +107,11 @@ public class Item extends Entity<String> {
 		this.parents = parents == null ? Collections.emptyList() : Collections.unmodifiableList(parents);
 		this.events = events == null ? Collections.emptyList() : Collections.unmodifiableList(events);
 		this.aggStatus = aggStatus == null ? new AggregateStatus() : aggStatus;
+		this.maintenance = maintenance == null ? new ItemMaintenance(null) : maintenance;
+	}
+	
+	public boolean isMaintenanceOn() {
+		return maintenance.test();
 	}
 
 	public static Set<Object> getFiltersForIndex(Item item) {
@@ -167,6 +175,7 @@ public class Item extends Entity<String> {
 		protected List<Item> children;
 		protected List<Item> parents;
 		protected List<Event> events;
+		protected ItemMaintenance maintenance;
 		
 		
 
@@ -185,6 +194,7 @@ public class Item extends Entity<String> {
 			this.parents = item.getParents();
 			this.events = item.getEvents();
 			this.aggStatus = new AggregateStatus(item.getAggStatus());
+			this.maintenance = item.maintenance;
 		}
 		
 		@Override
@@ -208,7 +218,8 @@ public class Item extends Entity<String> {
 			this.aggStatus,
 			children,
 			parents,
-			events);
+			events,
+			maintenance);
 		}
 		
 		public Builder name(String name) {

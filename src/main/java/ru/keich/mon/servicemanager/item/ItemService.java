@@ -123,7 +123,7 @@ public class ItemService extends EntityService<String, Item> {
 		case UPDATE:
 			entityCache.computeIfPresent(info.getId(), (id, item) -> {
 				var newStatus = BaseStatus.CLEAR;
-				if(item.isNotDeleted()) {
+				if(item.isNotDeleted() && !item.isMaintenanceOn()) {
 					newStatus = calculateStatus(item);
 				}
 				if(item.getStatus() != newStatus) {
