@@ -19,8 +19,7 @@ import ru.keich.mon.indexedhashmap.IndexedHashMap;
 import ru.keich.mon.indexedhashmap.IndexedHashMap.EmptyCounter;
 import ru.keich.mon.indexedhashmap.IndexedHashMap.IndexType;
 import ru.keich.mon.indexedhashmap.query.Operator;
-import ru.keich.mon.indexedhashmap.query.predicates.Predicates;
-import ru.keich.mon.indexedhashmap.query.predicates.QueryPredicate;
+import ru.keich.mon.indexedhashmap.query.QueryPredicate;
 import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.QueueThreadReader;
 import ru.keich.mon.servicemanager.item.Item;
@@ -109,9 +108,9 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	}
 	
 	public List<T> deleteBySourceAndSourceKeyNot(String source, String sourceKey) {
-		var predicate = Predicates.equal(Entity.FIELD_SOURCE, source);
+		var predicate = QueryPredicate.equal(Entity.FIELD_SOURCE, source);
 		var sourceIndex = entityCache.keySet(predicate);
-		predicate = Predicates.equal(Entity.FIELD_SOURCEKEY, sourceKey);
+		predicate = QueryPredicate.equal(Entity.FIELD_SOURCEKEY, sourceKey);
 		var sourceKeyIndex = entityCache.keySet(predicate);
 		sourceIndex.removeAll(sourceKeyIndex);
 		return sourceIndex.stream()
@@ -125,7 +124,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	
 	@Scheduled(fixedRateString = "${entity.delete.fixedrate:60}", timeUnit = TimeUnit.SECONDS)
 	public void deleteOldScheduled() {
-		var predicate = Predicates.lessThan(Entity.FIELD_DELETEDON, Instant.now().minusSeconds(seconds));
+		var predicate = QueryPredicate.lessThan(Entity.FIELD_DELETEDON, Instant.now().minusSeconds(seconds));
 		entityCache.keySet(predicate).forEach(entityCache::remove);
 	}
 	

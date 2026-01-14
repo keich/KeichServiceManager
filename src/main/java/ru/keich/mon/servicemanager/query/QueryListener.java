@@ -10,7 +10,7 @@ import java.util.function.BiFunction;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import ru.keich.mon.indexedhashmap.query.predicates.Predicates;
+import ru.keich.mon.indexedhashmap.query.QueryPredicate;
 import ru.keich.mon.servicemanager.KQueryBaseListener;
 import ru.keich.mon.servicemanager.KQueryParser.ExprANDContext;
 import ru.keich.mon.servicemanager.KQueryParser.ExprContainContext;
@@ -74,7 +74,7 @@ public class QueryListener<K, T extends Entity<K>> extends KQueryBaseListener {
 	public void exitExprNotEqual(ExprNotEqualContext ctx) {
 		var name = getFieldName(ctx, 0);
 		var value = pullString(ctx, 2);
-		var p = Predicates.notEqual(name, valueConverter.apply(name, value));
+		var p = QueryPredicate.notEqual(name, valueConverter.apply(name, value));
 		var r = entityService.find(p);
 		stack.push(r);
 	}
@@ -83,7 +83,7 @@ public class QueryListener<K, T extends Entity<K>> extends KQueryBaseListener {
 	public void exitExprEqual(ExprEqualContext ctx) {
 		var name = getFieldName(ctx, 0);
 		var value = pullString(ctx, 2);
-		var p = Predicates.equal(name, valueConverter.apply(name, value));
+		var p = QueryPredicate.equal(name, valueConverter.apply(name, value));
 		var r = entityService.find(p);
 		stack.push(r);
 	}
@@ -92,7 +92,7 @@ public class QueryListener<K, T extends Entity<K>> extends KQueryBaseListener {
 	public void exitExprNotContain(ExprNotContainContext ctx) {
 		var name = getFieldName(ctx, 0);
 		var value = pullString(ctx, 2);
-		var p = Predicates.notContain(name, valueConverter.apply(name, value));
+		var p = QueryPredicate.notContain(name, valueConverter.apply(name, value));
 		var r = entityService.find(p);
 		stack.push(r);
 	}
@@ -101,7 +101,7 @@ public class QueryListener<K, T extends Entity<K>> extends KQueryBaseListener {
 	public void exitExprNotInclude(ExprNotIncludeContext ctx) {
 		var name = getFieldName(ctx, 0);
 		var value = pullString(ctx, 2);
-		var p = Predicates.notInclude(name, valueConverter.apply(name, value));
+		var p = QueryPredicate.notInclude(name, valueConverter.apply(name, value));
 		var r = entityService.find(p);
 		stack.push(r);
 	}
@@ -110,7 +110,7 @@ public class QueryListener<K, T extends Entity<K>> extends KQueryBaseListener {
 	public void exitExprLessThan(ExprLessThanContext ctx) {
 		var name = getFieldName(ctx, 0);
 		var value = pullString(ctx, 2);
-		var p = Predicates.lessThan(name, valueConverter.apply(name, value));
+		var p = QueryPredicate.lessThan(name, valueConverter.apply(name, value));
 		var r = entityService.find(p);
 		stack.push(r);
 	}
@@ -119,7 +119,7 @@ public class QueryListener<K, T extends Entity<K>> extends KQueryBaseListener {
 	public void exitExprGreaterEqual(ExprGreaterEqualContext ctx) {
 		var name = getFieldName(ctx, 0);
 		var value = pullString(ctx, 2);
-		var p = Predicates.greaterEqual(name, valueConverter.apply(name, value));
+		var p = QueryPredicate.greaterEqual(name, valueConverter.apply(name, value));
 		var r = entityService.find(p);
 		stack.push(r);
 	}
@@ -128,7 +128,7 @@ public class QueryListener<K, T extends Entity<K>> extends KQueryBaseListener {
 	public void exitExprContain(ExprContainContext ctx) {
 		var name = getFieldName(ctx, 0);
 		var value = pullString(ctx, 2);
-		var p = Predicates.contain(name, valueConverter.apply(name, value));
+		var p = QueryPredicate.contain(name, valueConverter.apply(name, value));
 		var r = entityService.find(p);
 		stack.push(r);
 	}
@@ -137,7 +137,7 @@ public class QueryListener<K, T extends Entity<K>> extends KQueryBaseListener {
 	public void exitExprGreaterThan(ExprGreaterThanContext ctx) {
 		var name = getFieldName(ctx, 0);
 		var value = pullString(ctx, 2);
-		var p = Predicates.greaterThan(name, valueConverter.apply(name, value));
+		var p = QueryPredicate.greaterThan(name, valueConverter.apply(name, value));
 		var r = entityService.find(p);
 		stack.push(r);
 	}
@@ -159,7 +159,7 @@ public class QueryListener<K, T extends Entity<K>> extends KQueryBaseListener {
 		var key = pullString(ctx, 2);
 		var value = pullString(ctx, 4);
 		var entry = Map.entry(key, value);
-		var p = Predicates.contain(Entity.FIELD_FIELDS, entry);
+		var p = QueryPredicate.contain(Entity.FIELD_FIELDS, entry);
 		var r = entityService.find(p);
 		stack.push(r);
 	}
@@ -169,7 +169,7 @@ public class QueryListener<K, T extends Entity<K>> extends KQueryBaseListener {
 		var key = pullString(ctx, 2);
 		var value = pullString(ctx, 4);
 		var entry = Map.entry(key, value);
-		var p = Predicates.equal(Entity.FIELD_FIELDS, entry);
+		var p = QueryPredicate.equal(Entity.FIELD_FIELDS, entry);
 		var r = entityService.find(p);
 		stack.push(r);
 	}
@@ -196,7 +196,7 @@ public class QueryListener<K, T extends Entity<K>> extends KQueryBaseListener {
 		var list = new ArrayList<String>();
 		childToList(ctx.getChild(3), list);
 		var r = list.stream().map(value -> {
-			var p = Predicates.equal(name, valueConverter.apply(name, value));
+			var p = QueryPredicate.equal(name, valueConverter.apply(name, value));
 			return entityService.find(p);
 		}).reduce((result, el) -> {
 			result.addAll(el);

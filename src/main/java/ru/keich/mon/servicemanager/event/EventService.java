@@ -29,11 +29,11 @@ import org.springframework.stereotype.Service;
 import io.micrometer.core.instrument.MeterRegistry;
 import ru.keich.mon.indexedhashmap.IndexedHashMap.IndexType;
 import ru.keich.mon.indexedhashmap.query.Operator;
-import ru.keich.mon.indexedhashmap.query.predicates.Predicates;
-import ru.keich.mon.servicemanager.query.QuerySort;
+import ru.keich.mon.indexedhashmap.query.QueryPredicate;
 import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.entity.EntityService;
 import ru.keich.mon.servicemanager.item.ItemService;
+import ru.keich.mon.servicemanager.query.QuerySort;
 
 @Service
 public class EventService extends EntityService<String, Event>{
@@ -102,7 +102,7 @@ public class EventService extends EntityService<String, Event>{
 
 	@Scheduled(fixedRateString = "1", timeUnit = TimeUnit.SECONDS)
 	public void deleteEndsOnScheduled() {
-		var predicate = Predicates.lessThan(Event.FIELD_ENDSON, Instant.now());
+		var predicate = QueryPredicate.lessThan(Event.FIELD_ENDSON, Instant.now());
 		entityCache.keySet(predicate).forEach(this::deleteById);
 	}
 

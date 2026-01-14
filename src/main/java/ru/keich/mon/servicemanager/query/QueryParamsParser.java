@@ -12,8 +12,7 @@ import org.springframework.util.MultiValueMap;
 
 import lombok.Getter;
 import ru.keich.mon.indexedhashmap.query.Operator;
-import ru.keich.mon.indexedhashmap.query.predicates.Predicates;
-import ru.keich.mon.indexedhashmap.query.predicates.QueryPredicate;
+import ru.keich.mon.indexedhashmap.query.QueryPredicate;
 import ru.keich.mon.servicemanager.item.Item;
 
 /*
@@ -102,7 +101,7 @@ public class QueryParamsParser {
 		return filteredPrams.stream()
 				.flatMap(param -> {
 					return param.getValue().stream()
-							.map(value -> Predicates.fromParam(param.getKey(), value, valueConverter));
+							.map(value -> QueryPredicate.fromParam(param.getKey(), value, valueConverter));
 				})
 				.filter(p -> p.getOperator() != Operator.ERROR)
 				.collect(Collectors.toList());

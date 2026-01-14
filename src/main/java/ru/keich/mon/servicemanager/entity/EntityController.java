@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 
-import ru.keich.mon.indexedhashmap.query.predicates.QueryPredicate;
+import ru.keich.mon.indexedhashmap.query.QueryPredicate;
 import ru.keich.mon.servicemanager.KQueryLexer;
 import ru.keich.mon.servicemanager.KQueryParser;
 import ru.keich.mon.servicemanager.query.QueryListener;
