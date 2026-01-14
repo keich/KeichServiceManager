@@ -13,8 +13,10 @@ import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import ru.keich.mon.indexedhashmap.IndexedHashMap;
+import ru.keich.mon.indexedhashmap.IndexedHashMap.EmptyCounter;
 import ru.keich.mon.indexedhashmap.IndexedHashMap.IndexType;
 import ru.keich.mon.indexedhashmap.query.Operator;
 import ru.keich.mon.indexedhashmap.query.predicates.Predicates;
@@ -42,6 +44,9 @@ import ru.keich.mon.servicemanager.query.QuerySort;
 
 public abstract class EntityService<K, T extends Entity<K>> {
 	static public final Long VERSION_MIN = 0L;
+	static final public String METRIC_NAME_MAP = "entityservice_";
+	static final public String METRIC_VERSION_NAME = "version";
+	static final public String METRIC_NAME_SERVICENAME = "servicename";
 	
 	private AtomicLong incrementVersion = new AtomicLong(VERSION_MIN + 1);
 	
@@ -49,6 +54,8 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	final protected QueueThreadReader<QueueInfo<K>> entityChangedQueue;
 	
 	final public String nodeName;
+	
+	private Counter metricVersion = EmptyCounter.EMPTY;
 
 	public EntityService(String nodeName, MeterRegistry registry, Integer threadCount) {
 		this.nodeName = nodeName;
@@ -66,10 +73,17 @@ public abstract class EntityService<K, T extends Entity<K>> {
 		
 		entityCache.addIndex(Entity.FIELD_FIELDS, IndexType.EQUAL, Entity::getFieldsForIndex);
 		entityCache.addIndex(Entity.FIELD_FROMHISTORY, IndexType.EQUAL, Entity::getFromHistoryForIndex);
+		
+		if (registry != null) {
+			metricVersion = registry.counter(METRIC_NAME_MAP + METRIC_VERSION_NAME, METRIC_NAME_SERVICENAME,
+					this.getClass().getSimpleName());
+		}
 	}
 	
 	protected Long getNextVersion() {
-		return incrementVersion.incrementAndGet();
+		var l =  incrementVersion.incrementAndGet();
+		metricVersion.increment(l);
+		return l;
 	}
 
 	protected abstract void queueRead(QueueInfo<K> info);	
