@@ -18,9 +18,8 @@ import org.springframework.stereotype.Service;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.java.Log;
-import ru.keich.mon.indexedhashmap.BaseStatus;
-import ru.keich.mon.indexedhashmap.IndexedHashMap.IndexType;
 import ru.keich.mon.indexedhashmap.query.Operator;
+import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.entity.EntityService;
 import ru.keich.mon.servicemanager.event.Event;
@@ -60,10 +59,10 @@ public class ItemService extends EntityService<String, Item> {
 		
 		AggregateStatus.setSeconds(aggStatusSeconds);
 		
-		entityCache.addIndex(Item.FIELD_FILTERS_EQL, IndexType.EQUAL, Item::getFiltersForIndex);
-		entityCache.addIndex(Item.FIELD_PARENTS, IndexType.EQUAL, Item::getParentsForIndex);
+		entityCache.addIndexEqual(Item.FIELD_FILTERS_EQL, Item::getFiltersForIndex);
+		entityCache.addIndexEqual(Item.FIELD_PARENTS, Item::getParentsForIndex);
 
-		entityCache.addIndex(Item.FIELD_EVENTIDS, IndexType.EQUAL, Item::getEventsIdsForIndex);
+		entityCache.addIndexEqual(Item.FIELD_EVENTIDS, Item::getEventsIdsForIndex);
 		
 		entityCache.addQueryField(Item.FIELD_AGGSTATUS, Item::getAggStatusForQuery);
 		entityCache.addQueryField(Item.FIELD_NAME, Item::getNameForQuery);

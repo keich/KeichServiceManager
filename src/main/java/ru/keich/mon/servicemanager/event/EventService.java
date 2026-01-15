@@ -27,7 +27,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import ru.keich.mon.indexedhashmap.IndexedHashMap.IndexType;
 import ru.keich.mon.indexedhashmap.query.Operator;
 import ru.keich.mon.indexedhashmap.query.QueryPredicate;
 import ru.keich.mon.servicemanager.QueueInfo;
@@ -42,7 +41,7 @@ public class EventService extends EntityService<String, Event>{
 
 	public void setItemService(ItemService itemService) {
 		this.itemService = itemService;
-		entityCache.addIndex(Event.FIELD_ENDSON, IndexType.SORTED, Event::getEndsOnForIndex);
+		entityCache.addIndexSorted(Event.FIELD_ENDSON, Event::getEndsOnForIndex);
 		entityCache.addQueryField(Event.FIELD_NODE, Event::getNodeForQuery);
 		entityCache.addQueryField(Event.FIELD_SUMMARY, Event::getSummaryForQuery);
 	}

@@ -6,7 +6,7 @@ import java.util.HashMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import ru.keich.mon.indexedhashmap.BaseStatus;
+import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.SourceType;
 import ru.keich.mon.servicemanager.event.Event;
 import ru.keich.mon.servicemanager.event.Event.EventType;

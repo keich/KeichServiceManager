@@ -3,7 +3,7 @@ package ru.keich.mon.servicemanager.item;
 import java.time.Instant;
 
 import lombok.Getter;
-import ru.keich.mon.indexedhashmap.BaseStatus;
+import ru.keich.mon.servicemanager.BaseStatus;
 
 /*
  * Copyright 2025 the original author or authors.

@@ -17,9 +17,9 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import ru.keich.mon.indexedhashmap.IndexedHashMap;
 import ru.keich.mon.indexedhashmap.IndexedHashMap.EmptyCounter;
-import ru.keich.mon.indexedhashmap.IndexedHashMap.IndexType;
 import ru.keich.mon.indexedhashmap.query.Operator;
 import ru.keich.mon.indexedhashmap.query.QueryPredicate;
+import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.QueueThreadReader;
 import ru.keich.mon.servicemanager.item.Item;
@@ -62,16 +62,16 @@ public abstract class EntityService<K, T extends Entity<K>> {
 		entityChangedQueue = new QueueThreadReader<QueueInfo<K>>(registry, this.getClass().getSimpleName(), threadCount, this::queueRead);
 		
 		entityCache.addIndexLongUniq(Entity.FIELD_VERSION, Entity::getVersionForIndex);
-		entityCache.addIndex(Entity.FIELD_SOURCE, IndexType.EQUAL, Entity::getSourceForIndex);
-		entityCache.addIndex(Entity.FIELD_SOURCEKEY, IndexType.EQUAL, Entity::getSourceKeyForIndex);
-		entityCache.addIndex(Entity.FIELD_SOURCETYPE, IndexType.EQUAL, Entity::getSourceTypeForIndex);
-		entityCache.addIndex(Entity.FIELD_DELETEDON, IndexType.SORTED, Entity::getDeletedOnForIndex);
-		entityCache.addIndex(Entity.FIELD_CREATEDON, IndexType.SORTED, Entity::getCreatedOnForIndex);
-		entityCache.addIndex(Entity.FIELD_UPDATEDON, IndexType.SORTED, Entity::getUpdatedOnForIndex);
-		entityCache.addIndexStatus(Item.FIELD_STATUS, Entity::getStatusForIndex);
+		entityCache.addIndexEqual(Entity.FIELD_SOURCE, Entity::getSourceForIndex);
+		entityCache.addIndexEqual(Entity.FIELD_SOURCEKEY, Entity::getSourceKeyForIndex);
+		entityCache.addIndexEqual(Entity.FIELD_SOURCETYPE, Entity::getSourceTypeForIndex);
+		entityCache.addIndexSorted(Entity.FIELD_DELETEDON, Entity::getDeletedOnForIndex);
+		entityCache.addIndexSorted(Entity.FIELD_CREATEDON, Entity::getCreatedOnForIndex);
+		entityCache.addIndexSorted(Entity.FIELD_UPDATEDON, Entity::getUpdatedOnForIndex);
+		entityCache.addIndexSmallInt(Item.FIELD_STATUS, BaseStatus.length, Entity::getStatusForIndex);
 		
-		entityCache.addIndex(Entity.FIELD_FIELDS, IndexType.EQUAL, Entity::getFieldsForIndex);
-		entityCache.addIndex(Entity.FIELD_FROMHISTORY, IndexType.EQUAL, Entity::getFromHistoryForIndex);
+		entityCache.addIndexEqual(Entity.FIELD_FIELDS, Entity::getFieldsForIndex);
+		entityCache.addIndexEqual(Entity.FIELD_FROMHISTORY, Entity::getFromHistoryForIndex);
 		
 		if (registry != null) {
 			metricVersion = registry.counter(METRIC_NAME_MAP + METRIC_VERSION_NAME, METRIC_NAME_SERVICENAME,

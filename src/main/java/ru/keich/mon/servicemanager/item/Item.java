@@ -14,7 +14,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import lombok.Getter;
-import ru.keich.mon.indexedhashmap.BaseStatus;
+import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.SourceType;
 import ru.keich.mon.servicemanager.entity.Entity;
 import ru.keich.mon.servicemanager.event.Event;

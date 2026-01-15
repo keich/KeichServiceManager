@@ -17,7 +17,7 @@ import org.springframework.http.MediaType;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import ru.keich.mon.indexedhashmap.BaseStatus;
+import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.alert.Alert;
 import ru.keich.mon.servicemanager.event.Event;
 

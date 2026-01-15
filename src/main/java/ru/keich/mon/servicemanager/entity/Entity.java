@@ -13,7 +13,7 @@ import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import lombok.Getter;
-import ru.keich.mon.indexedhashmap.BaseStatus;
+import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.SourceType;
 
 /*
@@ -127,8 +127,8 @@ public class Entity<K> {
 		return entity.getFromHistory().stream().collect(Collectors.toSet());
 	}
 	
-	public static BaseStatus getStatusForIndex(Entity<?> entity) {
-		return entity.getStatus();
+	public static Integer getStatusForIndex(Entity<?> entity) {
+		return entity.getStatus().getInt();
 	}
 	
 	public static Object parseKeyValString(String str) {
