@@ -8,7 +8,7 @@
 	</parent>
 	<groupId>ru.keich.mon</groupId>
 	<artifactId>KeichServiceManager</artifactId>
-	<version>0.0.2</version>
+	<version>0.1.0</version>
 	<name>KeichServiceManager</name>
 	<description>KeichServiceManager</description>
 	<properties>
@@ -53,7 +53,7 @@
 	  	<dependency>
 			<groupId>ru.keich.mon</groupId>
 			<artifactId>IndexedHashMap</artifactId>
-			<version>0.0.1</version>
+			<version>0.2.0</version>
 		</dependency>
 	</dependencies>
 	<build>
