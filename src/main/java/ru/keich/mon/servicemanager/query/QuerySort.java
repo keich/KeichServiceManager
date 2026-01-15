@@ -1,7 +1,5 @@
 package ru.keich.mon.servicemanager.query;
 
-import ru.keich.mon.indexedhashmap.query.Operator;
-
 /*
  * Copyright 2025 the original author or authors.
  *

@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 import org.springframework.util.MultiValueMap;
 
 import lombok.Getter;
-import ru.keich.mon.indexedhashmap.query.Operator;
 import ru.keich.mon.indexedhashmap.query.QueryPredicate;
 import ru.keich.mon.servicemanager.item.Item;
 
@@ -97,13 +96,51 @@ public class QueryParamsParser {
 		return this.getProperties();
 	}
 	
+	public static class ErrorParsePredicateException extends RuntimeException {
+		private static final long serialVersionUID = 1L;
+
+		public ErrorParsePredicateException(String errorMessage) {
+	        super(errorMessage);
+	    }
+		
+	}
+	
+	public static <C> QueryPredicate getPredicatesFromParam(String name, String value,
+			BiFunction<String, String, Object> valueConverter) {
+		var arr = value.split(":", 2);
+		if (arr.length == 2) {
+			var operator = Operator.fromString(arr[0]);
+			switch (operator) {
+			case EQ:
+				return QueryPredicate.equal(name, valueConverter.apply(name, arr[1]));
+			case NE:
+				return QueryPredicate.notEqual(name, valueConverter.apply(name, arr[1]));
+			case LT:
+				return QueryPredicate.lessThan(name, valueConverter.apply(name, arr[1]));
+			case GT:
+				return QueryPredicate.greaterThan(name, valueConverter.apply(name, arr[1]));
+			case GE:
+				return QueryPredicate.greaterEqual(name, valueConverter.apply(name, arr[1]));
+			case CO:
+				return QueryPredicate.contain(name, valueConverter.apply(name, arr[1]));
+			case NC:
+				return QueryPredicate.notContain(name, valueConverter.apply(name, arr[1]));
+			case NI:
+				return QueryPredicate.notInclude(name, valueConverter.apply(name, arr[1]));
+			default:
+				throw new ErrorParsePredicateException("Wrong operator: " + arr[0]);
+			}
+		} else {
+			return QueryPredicate.equal(name, valueConverter.apply(name, value));
+		}
+	}
+	
 	public List<QueryPredicate> getPredicates(BiFunction<String, String, Object> valueConverter) {
 		return filteredPrams.stream()
 				.flatMap(param -> {
 					return param.getValue().stream()
-							.map(value -> QueryPredicate.fromParam(param.getKey(), value, valueConverter));
+							.map(value -> getPredicatesFromParam(param.getKey(), value, valueConverter));
 				})
-				.filter(p -> p.getOperator() != Operator.ERROR)
 				.collect(Collectors.toList());
 	}
 

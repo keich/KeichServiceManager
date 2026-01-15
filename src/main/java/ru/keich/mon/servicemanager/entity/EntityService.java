@@ -17,12 +17,12 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import ru.keich.mon.indexedhashmap.IndexedHashMap;
 import ru.keich.mon.indexedhashmap.IndexedHashMap.EmptyCounter;
-import ru.keich.mon.indexedhashmap.query.Operator;
 import ru.keich.mon.indexedhashmap.query.QueryPredicate;
 import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.QueueThreadReader;
 import ru.keich.mon.servicemanager.item.Item;
+import ru.keich.mon.servicemanager.query.Operator;
 import ru.keich.mon.servicemanager.query.QuerySort;
 
 /*

@@ -18,12 +18,12 @@ import org.springframework.stereotype.Service;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.java.Log;
-import ru.keich.mon.indexedhashmap.query.Operator;
 import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.entity.EntityService;
 import ru.keich.mon.servicemanager.event.Event;
 import ru.keich.mon.servicemanager.event.EventService;
+import ru.keich.mon.servicemanager.query.Operator;
 import ru.keich.mon.servicemanager.query.QuerySort;
 
 
