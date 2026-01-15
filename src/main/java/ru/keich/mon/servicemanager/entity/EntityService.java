@@ -80,9 +80,8 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	}
 	
 	protected Long getNextVersion() {
-		var l =  incrementVersion.incrementAndGet();
-		metricVersion.increment(l);
-		return l;
+		metricVersion.increment();
+		return incrementVersion.incrementAndGet();
 	}
 
 	protected abstract void queueRead(QueueInfo<K> info);	
