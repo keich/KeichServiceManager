@@ -2,6 +2,7 @@ package ru.keich.mon.servicemanager.entity;
 
 import java.time.Instant;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -18,7 +19,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import ru.keich.mon.indexedhashmap.IndexedHashMap;
 import ru.keich.mon.indexedhashmap.Metrics;
-import ru.keich.mon.indexedhashmap.query.QueryPredicate;
+import ru.keich.mon.servicemanager.query.QueryPredicate;
 import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.QueueThreadReader;
@@ -135,10 +136,8 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	}
 
 	public List<T> deleteBySourceAndSourceKeyNot(String source, String sourceKey) {
-		var predicate = QueryPredicate.equal(Entity.FIELD_SOURCE, source);
-		var sourceIndex = entityCache.keySet(predicate);
-		predicate = QueryPredicate.equal(Entity.FIELD_SOURCEKEY, sourceKey);
-		var sourceKeyIndex = entityCache.keySet(predicate);
+		var sourceIndex = entityCache.keySetIndexEq(Entity.FIELD_SOURCE, source);
+		var sourceKeyIndex = entityCache.keySetIndexEq(Entity.FIELD_SOURCEKEY, sourceKey);
 		sourceIndex.removeAll(sourceKeyIndex);
 		return sourceIndex.stream()
 				.map(this::deleteById)
@@ -151,8 +150,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 
 	@Scheduled(fixedRateString = "${entity.delete.fixedrate:60}", timeUnit = TimeUnit.SECONDS)
 	public void deleteOldScheduled() {
-		var predicate = QueryPredicate.lessThan(Entity.FIELD_DELETEDON, Instant.now().minusSeconds(seconds));
-		entityCache.keySet(predicate).forEach(entityCache::remove);
+		entityCache.keySetIndexGetBefore(Entity.FIELD_DELETEDON, Instant.now().minusSeconds(seconds)).forEach(entityCache::remove);
 	}
 
 	public Comparator<T> getSortComparator(QuerySort sort) {
@@ -193,7 +191,32 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	}
 
 	public Set<K> find(QueryPredicate predicate) {
-		return entityCache.keySet(predicate);
+		var fieldName = predicate.getName();
+		var indexNames = entityCache.getIndexNames();
+		if(indexNames.contains(fieldName)) {
+			switch (predicate.getOperator()) {
+			case EQ:
+				return entityCache.keySetIndexEq(fieldName, predicate.getValue());
+			case NE:
+			case CO:
+			case NC:
+				return entityCache.keySetIndexPredicate(fieldName, predicate.getPredicate());
+			case NI:
+				var t = entityCache.keySetIndexEq(fieldName, predicate.getValue());
+				var r = entityCache.keySet();
+				r.removeAll(t);
+				return r;
+			case LT:
+				return entityCache.keySetIndexGetBefore(fieldName, predicate.getValue());
+			case GT:
+				return entityCache.keySetIndexGetAfter(fieldName, predicate.getValue());
+			case GE:
+				return entityCache.keySetIndexGetAfterEqual(fieldName, predicate.getValue());
+			default:
+				return new HashSet<>(0);
+			}
+		}
+		return new HashSet<>(0);
 	}
 
 	@Scheduled(fixedRateString = "5", timeUnit = TimeUnit.SECONDS)

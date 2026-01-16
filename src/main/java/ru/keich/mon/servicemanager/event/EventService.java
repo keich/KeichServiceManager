@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -27,11 +28,11 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import ru.keich.mon.indexedhashmap.query.QueryPredicate;
 import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.entity.EntityService;
 import ru.keich.mon.servicemanager.item.ItemService;
 import ru.keich.mon.servicemanager.query.Operator;
+import ru.keich.mon.servicemanager.query.QueryPredicate;
 import ru.keich.mon.servicemanager.query.QuerySort;
 
 @Service
@@ -42,8 +43,6 @@ public class EventService extends EntityService<String, Event>{
 	public void setItemService(ItemService itemService) {
 		this.itemService = itemService;
 		entityCache.addIndexSorted(Event.FIELD_ENDSON, Event::getEndsOnForIndex);
-		entityCache.addQueryField(Event.FIELD_NODE, Event::getNodeForQuery);
-		entityCache.addQueryField(Event.FIELD_SUMMARY, Event::getSummaryForQuery);
 	}
 
 	public EventService(@Value("${replication.nodename}") String nodeName
@@ -101,8 +100,7 @@ public class EventService extends EntityService<String, Event>{
 
 	@Scheduled(fixedRateString = "1", timeUnit = TimeUnit.SECONDS)
 	public void deleteEndsOnScheduled() {
-		var predicate = QueryPredicate.lessThan(Event.FIELD_ENDSON, Instant.now());
-		entityCache.keySet(predicate).forEach(this::deleteById);
+		entityCache.keySetIndexGetBefore(Event.FIELD_ENDSON, Instant.now()).forEach(this::deleteById);
 	}
 
 	@Override
@@ -119,4 +117,15 @@ public class EventService extends EntityService<String, Event>{
 		return super.getSortComparator(sort);
 	}
 
+	@Override
+	public Set<String> find(QueryPredicate predicate) {
+		var fieldName = predicate.getName();
+		if(Event.FIELD_NODE.equals(fieldName)) {
+			return entityCache.keySetPredicate(Event::getNodeForQuery, predicate.getPredicate());
+		} else if(Event.FIELD_SUMMARY.equals(fieldName)) {
+			return entityCache.keySetPredicate(Event::getSummaryForQuery, predicate.getPredicate());
+		}
+		return super.find(predicate);
+	}
+	
 }

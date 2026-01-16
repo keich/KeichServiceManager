@@ -24,6 +24,7 @@ import ru.keich.mon.servicemanager.entity.EntityService;
 import ru.keich.mon.servicemanager.event.Event;
 import ru.keich.mon.servicemanager.event.EventService;
 import ru.keich.mon.servicemanager.query.Operator;
+import ru.keich.mon.servicemanager.query.QueryPredicate;
 import ru.keich.mon.servicemanager.query.QuerySort;
 
 
@@ -56,17 +57,10 @@ public class ItemService extends EntityService<String, Item> {
 			,@Value("${item.thread.count:2}") Integer threadCount
 			,@Value("${item.aggstatus.seconds:60}") Long aggStatusSeconds) {
 		super(nodeName, registry, threadCount);
-		
 		AggregateStatus.setSeconds(aggStatusSeconds);
-		
 		entityCache.addIndexEqual(Item.FIELD_FILTERS_EQL, Item::getFiltersForIndex);
 		entityCache.addIndexEqual(Item.FIELD_PARENTS, Item::getParentsForIndex);
-
 		entityCache.addIndexEqual(Item.FIELD_EVENTIDS, Item::getEventsIdsForIndex);
-		
-		entityCache.addQueryField(Item.FIELD_AGGSTATUS, Item::getAggStatusForQuery);
-		entityCache.addQueryField(Item.FIELD_NAME, Item::getNameForQuery);
-		
 		this.eventService = eventService;
 		eventService.setItemService(this);
 	}
@@ -266,6 +260,17 @@ public class ItemService extends EntityService<String, Item> {
 			return (e1, e2) -> e1.getName().compareTo(e2.getName()) * mult;
 		}
 		return super.getSortComparator(sort);
+	}
+
+	@Override
+	public Set<String> find(QueryPredicate predicate) {
+		var fieldName = predicate.getName();
+		if(Item.FIELD_NAME.equals(fieldName)) {
+			return entityCache.keySetPredicate(Item::getNameForQuery, predicate.getPredicate());
+		} else if(Item.FIELD_AGGSTATUS.equals(fieldName)) {
+			return entityCache.keySetPredicate(Item::getAggStatusForQuery, predicate.getPredicate());
+		}
+		return super.find(predicate);
 	}
 
 }

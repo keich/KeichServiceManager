@@ -10,7 +10,6 @@ import java.util.function.BiFunction;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import ru.keich.mon.indexedhashmap.query.QueryPredicate;
 import ru.keich.mon.servicemanager.KQueryBaseListener;
 import ru.keich.mon.servicemanager.KQueryParser.ExprANDContext;
 import ru.keich.mon.servicemanager.KQueryParser.ExprContainContext;

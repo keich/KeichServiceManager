@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 import org.springframework.util.MultiValueMap;
 
 import lombok.Getter;
-import ru.keich.mon.indexedhashmap.query.QueryPredicate;
 import ru.keich.mon.servicemanager.item.Item;
 
 /*
