@@ -15,8 +15,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import ru.keich.mon.indexedhashmap.IndexedHashMap;
-import ru.keich.mon.indexedhashmap.IndexedHashMap.EmptyCounter;
+import ru.keich.mon.indexedhashmap.Metrics;
 import ru.keich.mon.indexedhashmap.query.QueryPredicate;
 import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.QueueInfo;
@@ -43,24 +44,37 @@ import ru.keich.mon.servicemanager.query.QuerySort;
 
 public abstract class EntityService<K, T extends Entity<K>> {
 	static public final Long VERSION_MIN = 0L;
-	static final public String METRIC_NAME_MAP = "entityservice_";
+	static final public String METRIC_NAME_PREFIX = "ksm_";
 	static final public String METRIC_VERSION_NAME = "version";
 	static final public String METRIC_NAME_SERVICENAME = "servicename";
-	
+	static final public String METRIC_NAME_OPERATION = "operation";
+	static final public String METRIC_NAME_ADDED = "insered";
+	static final public String METRIC_NAME_UPDATED = "updated";
+	static final public String METRIC_NAME_REMOVED = "removed";
+	static final public String METRIC_NAME_OBJECTS = "objects_";
+	static final public String METRIC_NAME_SIZE = "size";
+	static final public String METRIC_NAME_INDEX = "index";
+
+	private ru.keich.mon.indexedhashmap.Metrics metrics;
+
 	private AtomicLong incrementVersion = new AtomicLong(VERSION_MIN + 1);
-	
+
 	final protected IndexedHashMap<K, T> entityCache;
 	final protected QueueThreadReader<QueueInfo<K>> entityChangedQueue;
-	
+
 	final public String nodeName;
-	
-	private Counter metricVersion = EmptyCounter.EMPTY;
+
+	private final Counter metricVersion;
+	private final Counter metricAdded;
+	private final Counter metricUpdated;
+	private final Counter metricRemoved;
 
 	public EntityService(String nodeName, MeterRegistry registry, Integer threadCount) {
 		this.nodeName = nodeName;
-		entityCache = new IndexedHashMap<>(registry, this.getClass().getSimpleName());
-		entityChangedQueue = new QueueThreadReader<QueueInfo<K>>(registry, this.getClass().getSimpleName(), threadCount, this::queueRead);
-		
+		var serviceName = this.getClass().getSimpleName();
+		entityCache = new IndexedHashMap<>();
+		entityChangedQueue = new QueueThreadReader<QueueInfo<K>>(serviceName, threadCount, this::queueRead);
+
 		entityCache.addIndexLongUniq(Entity.FIELD_VERSION, Entity::getVersionForIndex);
 		entityCache.addIndexEqual(Entity.FIELD_SOURCE, Entity::getSourceForIndex);
 		entityCache.addIndexEqual(Entity.FIELD_SOURCEKEY, Entity::getSourceKeyForIndex);
@@ -69,35 +83,49 @@ public abstract class EntityService<K, T extends Entity<K>> {
 		entityCache.addIndexSorted(Entity.FIELD_CREATEDON, Entity::getCreatedOnForIndex);
 		entityCache.addIndexSorted(Entity.FIELD_UPDATEDON, Entity::getUpdatedOnForIndex);
 		entityCache.addIndexSmallInt(Item.FIELD_STATUS, BaseStatus.length, Entity::getStatusForIndex);
-		
+
 		entityCache.addIndexEqual(Entity.FIELD_FIELDS, Entity::getFieldsForIndex);
 		entityCache.addIndexEqual(Entity.FIELD_FROMHISTORY, Entity::getFromHistoryForIndex);
-		
-		if (registry != null) {
-			metricVersion = registry.counter(METRIC_NAME_MAP + METRIC_VERSION_NAME, METRIC_NAME_SERVICENAME,
-					this.getClass().getSimpleName());
-		}
+
+		metrics = entityCache.getMetrics();
+		var tags = Tags.of(METRIC_NAME_SERVICENAME, serviceName);
+
+		metricVersion = registry.counter(METRIC_NAME_PREFIX + METRIC_VERSION_NAME, tags);
+		var opr = METRIC_NAME_PREFIX + METRIC_NAME_OPERATION;
+		metricAdded = registry.counter(opr, tags.and(Tags.of(METRIC_NAME_OPERATION, METRIC_NAME_ADDED)));
+		metricUpdated = registry.counter(opr, tags.and(Tags.of(METRIC_NAME_OPERATION, METRIC_NAME_UPDATED)));
+		metricRemoved = registry.counter(opr, tags.and(Tags.of(METRIC_NAME_OPERATION, METRIC_NAME_REMOVED)));
+
+		registry.gauge(METRIC_NAME_PREFIX + METRIC_NAME_OBJECTS + METRIC_NAME_SIZE, tags, this, s -> s.getChachedMetrics().objectsSize());
+
+		var indexSize = entityCache.getMetrics().indexSize();
+		var idxName = METRIC_NAME_PREFIX + METRIC_NAME_INDEX + "_" + METRIC_NAME_SIZE;
+		indexSize.entrySet().forEach(e -> {
+			var indexName = e.getKey();
+			var indexTags = tags.and(Tags.of(METRIC_NAME_INDEX, indexName));
+			registry.gauge(idxName, indexTags, this, s -> s.getChachedMetrics().indexSize().get(indexName));
+		});
+
 	}
-	
+
 	protected Long getNextVersion() {
-		metricVersion.increment();
 		return incrementVersion.incrementAndGet();
 	}
 
 	protected abstract void queueRead(QueueInfo<K> info);	
-	
+
 	public abstract void addOrUpdate(T entity);
-	
+
 	public abstract Optional<T> deleteById(K entityId);
-	
+
 	public Optional<T> findById(K id) {
 		return Optional.ofNullable(entityCache.get(id));
 	}
-	
+
 	public List<T> findByIds(Set<K> ids) {
 		return entityCache.get(ids);
 	}
-	
+
 	public List<T> deleteByIds(List<K> ids) {
 		return ids.stream()
 				.map(this::deleteById)
@@ -105,7 +133,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 				.map(Optional::get)
 				.collect(Collectors.toList());
 	}
-	
+
 	public List<T> deleteBySourceAndSourceKeyNot(String source, String sourceKey) {
 		var predicate = QueryPredicate.equal(Entity.FIELD_SOURCE, source);
 		var sourceIndex = entityCache.keySet(predicate);
@@ -120,13 +148,13 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	}
 
 	@Value("${entity.delete.secondsold:30}") Long seconds;
-	
+
 	@Scheduled(fixedRateString = "${entity.delete.fixedrate:60}", timeUnit = TimeUnit.SECONDS)
 	public void deleteOldScheduled() {
 		var predicate = QueryPredicate.lessThan(Entity.FIELD_DELETEDON, Instant.now().minusSeconds(seconds));
 		entityCache.keySet(predicate).forEach(entityCache::remove);
 	}
-	
+
 	public Comparator<T> getSortComparator(QuerySort sort) {
 		final int mult = sort.getOperator() == Operator.SORTDESC ? -1 : 1;
 		switch (sort.getName()) {
@@ -149,7 +177,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 			return e1.getVersion().compareTo(e2.getVersion()) * mult;
 		};
 	}
-	
+
 	public Stream<T> sortAndLimit(Stream<T> data, List<QuerySort> sorts, long limit) {
 		if(!sorts.isEmpty()) {
 			var comparator = sorts.stream()
@@ -163,9 +191,26 @@ public abstract class EntityService<K, T extends Entity<K>> {
 		}
 		return data;
 	}
-	
+
 	public Set<K> find(QueryPredicate predicate) {
 		return entityCache.keySet(predicate);
 	}
-	
+
+	@Scheduled(fixedRateString = "5", timeUnit = TimeUnit.SECONDS)
+	public void updateMetrics() {
+		synchronized(metrics) {
+			this.metrics = entityCache.getMetrics();
+			metricVersion.increment(incrementVersion.doubleValue() - metricVersion.count());
+			metricAdded.increment(metrics.added() - metricAdded.count());
+			metricUpdated.increment(metrics.updated() - metricUpdated.count());
+			metricRemoved.increment(metrics.removed() - metricRemoved.count());
+		}
+	}
+
+	private Metrics getChachedMetrics() {
+		synchronized(metrics) {
+			return metrics;
+		}
+	}
+
 }

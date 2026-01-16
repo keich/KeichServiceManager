@@ -5,10 +5,6 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
-import ru.keich.mon.indexedhashmap.IndexedHashMap.EmptyCounter;
-
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -35,18 +31,9 @@ public class QueueThreadReader<K> {
 	static final Integer POLL_SECONDS = 30;
 	private final Consumer<K> consumer;
 	private BlockingQueue<K> queue = new LinkedBlockingDeque<K>();
-	private Counter metricAdded = EmptyCounter.EMPTY;
-	private Counter metricRemoved = EmptyCounter.EMPTY;
 
-	public QueueThreadReader(MeterRegistry registry, String name, int  number, Consumer<K> consumer) {
+	public QueueThreadReader(String name, int  number, Consumer<K> consumer) {
 		super();
-		if(registry != null) {
-			metricAdded = registry.counter(METRIC_NAME_QUEUE + METRIC_NAME_OPERATION, METRIC_NAME_OPERATION,
-					METRIC_NAME_ADDED, METRIC_NAME_SERVICENAME, name);
-	
-			metricRemoved = registry.counter(METRIC_NAME_QUEUE + METRIC_NAME_OPERATION, METRIC_NAME_OPERATION,
-					METRIC_NAME_REMOVED, METRIC_NAME_SERVICENAME, name);
-		}
 		this.consumer = consumer;
 		for (int i = 0; i < number; i++) {
 			runThread(name + "-queue-" + i);
@@ -59,7 +46,6 @@ public class QueueThreadReader<K> {
 				while (true) {
 					var info = queue.poll(POLL_SECONDS, TimeUnit.SECONDS);
 					if(info != null) {
-						metricRemoved.increment();
 						consumer.accept(info);
 					}
 				}
@@ -72,7 +58,6 @@ public class QueueThreadReader<K> {
 	}
 
 	public void add(K value) {
-		metricAdded.increment();
 		queue.add(value);
 	}
 
