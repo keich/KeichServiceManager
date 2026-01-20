@@ -20,10 +20,6 @@ import java.util.function.Predicate;
  */
 
 public class QueryPredicate {
-
-	public static enum Operator {
-		NE, EQ, LT, GT, GE, CO, NC, NI;
-	}
 	
 	final String name;
 	final Operator operator;
