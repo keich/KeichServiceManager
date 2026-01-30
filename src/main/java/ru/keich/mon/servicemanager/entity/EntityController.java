@@ -22,11 +22,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 
-import ru.keich.mon.servicemanager.query.QueryPredicate;
-import ru.keich.mon.servicemanager.KQueryLexer;
-import ru.keich.mon.servicemanager.KQueryParser;
-import ru.keich.mon.servicemanager.query.QueryListener;
+import ru.keich.mon.servicemanager.KSearchLexer;
+import ru.keich.mon.servicemanager.KSearchParser;
 import ru.keich.mon.servicemanager.query.QueryParamsParser;
+import ru.keich.mon.servicemanager.query.QueryPredicate;
+import ru.keich.mon.servicemanager.search.SearchListener;
+
 
 /*
  * Copyright 2024 the original author or authors.
@@ -100,12 +101,12 @@ public class EntityController<K, T extends Entity<K>> {
 	}
 
 	protected Stream<T> findBySearch(String search) {
-		var lexer = new KQueryLexer(CharStreams.fromString(search));
+		var lexer = new KSearchLexer(CharStreams.fromString(search));
 		var tokens = new CommonTokenStream(lexer);
-		var parser = new KQueryParser(tokens);
+		var parser = new KSearchParser(tokens);
 		var tree = parser.parse();
 		var walker = new ParseTreeWalker();
-		var q = new QueryListener<K, T>(entityService, valueConverter);
+		var q = new SearchListener<K, T>(entityService, valueConverter);
 		walker.walk(q, tree);
 		return q.getResult()
 				.stream()

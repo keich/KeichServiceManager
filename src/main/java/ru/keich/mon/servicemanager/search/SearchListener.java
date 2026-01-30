@@ -1,4 +1,4 @@
-package ru.keich.mon.servicemanager.query;
+package ru.keich.mon.servicemanager.search;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,23 +10,24 @@ import java.util.function.BiFunction;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import ru.keich.mon.servicemanager.KQueryBaseListener;
-import ru.keich.mon.servicemanager.KQueryParser.ExprANDContext;
-import ru.keich.mon.servicemanager.KQueryParser.ExprContainContext;
-import ru.keich.mon.servicemanager.KQueryParser.ExprContext;
-import ru.keich.mon.servicemanager.KQueryParser.ExprEqualContext;
-import ru.keich.mon.servicemanager.KQueryParser.ExprFieldsContainContext;
-import ru.keich.mon.servicemanager.KQueryParser.ExprFieldsEqualContext;
-import ru.keich.mon.servicemanager.KQueryParser.ExprGreaterEqualContext;
-import ru.keich.mon.servicemanager.KQueryParser.ExprGreaterThanContext;
-import ru.keich.mon.servicemanager.KQueryParser.ExprInEqualContext;
-import ru.keich.mon.servicemanager.KQueryParser.ExprLessThanContext;
-import ru.keich.mon.servicemanager.KQueryParser.ExprNotContainContext;
-import ru.keich.mon.servicemanager.KQueryParser.ExprNotEqualContext;
-import ru.keich.mon.servicemanager.KQueryParser.ExprNotIncludeContext;
-import ru.keich.mon.servicemanager.KQueryParser.ExprORContext;
+import ru.keich.mon.servicemanager.KSearchBaseListener;
+import ru.keich.mon.servicemanager.KSearchParser.ExprANDContext;
+import ru.keich.mon.servicemanager.KSearchParser.ExprContainContext;
+import ru.keich.mon.servicemanager.KSearchParser.ExprContext;
+import ru.keich.mon.servicemanager.KSearchParser.ExprEqualContext;
+import ru.keich.mon.servicemanager.KSearchParser.ExprFieldsContainContext;
+import ru.keich.mon.servicemanager.KSearchParser.ExprFieldsEqualContext;
+import ru.keich.mon.servicemanager.KSearchParser.ExprGreaterEqualContext;
+import ru.keich.mon.servicemanager.KSearchParser.ExprGreaterThanContext;
+import ru.keich.mon.servicemanager.KSearchParser.ExprInEqualContext;
+import ru.keich.mon.servicemanager.KSearchParser.ExprLessThanContext;
+import ru.keich.mon.servicemanager.KSearchParser.ExprNotContainContext;
+import ru.keich.mon.servicemanager.KSearchParser.ExprNotEqualContext;
+import ru.keich.mon.servicemanager.KSearchParser.ExprNotIncludeContext;
+import ru.keich.mon.servicemanager.KSearchParser.ExprORContext;
 import ru.keich.mon.servicemanager.entity.Entity;
 import ru.keich.mon.servicemanager.entity.EntityService;
+import ru.keich.mon.servicemanager.query.QueryPredicate;
 
 /*
  * Copyright 2025 the original author or authors.
@@ -44,13 +45,13 @@ import ru.keich.mon.servicemanager.entity.EntityService;
  * limitations under the License.
  */
 
-public class QueryListener<K, T extends Entity<K>> extends KQueryBaseListener {
+public class SearchListener<K, T extends Entity<K>> extends KSearchBaseListener {
 
 	private final EntityService<K, T> entityService;
 	private final Stack<Set<K>> stack = new Stack<>();
 	private final BiFunction<String, String, Object> valueConverter;
 
-	public QueryListener(EntityService<K, T> entityService, BiFunction<String, String, Object> valueConverter) {
+	public SearchListener(EntityService<K, T> entityService, BiFunction<String, String, Object> valueConverter) {
 		this.entityService = entityService;
 		this.valueConverter = valueConverter;
 	}

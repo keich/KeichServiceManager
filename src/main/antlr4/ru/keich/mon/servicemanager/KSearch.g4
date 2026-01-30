@@ -1,4 +1,4 @@
-grammar KQuery;
+grammar KSearch;
 
 parse
  : expr EOF
