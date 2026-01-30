@@ -2,12 +2,15 @@ package ru.keich.mon.servicemanager.entity;
 
 import java.time.Instant;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -62,6 +65,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 
 	final protected IndexedHashMap<K, T> entityCache;
 	final protected QueueThreadReader<QueueInfo<K>> entityChangedQueue;
+	final protected Map<String, Function<T, Set<Object>>> queryValueMapper = new HashMap<>();
 
 	final public String nodeName;
 
@@ -214,6 +218,10 @@ public abstract class EntityService<K, T extends Entity<K>> {
 				return entityCache.keySetIndexGetAfterEqual(fieldName, predicate.getValue());
 			default:
 				return new HashSet<>(0);
+			}
+		} else {
+			if(queryValueMapper.containsKey(fieldName)) {
+				return entityCache.keySetPredicate(queryValueMapper.get(fieldName), predicate.getPredicate());
 			}
 		}
 		return new HashSet<>(0);

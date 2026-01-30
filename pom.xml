@@ -8,7 +8,7 @@
 	</parent>
 	<groupId>ru.keich.mon</groupId>
 	<artifactId>KeichServiceManager</artifactId>
-	<version>0.1.1</version>
+	<version>0.1.2</version>
 	<name>KeichServiceManager</name>
 	<description>KeichServiceManager</description>
 	<properties>

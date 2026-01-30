@@ -20,7 +20,6 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -32,7 +31,6 @@ import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.entity.EntityService;
 import ru.keich.mon.servicemanager.item.ItemService;
 import ru.keich.mon.servicemanager.query.Operator;
-import ru.keich.mon.servicemanager.query.QueryPredicate;
 import ru.keich.mon.servicemanager.query.QuerySort;
 
 @Service
@@ -49,6 +47,8 @@ public class EventService extends EntityService<String, Event>{
 			,MeterRegistry registry
 			,@Value("${event.thread.count:2}") Integer threadCount) {
 		super(nodeName, registry, threadCount);
+		queryValueMapper.put(Event.FIELD_NODE, Event::getNodeForQuery);
+		queryValueMapper.put(Event.FIELD_SUMMARY, Event::getSummaryForQuery);
 	}
 
 	@Override
@@ -117,15 +117,4 @@ public class EventService extends EntityService<String, Event>{
 		return super.getSortComparator(sort);
 	}
 
-	@Override
-	public Set<String> find(QueryPredicate predicate) {
-		var fieldName = predicate.getName();
-		if(Event.FIELD_NODE.equals(fieldName)) {
-			return entityCache.keySetPredicate(Event::getNodeForQuery, predicate.getPredicate());
-		} else if(Event.FIELD_SUMMARY.equals(fieldName)) {
-			return entityCache.keySetPredicate(Event::getSummaryForQuery, predicate.getPredicate());
-		}
-		return super.find(predicate);
-	}
-	
 }
