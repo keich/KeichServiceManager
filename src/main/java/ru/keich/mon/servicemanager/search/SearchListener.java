@@ -88,7 +88,7 @@ public class SearchListener<K, T extends Entity<K>> extends KSearchBaseListener 
 	@Override
 	public void exitExprNotContain(ExprNotContainContext ctx) {
 		var name = getFieldName(ctx, 0);
-		var value = pullString(ctx, 2);
+		var value = pullString(ctx, 3);
 		var p = QueryPredicate.notContain(name, entityService.fieldValueOf(name, value));
 		var r = entityService.find(p);
 		stack.push(r);
@@ -97,7 +97,7 @@ public class SearchListener<K, T extends Entity<K>> extends KSearchBaseListener 
 	@Override
 	public void exitExprNotInclude(ExprNotIncludeContext ctx) {
 		var name = getFieldName(ctx, 0);
-		var value = pullString(ctx, 2);
+		var value = pullString(ctx, 3);
 		var p = QueryPredicate.notInclude(name, entityService.fieldValueOf(name, value));
 		var r = entityService.find(p);
 		stack.push(r);

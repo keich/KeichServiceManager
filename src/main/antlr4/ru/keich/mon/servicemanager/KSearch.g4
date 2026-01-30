@@ -13,7 +13,7 @@ expr
  | expr_props '>=' expr_val        # ExprGreaterEqual
  | expr_props LIKE expr_val        # ExprContain
  | expr_props NOT LIKE expr_val    # ExprNotContain
- | expr_props HAS NOT  expr_val        # ExprNotInclude
+ | expr_props HAS NOT expr_val     # ExprNotInclude
  | expr_props IN '(' expr_str_list ')' # ExprInEqual
  | FIELDS '.' STRING '='  STRING   # ExprFieldsEqual
  | FIELDS '.' STRING LIKE STRING   # ExprFieldsContain
