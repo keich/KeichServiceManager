@@ -40,7 +40,7 @@ public class EventController extends EntityController<String, Event> {
 	final EventService eventService;
 	
 	public EventController(EventService eventService) {
-		super(eventService, Event::fieldValueOf);
+		super(eventService);
 		this.eventService = eventService;
 	}
 

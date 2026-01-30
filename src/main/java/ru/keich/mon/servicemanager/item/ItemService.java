@@ -263,4 +263,9 @@ public class ItemService extends EntityService<String, Item> {
 		return super.getSortComparator(sort);
 	}
 
+	@Override
+	public Object fieldValueOf(String fieldName, String str) {
+		return Item.fieldValueOf(fieldName, str);
+	}
+
 }

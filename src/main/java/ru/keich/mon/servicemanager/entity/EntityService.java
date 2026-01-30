@@ -243,5 +243,9 @@ public abstract class EntityService<K, T extends Entity<K>> {
 			return metrics;
 		}
 	}
+	
+	public Object fieldValueOf(String fieldName, String str) {
+		return Entity.fieldValueOf(fieldName, str);
+	}
 
 }

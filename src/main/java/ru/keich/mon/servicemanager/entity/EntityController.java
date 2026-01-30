@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -48,23 +47,20 @@ import ru.keich.mon.servicemanager.search.SearchListener;
 public class EntityController<K, T extends Entity<K>> {
 
 	private EntityService<K, T> entityService;
-	final protected BiFunction<String, String, Object> valueConverter;
 
 	public static final String FILTER_NAME = "propertiesFilter";
 	
 	protected final SimpleFilterProvider jsonDefaultFilter;
 	
-	public EntityController(EntityService<K, T> entityService, SimpleFilterProvider jsonDefaultFilter, BiFunction<String, String, Object> valueConverter) {
+	public EntityController(EntityService<K, T> entityService, SimpleFilterProvider jsonDefaultFilter) {
 		super();
 		this.entityService = entityService;
-		this.valueConverter = valueConverter;
 		this.jsonDefaultFilter = jsonDefaultFilter;
 	}
 	
-	public EntityController(EntityService<K, T> entityService, BiFunction<String, String, Object> valueConverter) {
+	public EntityController(EntityService<K, T> entityService) {
 		super();
 		this.entityService = entityService;
-		this.valueConverter = valueConverter;
 		this.jsonDefaultFilter = new SimpleFilterProvider().addFilter(FILTER_NAME, SimpleBeanPropertyFilter.serializeAll());
 	}
 	
@@ -106,7 +102,7 @@ public class EntityController<K, T extends Entity<K>> {
 		var parser = new KSearchParser(tokens);
 		var tree = parser.parse();
 		var walker = new ParseTreeWalker();
-		var q = new SearchListener<K, T>(entityService, valueConverter);
+		var q = new SearchListener<K, T>(entityService);
 		walker.walk(q, tree);
 		return q.getResult()
 				.stream()
@@ -119,7 +115,7 @@ public class EntityController<K, T extends Entity<K>> {
 		if(qp.isHasSearch()) {
 			return findBySearch(qp.getSearch());
 		} else {
-			return findByPredicates(qp.getPredicates(valueConverter));
+			return findByPredicates(qp.getPredicates(entityService::fieldValueOf));
 		}
 	}
 

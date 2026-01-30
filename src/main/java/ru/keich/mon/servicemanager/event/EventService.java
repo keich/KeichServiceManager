@@ -117,4 +117,8 @@ public class EventService extends EntityService<String, Event>{
 		return super.getSortComparator(sort);
 	}
 
+	public Object fieldValueOf(String fieldName, String str) {
+		return Event.fieldValueOf(fieldName, str);
+	}
+
 }
