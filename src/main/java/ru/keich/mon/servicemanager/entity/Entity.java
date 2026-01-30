@@ -155,7 +155,7 @@ public class Entity<K> {
 		case FIELD_DELETEDON:
 			return Instant.parse(str);
 		case FIELD_STATUS:
-			return BaseStatus.fromString(str);
+			return BaseStatus.fromString(str).getInt();
 		case FIELD_SOURCETYPE:
 			return SourceType.valueOf(str);
 		case FIELD_FIELDS:
