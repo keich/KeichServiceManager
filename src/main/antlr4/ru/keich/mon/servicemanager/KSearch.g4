@@ -11,12 +11,12 @@ expr
  | expr_props '<'  expr_val        # ExprLessThan
  | expr_props '>'  expr_val        # ExprGreaterThan
  | expr_props '>=' expr_val        # ExprGreaterEqual
- | expr_props '=*' expr_val        # ExprContain
- | expr_props '!*' expr_val        # ExprNotContain
- | expr_props '!+' expr_val        # ExprNotInclude
+ | expr_props LIKE expr_val        # ExprContain
+ | expr_props NOT LIKE expr_val    # ExprNotContain
+ | expr_props HAS NOT  expr_val        # ExprNotInclude
  | expr_props IN '(' expr_str_list ')' # ExprInEqual
  | FIELDS '.' STRING '='  STRING   # ExprFieldsEqual
- | FIELDS '.' STRING '=*' STRING   # ExprFieldsContain
+ | FIELDS '.' STRING LIKE STRING   # ExprFieldsContain
  | '(' expr ')'                    # ExprParentheses
  | expr AND expr                 # ExprAND
  | expr OR expr                  # ExprOR
@@ -62,6 +62,10 @@ base_status
 AND: A N D;
 OR: O R;
 IN: I N;
+LIKE: L I K E;
+NOT: N O T;
+HAS: H A S;
+
 
 CLEAR: C L E A R;
 INDETERMINATE: I N D E T E R M I N A T E;

@@ -190,7 +190,7 @@ public class ControllersTest {
 	// TODO use Entity<K> with ParameterizedTypeReference
 	private <K, T extends Entity<K>> List<T> entityGetByVersionGreaterThan(String path, Long version, String nodename,
 			Class<T> responseType) {
-		var result = restTemplate.exchange("/api/v1" + path + "?search=fromHistory!*\"" + nodename + "\" and version>" + version,
+		var result = restTemplate.exchange("/api/v1" + path + "?search=fromHistory has not \"" + nodename + "\" and version>" + version,
 				HttpMethod.GET, null, new ParameterizedTypeReference<List<T>>() {
 				});
 		assertEquals(HttpStatus.OK, result.getStatusCode());
