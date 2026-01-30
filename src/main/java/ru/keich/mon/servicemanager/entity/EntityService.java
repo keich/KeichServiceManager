@@ -197,7 +197,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	public Set<K> find(QueryPredicate predicate) {
 		var fieldName = predicate.getName();
 		var indexNames = entityCache.getIndexNames();
-		if(indexNames.contains(fieldName)) {
+		if (indexNames.contains(fieldName)) {
 			switch (predicate.getOperator()) {
 			case EQ:
 				return entityCache.keySetIndexEq(fieldName, predicate.getValue());
@@ -219,10 +219,10 @@ public abstract class EntityService<K, T extends Entity<K>> {
 			default:
 				return new HashSet<>(0);
 			}
-		} else {
-			if(queryValueMapper.containsKey(fieldName)) {
-				return entityCache.keySetPredicate(queryValueMapper.get(fieldName), predicate.getPredicate());
-			}
+		} else if (Entity.FIELD_ID.equals(fieldName)) {
+			return entityCache.keySet().stream().filter(predicate.getPredicate()).collect(Collectors.toSet());
+		} else if (queryValueMapper.containsKey(fieldName)) {
+			return entityCache.keySetPredicate(queryValueMapper.get(fieldName), predicate.getPredicate());
 		}
 		return new HashSet<>(0);
 	}

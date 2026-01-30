@@ -34,7 +34,8 @@ expr_str_list
  ;
  
 expr_props
- : NAME
+ : ID
+ | NAME
  | VERSION
  | SOURCE
  | SOURCEKEY
