@@ -181,6 +181,7 @@ public class Item extends Entity<String> {
 
 		public Builder(String id) {
 			super(id);
+			aggStatus = new AggregateStatus();
 		}
 		
 		public Builder(Item item) {
@@ -328,8 +329,19 @@ public class Item extends Entity<String> {
 			aggStatus.set(status);
 			return this;
 		}
-		
-			
+
+		public Builder rules(Map<String, ItemRule> rules) {
+			this.rules = rules;
+			changed = true;
+			return this;
+		}
+
+		public Builder filters(Map<String, ItemFilter> filters) {
+			this.filters = filters;
+			changed = true;
+			return this;
+		}
+
 	}
 	
 }

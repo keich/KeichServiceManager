@@ -211,6 +211,7 @@ public class Entity<K> {
 		
 		public Builder(K id) {
 			this.id = id;
+			fromHistory = new HashSet<>();
 		}
 		
 		public Builder(B entity) {
