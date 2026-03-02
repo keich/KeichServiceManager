@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -120,8 +121,13 @@ public class EntityController<K, T extends Entity<K>> {
 	}
 
 	public ResponseEntity<MappingJacksonValue> find(MultiValueMap<String, String> reqParam) {
-		var qp = new QueryParamsParser(reqParam);	
-		var data = entityService.sortAndLimit(find(qp), qp.getSorts(), qp.getLimit()).collect(Collectors.toList());
+		return find(reqParam, (s, qp) -> s);
+	}
+
+	public ResponseEntity<MappingJacksonValue> find(MultiValueMap<String, String> reqParam, BiFunction<Stream<T>, QueryParamsParser, Stream<T>> prepare) {
+		var qp = new QueryParamsParser(reqParam);
+		var sortedLimetedData = entityService.sortAndLimit(find(qp), qp.getSorts(), qp.getLimit());
+		var data = prepare.apply(sortedLimetedData, qp).collect(Collectors.toList());
 		return applyFilter(new MappingJacksonValue(data), qp.getProperties());
 	}
 

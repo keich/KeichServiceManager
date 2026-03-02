@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.json.MappingJacksonValue;
@@ -75,7 +76,12 @@ public class ItemController extends EntityController<String, Item> {
 	@GetMapping("/item")
 	@CrossOrigin(origins = "*")
 	public ResponseEntity<MappingJacksonValue> find(@RequestParam MultiValueMap<String, String> reqParam) {
-		return super.find(reqParam);
+		return super.find(reqParam, (s, qp) -> {
+			if(qp.isNeedEvents()) {
+				return s.map(this::fillEvents);
+			}
+			return s;
+		});
 	}
 	
 	Item fillEvents(Item item) { //TODO sort?
@@ -88,6 +94,10 @@ public class ItemController extends EntityController<String, Item> {
 		return items.stream()
 				.map(this::fillEvents)
 				.toList();
+	}
+	
+	Stream<Item> fillEvents(Stream<Item> items) {
+		return items.map(this::fillEvents);
 	}
 	
 	@GetMapping("/item/{id}")
