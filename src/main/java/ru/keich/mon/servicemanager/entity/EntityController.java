@@ -116,7 +116,7 @@ public class EntityController<K, T extends Entity<K>> {
 		if(qp.isHasSearch()) {
 			return findBySearch(qp.getSearch());
 		} else {
-			return findByPredicates(qp.getPredicates(entityService::fieldValueOf));
+			return findByPredicates(qp.getPredicates());
 		}
 	}
 
@@ -125,14 +125,14 @@ public class EntityController<K, T extends Entity<K>> {
 	}
 
 	public ResponseEntity<MappingJacksonValue> find(MultiValueMap<String, String> reqParam, BiFunction<Stream<T>, QueryParamsParser, Stream<T>> prepare) {
-		var qp = new QueryParamsParser(reqParam);
+		var qp = new QueryParamsParser(reqParam, entityService::fieldValueOf);
 		var sortedLimetedData = entityService.sortAndLimit(find(qp), qp.getSorts(), qp.getLimit());
 		var data = prepare.apply(sortedLimetedData, qp).collect(Collectors.toList());
 		return applyFilter(new MappingJacksonValue(data), qp.getProperties());
 	}
 
 	public ResponseEntity<MappingJacksonValue> findById(@PathVariable K id, @RequestParam MultiValueMap<String, String> reqParam) {
-		var qp = new QueryParamsParser(reqParam);	
+		var qp = new QueryParamsParser(reqParam, entityService::fieldValueOf);	
 		return entityService.findById(id)
 				.map(MappingJacksonValue::new)
 				.map(value -> applyFilter(value, qp.getProperties()))

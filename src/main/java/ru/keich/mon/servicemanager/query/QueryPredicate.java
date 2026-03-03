@@ -19,7 +19,7 @@ import java.util.function.Predicate;
  * limitations under the License.
  */
 
-public class QueryPredicate {
+public class QueryPredicate implements QueryParam {
 	
 	final String name;
 	final Operator operator;
@@ -119,6 +119,16 @@ public class QueryPredicate {
 	public static QueryPredicate notInclude(String name, Object value) {
 		final Predicate<Object> predicate =  v -> !v.toString().contains(value.toString());
 		return new QueryPredicate(name, Operator.NI, value, predicate);
+	}
+
+	@Override
+	public QueryPredicate getPredocate() {
+		return this;
+	}
+
+	@Override
+	public QueryParamType getType() {
+		return QueryParam.QueryParamType.PREDICATE;
 	}
 
 }

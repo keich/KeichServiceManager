@@ -1,12 +1,10 @@
 package ru.keich.mon.servicemanager.query;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 
 import org.springframework.util.MultiValueMap;
 
@@ -35,64 +33,67 @@ public class QueryParamsParser {
 	public static final String QUERY_PROPERTY = "property";
 	public static final String QUERY_LIMIT = "limit";
 	public static final String QUERY_ID = "id";
-	private final List<QuerySort> sorts;
-	private final Set<String> properties;
-	private final long limit;
-	private final String search;
-	private final boolean needEvents;
-	private final boolean hasSearch;
-	private final List<Entry<String, List<String>>> filteredPrams;
+	private final List<QuerySort> sorts = new ArrayList<QuerySort>();
+	private final Set<String> properties = new HashSet<String>();
+	private long limit = -1;
+	private String search = "";
+	private boolean needEvents = false;
+	private boolean hasSearch = false;
+	private final List<QueryPredicate> predicates = new ArrayList<QueryPredicate>();
+	//private final List<Entry<String, List<String>>> filteredPrams;
 	
-	public QueryParamsParser(MultiValueMap<String, String> reqParam) {	
-		if (reqParam.containsKey(QUERY_LIMIT)) {
-			limit = Long.valueOf(reqParam.get(QUERY_LIMIT).get(0));
-		} else {
-			limit = -1;
-		}
-		
-		if(reqParam.containsKey(QUERY_SEARCH)) {
-			search = reqParam.get(QUERY_SEARCH).get(0);
-			hasSearch = true;
-		} else {
-			search = "";
-			hasSearch = false;
-		}
-		
-		if(reqParam.containsKey(QUERY_PROPERTY)) {
-			properties = reqParam.get(QUERY_PROPERTY).stream().collect(Collectors.toSet());
-			properties.add(QUERY_ID);
-		} else {
-			properties = Collections.emptySet();
-		}
-		
-		if (this.getProperties().contains(Item.FIELD_EVENTS)) {
-			this.needEvents = true;
-		} else {
-			this.needEvents = false;
-		}
-		
-		this.filteredPrams = reqParam.entrySet().stream()
-				.filter(p -> !p.getKey().toLowerCase().equals(QUERY_PROPERTY))
-				.filter(p -> !p.getKey().toLowerCase().equals(QUERY_LIMIT))
-				.filter(p -> !p.getKey().toLowerCase().equals(QUERY_SEARCH))
-				.collect(Collectors.toList());
-		
-		this.sorts = filteredPrams.stream()
-				.flatMap(param -> {
-					return param.getValue().stream().map(value -> QuerySort.fromParam(param.getKey(), value));
-				})
-				.filter(s -> s.getOperator() != Operator.ERROR)
-				.sorted(QuerySort::compareTo)
-				.collect(Collectors.toList());
+	public QueryParamsParser(MultiValueMap<String, String> reqParam, BiFunction<String, String, Object> valueConverter) {	
+		reqParam.entrySet().forEach(p -> {
+			var param = p.getKey();
+			var lowerParam = param.toLowerCase();
+			var value = p.getValue();
+			var size = value.size();
+			
+			switch (lowerParam) {
+			case QUERY_LIMIT:
+				if (size == 0) {
+					throw new ErrorParsePredicateException("Param " + lowerParam + " is empty");
+				} else if (size > 1) {
+					throw new ErrorParsePredicateException("Param " + lowerParam + " has multiple values");
+				}
+				limit = Long.valueOf(value.get(0));
+				break;
+			case QUERY_SEARCH:
+				if (size == 0) {
+					throw new ErrorParsePredicateException("Param " + lowerParam + " is empty");
+				} else if (size > 1) {
+					throw new ErrorParsePredicateException("Param " + lowerParam + " has multiple values");
+				}
+				search = value.get(0);
+				hasSearch = true;
+				break;
+			case QUERY_PROPERTY:
+				if(size == 0) {
+					throw new ErrorParsePredicateException("Param " + lowerParam + " is empty");
+				}
+				value.forEach(properties::add);
+				properties.add(QUERY_ID);
+				break;
+			default:
+				value.forEach(v -> {
+					var qparam = getQueryParams(param, v, valueConverter);
+					switch(qparam.getType()) {
+					case SORT:
+						sorts.add(qparam.getSort());
+						break;
+					case PREDICATE:
+						predicates.add(qparam.getPredocate());
+						break;
+					}
+				});
+				break;
+			}			
+		});
+		needEvents = properties.contains(Item.FIELD_EVENTS);
 	}
 	
-	public Set<String> getPropertiesWith(String name) {
-		if (!this.getProperties().isEmpty()) {
-			var ret = new HashSet<String>(this.getProperties());
-			ret.add(name);
-			return ret;
-		}
-		return this.getProperties();
+	public void addProperty(String name) {
+		properties.add(name);
 	}
 	
 	public static class ErrorParsePredicateException extends RuntimeException {
@@ -104,8 +105,7 @@ public class QueryParamsParser {
 		
 	}
 	
-	public static <C> QueryPredicate getPredicatesFromParam(String name, String value,
-			BiFunction<String, String, Object> valueConverter) {
+	public static QueryParam getQueryParams(String name, String value, BiFunction<String, String, Object> valueConverter) {
 		var arr = value.split(":", 2);
 		if (arr.length == 2) {
 			var operator = Operator.fromString(arr[0]);
@@ -126,21 +126,16 @@ public class QueryParamsParser {
 				return QueryPredicate.notContain(name, valueConverter.apply(name, arr[1]));
 			case NI:
 				return QueryPredicate.notInclude(name, valueConverter.apply(name, arr[1]));
+			case SORT:
+				return new QuerySort(name, operator, Integer.valueOf(arr[1]));
+			case SORTDESC:
+				return new QuerySort(name, operator, Integer.valueOf(arr[1]));
 			default:
 				throw new ErrorParsePredicateException("Wrong operator: " + arr[0]);
 			}
 		} else {
 			return QueryPredicate.equal(name, valueConverter.apply(name, value));
 		}
-	}
-	
-	public List<QueryPredicate> getPredicates(BiFunction<String, String, Object> valueConverter) {
-		return filteredPrams.stream()
-				.flatMap(param -> {
-					return param.getValue().stream()
-							.map(value -> getPredicatesFromParam(param.getKey(), value, valueConverter));
-				})
-				.collect(Collectors.toList());
 	}
 
 }
