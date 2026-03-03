@@ -104,14 +104,11 @@ public class ItemController extends EntityController<String, Item> {
 	@CrossOrigin(origins = "*")
 	public ResponseEntity<MappingJacksonValue> findById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
 		var qp = new QueryParamsParser(reqParam, itemService::fieldValueOf);	
-		return itemService.findById(id)
-				.map(item -> {
-					if(qp.isNeedEvents()) {
-						return fillEvents(item);
-					}
-					return item;
-				})
-				.map(MappingJacksonValue::new)
+		var data = itemService.findById(id);
+		if(qp.isNeedEvents()) {
+			data = data.map(this::fillEvents);
+		}
+		return data.map(MappingJacksonValue::new)
 				.map(value -> applyFilter(value, qp.getProperties()))
 				.orElse(ResponseEntity.notFound().build());
 	}
@@ -166,10 +163,13 @@ public class ItemController extends EntityController<String, Item> {
 	// TODO rename children/tree
 	ResponseEntity<MappingJacksonValue> getTree(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
 		var qp = new QueryParamsParser(reqParam, itemService::fieldValueOf);
-		qp.addProperty(QUERY_CHILDREN);
+		var properties = qp.getProperties();
+		if(properties.size() > 0) {
+			qp.addProperty(QUERY_CHILDREN);
+		}
 		return itemService.findById(id)
 				.map(parent -> setChildren(parent, new HashSet<String>()))
-				.map(parent -> applyFilter(new MappingJacksonValue(parent), qp.getProperties()))
+				.map(parent -> applyFilter(new MappingJacksonValue(parent), properties))
 				.orElse(ResponseEntity.notFound().build());
 	}
 	
@@ -196,10 +196,13 @@ public class ItemController extends EntityController<String, Item> {
 	@CrossOrigin(origins = "*")
 	ResponseEntity<MappingJacksonValue> findParentsTreeById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
 		var qp = new QueryParamsParser(reqParam, itemService::fieldValueOf);
-		qp.addProperty(QUERY_PARENTS);
+		var properties = qp.getProperties();
+		if(properties.size() > 0) {
+			qp.addProperty(QUERY_PARENTS);
+		}
 		return itemService.findById(id)
 				.map(child -> setParents(child, new HashSet<String>()))
-				.map(child -> applyFilter(new MappingJacksonValue(child), qp.getProperties()))
+				.map(child -> applyFilter(new MappingJacksonValue(child), properties))
 				.orElse(ResponseEntity.notFound().build());
 	}
 	

@@ -72,7 +72,6 @@ public class QueryParamsParser {
 					throw new ErrorParsePredicateException("Param " + lowerParam + " is empty");
 				}
 				value.forEach(properties::add);
-				properties.add(QUERY_ID);
 				break;
 			default:
 				value.forEach(v -> {
@@ -90,6 +89,9 @@ public class QueryParamsParser {
 			}			
 		});
 		needEvents = properties.contains(Item.FIELD_EVENTS);
+		if(properties.size() > 0) {
+			properties.add(QUERY_ID);
+		}
 	}
 	
 	public void addProperty(String name) {
