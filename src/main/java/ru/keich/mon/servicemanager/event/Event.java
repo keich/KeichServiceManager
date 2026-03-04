@@ -35,6 +35,7 @@ public class Event extends Entity<String> {
 	public static final String FIELD_ENDSON = "endsOn";
 	public static final String FIELD_NODE = "node";
 	public static final String FIELD_SUMMARY = "summary";
+	public static final String FIELD_ITEMIDS = "itemIds";
 	
 	public enum EventType {
 		NOTSET, PROBLEM, RESOLUTION, INFORMATION
@@ -44,6 +45,7 @@ public class Event extends Entity<String> {
 	private final String node;
 	private final String summary;
 	private final Instant endsOn;
+	private final Set<String> itemIds;
 	
 	@JsonCreator
 	public Event(@JsonProperty(value = "id", required = true) String id,
@@ -60,12 +62,14 @@ public class Event extends Entity<String> {
 			@JsonProperty(value = "createdOn") Instant createdOn,
 			@JsonProperty(value = "updatedOn") Instant updatedOn,
 			@JsonProperty(value = "deletedOn") Instant deletedOn,
-			@JsonProperty(value = "endsOn") Instant endsOn) {
+			@JsonProperty(value = "endsOn") Instant endsOn,
+			@JsonProperty(value = "itemIds") Set<String> itemIds) {
 		super(id, version, source, sourceKey, sourceType, fields, fromHistory, createdOn, updatedOn, deletedOn, status);
 		this.type = type;
 		this.node = node == null ? "" : node;
 		this.summary = summary == null ? "" : summary;
 		this.endsOn = endsOn;
+		this.itemIds = itemIds == null ? Collections.emptySet() : Collections.unmodifiableSet(itemIds);
 	}
 
 	public static Set<Object> getEndsOnForIndex(Event event) {
@@ -94,6 +98,7 @@ public class Event extends Entity<String> {
 		protected EventType type;
 		protected BaseStatus status;
 		protected Instant endsOn;
+		protected Set<String> itemIds;
 
 		public Builder(String id) {
 			super(id);
@@ -105,6 +110,7 @@ public class Event extends Entity<String> {
 			type = event.getType();
 			status = event.getStatus();
 			endsOn = event.getEndsOn();
+			itemIds = event.getItemIds();
 
 			node = event.getNode();
 			if (node == null) {
@@ -139,7 +145,8 @@ public class Event extends Entity<String> {
 			createdOn,
 			updatedOn,
 			deletedOn,
-			endsOn);
+			endsOn,
+			itemIds);
 		}
 
 		public Builder type(EventType type) {
@@ -168,6 +175,12 @@ public class Event extends Entity<String> {
 		
 		public Builder endsOn(Instant endsOn) {
 			this.endsOn = endsOn;
+			changed = true;
+			return this;
+		}
+
+		public Builder itemIds(Set<String> itemIds) {
+			this.itemIds = itemIds;
 			changed = true;
 			return this;
 		}

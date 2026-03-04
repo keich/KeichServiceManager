@@ -20,7 +20,9 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -31,6 +33,7 @@ import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.entity.EntityService;
 import ru.keich.mon.servicemanager.item.ItemService;
 import ru.keich.mon.servicemanager.query.Operator;
+import ru.keich.mon.servicemanager.query.QueryParamsParser;
 import ru.keich.mon.servicemanager.query.QuerySort;
 
 @Service
@@ -119,6 +122,22 @@ public class EventService extends EntityService<String, Event>{
 
 	public Object fieldValueOf(String fieldName, String str) {
 		return Event.fieldValueOf(fieldName, str);
+	}
+
+	public Set<String> findItemIdsByEvent(Event event) {
+		return itemService.findItemIdsByEvent(event);
+	}
+
+	@Override
+	protected Stream<Event> enrich(Stream<Event> data, QueryParamsParser qp) {
+		if(qp.getEnrich().contains(Event.FIELD_ITEMIDS)) {
+			return data.map(this::fillItemIds);
+		}
+		return data;
+	}
+
+	Event fillItemIds(Event event) {
+		return new Event.Builder(event).itemIds(findItemIdsByEvent(event)).build();
 	}
 
 }

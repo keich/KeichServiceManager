@@ -9,7 +9,6 @@ import java.util.function.BiFunction;
 import org.springframework.util.MultiValueMap;
 
 import lombok.Getter;
-import ru.keich.mon.servicemanager.item.Item;
 
 /*
  * Copyright 2025 the original author or authors.
@@ -33,14 +32,14 @@ public class QueryParamsParser {
 	public static final String QUERY_PROPERTY = "property";
 	public static final String QUERY_LIMIT = "limit";
 	public static final String QUERY_ID = "id";
+	public static final String QUERY_ENRICH = "enrich";
 	private final List<QuerySort> sorts = new ArrayList<QuerySort>();
 	private final Set<String> properties = new HashSet<String>();
+	private final Set<String> enrich = new HashSet<String>();
 	private long limit = -1;
 	private String search = "";
-	private boolean needEvents = false;
 	private boolean hasSearch = false;
 	private final List<QueryPredicate> predicates = new ArrayList<QueryPredicate>();
-	//private final List<Entry<String, List<String>>> filteredPrams;
 	
 	public QueryParamsParser(MultiValueMap<String, String> reqParam, BiFunction<String, String, Object> valueConverter) {	
 		reqParam.entrySet().forEach(p -> {
@@ -73,6 +72,12 @@ public class QueryParamsParser {
 				}
 				value.forEach(properties::add);
 				break;
+			case QUERY_ENRICH:
+				if(size == 0) {
+					throw new ErrorParsePredicateException("Param " + lowerParam + " is empty");
+				}
+				value.forEach(enrich::add);
+				break;
 			default:
 				value.forEach(v -> {
 					var qparam = getQueryParams(param, v, valueConverter);
@@ -88,14 +93,15 @@ public class QueryParamsParser {
 				break;
 			}			
 		});
-		needEvents = properties.contains(Item.FIELD_EVENTS);
 		if(properties.size() > 0) {
 			properties.add(QUERY_ID);
 		}
 	}
 	
-	public void addProperty(String name) {
-		properties.add(name);
+	public void addPropertyIfNotEmpty(String name) {
+		if(properties.size() > 0) {
+			properties.add(name);
+		}
 	}
 	
 	public static class ErrorParsePredicateException extends RuntimeException {

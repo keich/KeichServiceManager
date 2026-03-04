@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.antlr.v4.runtime.CharStreams;
@@ -15,7 +13,6 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.json.MappingJacksonValue;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -77,8 +74,9 @@ public class EntityController<K, T extends Entity<K>> {
 		return jsonDefaultFilter;
 	}
 	
-	protected ResponseEntity<MappingJacksonValue> applyFilter(MappingJacksonValue data, Set<String> properties) {
-		final SimpleFilterProvider jsonFilter = getJsonFilter(properties);
+	protected ResponseEntity<MappingJacksonValue> applyFilter(Object obj, QueryParamsParser qp) {
+		final SimpleFilterProvider jsonFilter = getJsonFilter(qp.getProperties());
+		var data = new MappingJacksonValue(obj);
 		data.setFilters(jsonFilter);
 		return ResponseEntity.ok(data);
 	}
@@ -121,22 +119,17 @@ public class EntityController<K, T extends Entity<K>> {
 	}
 
 	public ResponseEntity<MappingJacksonValue> find(MultiValueMap<String, String> reqParam) {
-		return find(reqParam, (s, qp) -> s);
+		return entityService.sortAndLimitEnrich(reqParam, this::find, (s, qp) -> applyFilter(s.toList(), qp));
 	}
 
-	public ResponseEntity<MappingJacksonValue> find(MultiValueMap<String, String> reqParam, BiFunction<Stream<T>, QueryParamsParser, Stream<T>> prepare) {
-		var qp = new QueryParamsParser(reqParam, entityService::fieldValueOf);
-		var sortedLimetedData = entityService.sortAndLimit(find(qp), qp.getSorts(), qp.getLimit());
-		var data = prepare.apply(sortedLimetedData, qp).collect(Collectors.toList());
-		return applyFilter(new MappingJacksonValue(data), qp.getProperties());
-	}
-
-	public ResponseEntity<MappingJacksonValue> findById(@PathVariable K id, @RequestParam MultiValueMap<String, String> reqParam) {
-		var qp = new QueryParamsParser(reqParam, entityService::fieldValueOf);	
-		return entityService.findById(id)
-				.map(MappingJacksonValue::new)
-				.map(value -> applyFilter(value, qp.getProperties()))
-				.orElse(ResponseEntity.notFound().build());
+	public ResponseEntity<MappingJacksonValue> findById(K id, MultiValueMap<String, String> reqParam) {
+		return entityService.sortAndLimitEnrich(reqParam, qp -> entityService.findById(id).stream(), (s, qp) -> { 
+			var opt = s.findFirst();
+			if(opt.isEmpty()) {
+				return ResponseEntity.notFound().build();
+			}
+			return applyFilter(opt.get(), qp);
+		});
 	}
 
 	public ResponseEntity<Integer> deleteByFilter(@RequestBody(required = false) List<K> enties, @RequestParam Map<String, String> reqParam) {

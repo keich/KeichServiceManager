@@ -24,6 +24,7 @@ import ru.keich.mon.servicemanager.entity.EntityService;
 import ru.keich.mon.servicemanager.event.Event;
 import ru.keich.mon.servicemanager.event.EventService;
 import ru.keich.mon.servicemanager.query.Operator;
+import ru.keich.mon.servicemanager.query.QueryParamsParser;
 import ru.keich.mon.servicemanager.query.QuerySort;
 
 
@@ -266,6 +267,25 @@ public class ItemService extends EntityService<String, Item> {
 	@Override
 	public Object fieldValueOf(String fieldName, String str) {
 		return Item.fieldValueOf(fieldName, str);
+	}
+
+	public Set<String> findItemIdsByEvent(Event event) {
+		return entityCache.keySetIndexEq(Item.FIELD_EVENTIDS, event.getId());
+	}
+
+	// TODO move code from getTree
+	@Override
+	protected Stream<Item> enrich(Stream<Item> data, QueryParamsParser qp) {
+		if(qp.getEnrich().contains(Item.FIELD_EVENTS)) {
+			return data.map(this::fillEvents);
+		}
+		return data;
+	}
+
+	Item fillEvents(Item item) {
+		return new Item.Builder(item)
+				.setEvents(findAllEventsById(item.getId()).toList())
+				.build();
 	}
 
 }

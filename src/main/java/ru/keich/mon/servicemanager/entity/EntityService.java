@@ -10,24 +10,27 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.util.MultiValueMap;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import ru.keich.mon.indexedhashmap.IndexedHashMap;
 import ru.keich.mon.indexedhashmap.Metrics;
-import ru.keich.mon.servicemanager.query.QueryPredicate;
 import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.QueueThreadReader;
 import ru.keich.mon.servicemanager.item.Item;
 import ru.keich.mon.servicemanager.query.Operator;
+import ru.keich.mon.servicemanager.query.QueryParamsParser;
+import ru.keich.mon.servicemanager.query.QueryPredicate;
 import ru.keich.mon.servicemanager.query.QuerySort;
 
 /*
@@ -179,8 +182,20 @@ public abstract class EntityService<K, T extends Entity<K>> {
 			return e1.getVersion().compareTo(e2.getVersion()) * mult;
 		};
 	}
+	
+	protected abstract Stream<T> enrich(Stream<T> data, QueryParamsParser qp);
+	
+	public <R> R sortAndLimitEnrich(MultiValueMap<String, String> reqParam
+			,Function<QueryParamsParser, Stream<T>> supplier,
+			BiFunction<Stream<T>, QueryParamsParser, R> jsonFilter) {
+		var qp = new QueryParamsParser(reqParam, this::fieldValueOf);
+		var stream = supplier.apply(qp);
+		stream = sortAndLimit(stream, qp.getSorts(), qp.getLimit());
+		stream = enrich(stream, qp);
+		return jsonFilter.apply(stream, qp);
+	}
 
-	public Stream<T> sortAndLimit(Stream<T> data, List<QuerySort> sorts, long limit) {
+	private Stream<T> sortAndLimit(Stream<T> data, List<QuerySort> sorts, long limit) {
 		if(!sorts.isEmpty()) {
 			var comparator = sorts.stream()
 					.map(this::getSortComparator)
