@@ -123,7 +123,10 @@ public class ItemService extends EntityService<String, Item> {
 				}
 				if(item.getStatus() != newStatus) {
 					entityChangedQueue.add(new QueueInfo<String>(id, QueueInfo.QueueInfoType.UPDATED));
-					return new Item.Builder(item).status(newStatus).build();
+					return new Item.Builder(item)
+							.version(getNextVersion())
+							.status(newStatus)
+							.build();
 				}
 				return item;
 			});
@@ -143,7 +146,10 @@ public class ItemService extends EntityService<String, Item> {
 	public void itemUpdateEventsStatus(String itemId, Consumer<Map<String, BaseStatus>> s) {
 		entityCache.computeIfPresent(itemId, (k, item) -> {
 			entityChangedQueue.add(new QueueInfo<String>(itemId, QueueInfo.QueueInfoType.UPDATE));
-			return new Item.Builder(item).eventsStatusUpdate(s).build();
+			return new Item.Builder(item)
+					.version(getNextVersion())
+					.eventsStatusUpdate(s)
+					.build();
 		});
 	}
 
