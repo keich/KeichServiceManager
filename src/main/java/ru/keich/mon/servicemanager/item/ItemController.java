@@ -3,7 +3,6 @@ package ru.keich.mon.servicemanager.item;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.json.MappingJacksonValue;
@@ -17,9 +16,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
-import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 
 import lombok.extern.java.Log;
 import ru.keich.mon.servicemanager.entity.EntityController;
@@ -55,10 +51,7 @@ public class ItemController extends EntityController<String, Item> {
 	private final EventService eventService;
 
 	public ItemController(ItemService itemService, EventService eventService) {
-		super(itemService,
-				new SimpleFilterProvider().addFilter(FILTER_NAME,
-						SimpleBeanPropertyFilter
-								.serializeAllExcept(Set.of(Item.FIELD_EVENTSSTATUS))));
+		super(itemService);
 		this.itemService = itemService;
 		this.eventService = eventService;
 	}
