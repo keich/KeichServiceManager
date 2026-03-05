@@ -28,10 +28,12 @@ public class AggregateStatus {
 	private static long seconds = 10;
 
 	public AggregateStatus(AggregateStatus obj) {
-		for (int i = 0; i < BaseStatus.length; i++) {
-			this.statuses[i] = obj.statuses[i];
+		if(obj != null) {
+			for (int i = 0; i < BaseStatus.length; i++) {
+				this.statuses[i] = obj.statuses[i];
+			}
+			this.lastStatus = obj.lastStatus;
 		}
-		this.lastStatus = obj.lastStatus;
 	}
 
 	public AggregateStatus() {

@@ -70,10 +70,10 @@ public class ItemService extends EntityService<String, Item> {
 	@Override
 	public void addOrUpdate(Item item) {
 		entityCache.compute(item.getId(), (k, oldItem) -> {
-			var eventsStatus = item.getEventsStatus();
-			var status = item.getStatus();
-			var aggStatus = item.getAggStatus();
-			var createdOn = item.getCreatedOn();
+			Map<String, BaseStatus> eventsStatus = Collections.emptyMap();
+			BaseStatus status = BaseStatus.CLEAR;
+			AggregateStatus aggStatus = null;
+			Instant createdOn = Instant.now();
 			Instant deletedOn = item.isDeleted() ? Instant.now() : null;
 			if(oldItem != null) {
 				eventsStatus = oldItem.getEventsStatus();
