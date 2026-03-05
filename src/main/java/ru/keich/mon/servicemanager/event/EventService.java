@@ -52,6 +52,7 @@ public class EventService extends EntityService<String, Event>{
 		super(nodeName, registry, threadCount);
 		queryValueMapper.put(Event.FIELD_NODE, Event::getNodeForQuery);
 		queryValueMapper.put(Event.FIELD_SUMMARY, Event::getSummaryForQuery);
+		entityCache.addIndexSmallInt(Event.FIELD_CALCULATED, 2, Event::getCalculatedForIndex);
 	}
 
 	@Override
@@ -64,6 +65,7 @@ public class EventService extends EntityService<String, Event>{
 			}
 			entityChangedQueue.add(new QueueInfo<String>(event.getId(), QueueInfo.QueueInfoType.UPDATE));
 			return new Event.Builder(event)
+					.calculated(false)
 					.version(getNextVersion())
 					.fromHistoryAdd(nodeName)
 					.createdOn(createdOn)
@@ -91,14 +93,23 @@ public class EventService extends EntityService<String, Event>{
 
 	@Override
 	protected void queueRead(QueueInfo<String> info) {
-		entityCache.computeIfPresent(info.getId(), (k, event) -> {
-			if (event.isDeleted()) {
-				itemService.eventRemoved(event);
-			} else {
-				itemService.eventChanged(event);
-			}
-			return event;
-		});
+		switch (info.getType()) {
+		case UPDATE:
+			entityCache.computeIfPresent(info.getId(), (k, event) -> {
+				if (event.isDeleted()) {
+					itemService.eventRemoved(event);
+				} else {
+					itemService.eventChanged(event);
+				}
+				return new Event.Builder(event)
+						.calculated(true)
+						.version(getNextVersion())
+						.build();
+			});
+		case UPDATED:
+			// not used
+			break;
+		}
 	}
 
 	@Scheduled(fixedRateString = "1", timeUnit = TimeUnit.SECONDS)

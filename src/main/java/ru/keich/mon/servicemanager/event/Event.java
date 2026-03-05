@@ -36,6 +36,7 @@ public class Event extends Entity<String> {
 	public static final String FIELD_NODE = "node";
 	public static final String FIELD_SUMMARY = "summary";
 	public static final String FIELD_ITEMIDS = "itemIds";
+	public static final String FIELD_CALCULATED = "calculated";
 	
 	public enum EventType {
 		NOTSET, PROBLEM, RESOLUTION, INFORMATION
@@ -46,6 +47,7 @@ public class Event extends Entity<String> {
 	private final String summary;
 	private final Instant endsOn;
 	private final Set<String> itemIds;
+	private final Boolean calculated;
 	
 	@JsonCreator
 	public Event(@JsonProperty(value = "id", required = true) String id,
@@ -63,17 +65,23 @@ public class Event extends Entity<String> {
 			@JsonProperty(value = "updatedOn") Instant updatedOn,
 			@JsonProperty(value = "deletedOn") Instant deletedOn,
 			@JsonProperty(value = "endsOn") Instant endsOn,
-			@JsonProperty(value = "itemIds") Set<String> itemIds) {
+			@JsonProperty(value = "itemIds") Set<String> itemIds,
+			@JsonProperty(value = "calculated") Boolean calculated) {
 		super(id, version, source, sourceKey, sourceType, fields, fromHistory, createdOn, updatedOn, deletedOn, status);
 		this.type = type;
 		this.node = node == null ? "" : node;
 		this.summary = summary == null ? "" : summary;
 		this.endsOn = endsOn;
 		this.itemIds = itemIds == null ? Collections.emptySet() : Collections.unmodifiableSet(itemIds);
+		this.calculated = calculated == null ? false: calculated;
 	}
 
 	public static Set<Object> getEndsOnForIndex(Event event) {
 		return event.endsOn == null ? Collections.emptySet() : Collections.singleton(event.endsOn);
+	}
+	
+	public static Integer getCalculatedForIndex(Event event) {
+		return event.calculated ? 1 : 0;
 	}
 
 	public static Set<Object> getNodeForQuery(Event event) {
@@ -99,6 +107,7 @@ public class Event extends Entity<String> {
 		protected BaseStatus status;
 		protected Instant endsOn;
 		protected Set<String> itemIds;
+		protected Boolean calculated;
 
 		public Builder(String id) {
 			super(id);
@@ -146,7 +155,8 @@ public class Event extends Entity<String> {
 			updatedOn,
 			deletedOn,
 			endsOn,
-			itemIds);
+			itemIds,
+			calculated);
 		}
 
 		public Builder type(EventType type) {
@@ -245,15 +255,22 @@ public class Event extends Entity<String> {
 			return this;
 		}
 		
+		public Builder calculated(Boolean calculated) {
+			this.calculated = calculated;
+			changed = true;
+			return this;
+		}
+		
 	}
-	
+
 	public static Object fieldValueOf(String fieldName, String str) {
 		switch (fieldName) {
 		case FIELD_ENDSON:
 			return Instant.parse(str);
+		case FIELD_CALCULATED:
+			return Boolean.valueOf(str) ? 1 : 0;
 		}
 		return Entity.fieldValueOf(fieldName, str);
 	}
-	
-	
+
 }
