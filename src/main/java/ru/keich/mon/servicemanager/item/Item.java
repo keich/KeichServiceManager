@@ -190,7 +190,7 @@ public class Item extends Entity<String> {
 			rules = item.getRules();
 			filters = item.getFilters();
 			childrenIds = item.getChildrenIds();
-			eventsStatus = new HashMap<>(item.getEventsStatus());
+			eventsStatus = item.getEventsStatus();
 			children = item.getChildren();
 			parents = item.getParents();
 			events = item.getEvents();
@@ -230,13 +230,13 @@ public class Item extends Entity<String> {
 		}
 		
 		public Builder eventsStatus(Map<String, BaseStatus> eventsStatus) {
-			this.eventsStatus.clear();
-			this.eventsStatus.putAll(eventsStatus);
+			this.eventsStatus = eventsStatus;
 			changed = true;
 			return this;
 		}
 		
 		public Builder eventsStatusUpdate(Consumer<Map<String, BaseStatus>> s) {
+			eventsStatus =  new HashMap<>(eventsStatus);
 			s.accept(eventsStatus);
 			changed = true;
 			return this;
