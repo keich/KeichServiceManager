@@ -291,14 +291,6 @@ public class Entity<K> {
 			}
 			return this;
 		}
-		
-		public boolean isNotDeleted() {
-			return deletedOn == null;
-		}
-		
-		public boolean isDeleted() {
-			return deletedOn != null;
-		}
 
 	}
 	

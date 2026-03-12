@@ -931,7 +931,6 @@ public class ControllersTest {
 	
 	@Test
 	public void itemSortAndLimit()  throws IOException, InterruptedException {
-		System.out.println("DEBUG1 " );
 		var json = """
 				 [{
 			        "id": "itemSort1",
