@@ -106,7 +106,6 @@ public class ItemService extends EntityService<String, Item> {
 			return new Item.Builder(item)
 					.version(getNextVersion())
 					.fromHistory(Collections.singleton(nodeName))
-					.updatedOn(Instant.now())
 					.deletedOn(Instant.now())
 					.build();
 		}));

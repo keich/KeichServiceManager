@@ -82,7 +82,6 @@ public class EventService extends EntityService<String, Event>{
 			return new Event.Builder(oldEvent)
 					.version(getNextVersion())
 					.fromHistory(Collections.singleton(nodeName))
-					.updatedOn(Instant.now())
 					.deletedOn(Instant.now())
 					.build();
 		}));
