@@ -2,7 +2,6 @@ package ru.keich.mon.servicemanager.entity;
 
 import java.time.Instant;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -211,7 +210,7 @@ public class Entity<K> {
 		
 		public Builder(K id) {
 			this.id = id;
-			fromHistory = new HashSet<>();
+			fromHistory = Collections.emptySet();
 		}
 		
 		public Builder(B entity) {
@@ -224,7 +223,7 @@ public class Entity<K> {
 			createdOn = entity.getCreatedOn();
 			updatedOn = entity.getUpdatedOn();
 			deletedOn = entity.getDeletedOn();
-			fromHistory = new HashSet<String>(entity.getFromHistory());
+			fromHistory = entity.getFromHistory();
 			fields = entity.getFields();
 			status = entity.getStatus();
 		}
@@ -274,18 +273,11 @@ public class Entity<K> {
 		}
 
 		public Builder<K, B> fromHistory(Set<String> fromHistory) {
-			this.fromHistory.clear();
-			this.fromHistory.addAll(fromHistory);
+			this.fromHistory = fromHistory;
 			changed = true;
 			return this;
 		}
-		
-		public Builder<K, B> fromHistoryAdd(String value) {
-			this.fromHistory.add(value);
-			changed = true;
-			return this;
-		}
-		
+
 		public Builder<K, B> fields(Map<String, String> fields) {
 			this.fields = fields;
 			changed = true;

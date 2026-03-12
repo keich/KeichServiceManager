@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
@@ -181,13 +182,15 @@ public class SearchApiTest {
 	public void itemFromHistoryEqual() {
 		var id = "itemFromHistoryEqual_t";
 		var items = new ArrayList<Item>();
+		var fromHistory = new HashSet<String>();
+		fromHistory.add("itemFromHistoryEqual_node1");
+		fromHistory.add("itemFromHistoryEqual_node2");
 		final var item = new Item
 				.Builder(id)
 				.name("name")
 				.source("src_itemFromHistoryEqual")
 				.sourceKey("src_key_itemFromHistoryEqual")
-				.fromHistoryAdd("itemFromHistoryEqual_node1")
-				.fromHistoryAdd("itemFromHistoryEqual_node2")
+				.fromHistory(fromHistory)
 				.build();
 		items.add(item);
 		apiWrapper.itemAdd(items);

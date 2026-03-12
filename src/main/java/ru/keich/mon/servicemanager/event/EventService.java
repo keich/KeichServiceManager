@@ -19,6 +19,7 @@ package ru.keich.mon.servicemanager.event;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -60,11 +61,13 @@ public class EventService extends EntityService<String, Event>{
 		entityCache.compute(event.getId(), (k, oldEvent) -> {
 			final Instant createdOn = oldEvent == null ? event.getCreatedOn() : oldEvent.getCreatedOn();
 			final Instant deletedOn = event.isDeleted() ? Instant.now() : null;
+			final var fromHistory = new HashSet<String>();
+			fromHistory.add(nodeName);
 			entityChangedQueue.add(new QueueInfo<String>(event.getId(), QueueInfo.QueueInfoType.UPDATE));
 			return new Event.Builder(event)
 					.calculated(false)
 					.version(getNextVersion())
-					.fromHistoryAdd(nodeName)
+					.fromHistory(fromHistory)
 					.createdOn(createdOn)
 					.updatedOn(Instant.now())
 					.deletedOn(deletedOn)

@@ -81,13 +81,15 @@ public class ItemService extends EntityService<String, Item> {
 				aggStatus = oldItem.getAggStatus();
 				createdOn = oldItem.getCreatedOn();
 			}
+			final var fromHistory = new HashSet<String>(item.getFromHistory());
+			fromHistory.add(nodeName);
 			entityChangedQueue.add(new QueueInfo<String>(item.getId(), QueueInfo.QueueInfoType.UPDATE));
 			return new Item.Builder(item)
 					.eventsStatus(eventsStatus)
 					.status(status)
 					.aggStatus(aggStatus)
 					.version(getNextVersion())
-					.fromHistoryAdd(nodeName)
+					.fromHistory(fromHistory)
 					.createdOn(createdOn)
 					.updatedOn(Instant.now())
 					.deletedOn(deletedOn)

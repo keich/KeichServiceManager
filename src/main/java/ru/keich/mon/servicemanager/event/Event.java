@@ -244,12 +244,6 @@ public class Event extends Entity<String> {
 		}
 
 		@Override
-		public Builder fromHistoryAdd(String value) {
-			super.fromHistoryAdd(value);
-			return this;
-		}
-
-		@Override
 		public Builder fields(Map<String, String> fields) {
 			super.fields(fields);
 			return this;
