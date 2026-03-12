@@ -107,7 +107,7 @@ public class Item extends Entity<String> {
 		this.parents = parents == null ? Collections.emptyList() : Collections.unmodifiableList(parents);
 		this.events = events == null ? Collections.emptyList() : Collections.unmodifiableList(events);
 		this.aggStatus = aggStatus == null ? new AggregateStatus() : aggStatus;
-		this.maintenance = maintenance == null ? new ItemMaintenance(null) : maintenance;
+		this.maintenance = maintenance == null ? ItemMaintenance.EMPTY : maintenance;
 	}
 	
 	public boolean isMaintenanceOn() {

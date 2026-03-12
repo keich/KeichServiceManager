@@ -11,7 +11,9 @@ import lombok.Getter;
 
 @Getter
 public class ItemMaintenance {
-	
+
+	public static final ItemMaintenance EMPTY = new ItemMaintenance(null);
+
 	@Getter
 	public static class AbsoluteMaintenance {
 		private final Instant startsOn;
