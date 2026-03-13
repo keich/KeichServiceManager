@@ -106,7 +106,7 @@ public class Item extends Entity<String> {
 		this.children = children == null ? Collections.emptyList() : Collections.unmodifiableList(children);
 		this.parents = parents == null ? Collections.emptyList() : Collections.unmodifiableList(parents);
 		this.events = events == null ? Collections.emptyList() : Collections.unmodifiableList(events);
-		this.aggStatus = aggStatus == null ? new AggregateStatus() : aggStatus;
+		this.aggStatus = aggStatus == null ? AggregateStatus.EMPTY : aggStatus;
 		this.maintenance = maintenance == null ? ItemMaintenance.EMPTY : maintenance;
 	}
 	
@@ -181,7 +181,7 @@ public class Item extends Entity<String> {
 
 		public Builder(String id) {
 			super(id);
-			aggStatus = new AggregateStatus();
+			aggStatus = AggregateStatus.EMPTY;
 		}
 		
 		public Builder(Item item) {
@@ -194,7 +194,7 @@ public class Item extends Entity<String> {
 			children = item.getChildren();
 			parents = item.getParents();
 			events = item.getEvents();
-			aggStatus = new AggregateStatus(item.getAggStatus());
+			aggStatus = item.getAggStatus();
 			maintenance = item.maintenance;
 		}
 		
@@ -312,7 +312,7 @@ public class Item extends Entity<String> {
 		}		
 		
 		public Builder aggStatus(AggregateStatus aggStatus) {
-			this.aggStatus = new AggregateStatus(aggStatus);
+			this.aggStatus = aggStatus;
 			changed = true;
 			return this;
 		}
@@ -320,7 +320,7 @@ public class Item extends Entity<String> {
 		@Override
 		public Builder status(BaseStatus status) {
 			super.status(status);
-			aggStatus.set(status);
+			aggStatus = new AggregateStatus(aggStatus, status);
 			return this;
 		}
 
