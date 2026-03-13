@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -59,6 +60,9 @@ public class EventService extends EntityService<String, Event>{
 	@Override
 	public void addOrUpdate(Event event) {
 		entityCache.compute(event.getId(), (k, oldEvent) -> {
+			var fileds = Stream.ofNullable(event.getFields())
+					.flatMap(f -> f.entrySet().stream())
+					.collect(Collectors.toMap(e -> e.getKey().intern(), e -> e.getValue().intern()));
 			final Instant createdOn = oldEvent == null ? event.getCreatedOn() : oldEvent.getCreatedOn();
 			final Instant deletedOn = event.isDeleted() ? Instant.now() : null;
 			final var fromHistory = new HashSet<String>();
@@ -71,6 +75,7 @@ public class EventService extends EntityService<String, Event>{
 					.createdOn(createdOn)
 					.updatedOn(Instant.now())
 					.deletedOn(deletedOn)
+					.fields(fileds)
 					.build();
 		});
 	}

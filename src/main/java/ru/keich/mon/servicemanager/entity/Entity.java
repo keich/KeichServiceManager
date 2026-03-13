@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -84,9 +83,7 @@ public class Entity<K> {
 		this.createdOn = createdOn == null ? Instant.now() : createdOn;
 		this.updatedOn = updatedOn == null ? Instant.now() : updatedOn;
 		this.deletedOn = deletedOn;
-		this.fields = Stream.ofNullable(fields)
-				.flatMap(f -> f.entrySet().stream())
-				.collect(Collectors.toMap(e -> e.getKey().intern(), e -> e.getValue().intern()));
+		this.fields = fields == null ? Collections.emptyMap() : Collections.unmodifiableMap(fields);
 		this.status = status == null ? BaseStatus.CLEAR : status;
 	}
 	

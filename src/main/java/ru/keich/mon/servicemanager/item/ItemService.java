@@ -70,6 +70,9 @@ public class ItemService extends EntityService<String, Item> {
 	@Override
 	public void addOrUpdate(Item item) {
 		entityCache.compute(item.getId(), (k, oldItem) -> {
+			var fileds = Stream.ofNullable(item.getFields())
+					.flatMap(f -> f.entrySet().stream())
+					.collect(Collectors.toMap(e -> e.getKey().intern(), e -> e.getValue().intern()));
 			Map<String, BaseStatus> eventsStatus = Collections.emptyMap();
 			BaseStatus status = BaseStatus.CLEAR;
 			AggregateStatus aggStatus = null;
@@ -93,6 +96,7 @@ public class ItemService extends EntityService<String, Item> {
 					.createdOn(createdOn)
 					.updatedOn(Instant.now())
 					.deletedOn(deletedOn)
+					.fields(fileds)
 					.build();
 		});
 
