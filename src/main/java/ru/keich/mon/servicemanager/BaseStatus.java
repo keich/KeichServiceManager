@@ -1,6 +1,7 @@
 package ru.keich.mon.servicemanager;
 
 import java.util.Collection;
+import java.util.stream.Stream;
 
 /*
  * Copyright 2026 the original author or authors.
@@ -79,6 +80,16 @@ public enum BaseStatus {
 			return CRITICAL;
 		}
 		return CLEAR;
+	}
+
+	@SafeVarargs
+	public static BaseStatus max(Stream<BaseStatus>... statuses) {
+		var result =  Stream.of(statuses)
+		.flatMap(s -> s)
+		.mapToInt(BaseStatus::getInt)
+		.max()
+		.orElse(0);
+		return BaseStatus.fromInteger(result);
 	}
 
 	public static BaseStatus max(Collection<BaseStatus> statuses) {

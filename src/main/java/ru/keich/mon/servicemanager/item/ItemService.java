@@ -172,21 +172,20 @@ public class ItemService extends EntityService<String, Item> {
 				});
 	}
 
-	private BaseStatus calculateStatusByChild(Item parent) {	
-		var rules = parent.getRules().values();
-		var statuses = findChildren(parent)
-				.map(Item::getStatus)
-				.toList();
-		if(rules.isEmpty()) {
-			return ItemRule.doDefault(statuses);
+	private Stream<BaseStatus> calculateRulesStatus(Item parent) {	
+		if(parent.getRules().isEmpty()) {
+			return Stream.of(ItemRule.doDefault(findChildren(parent)));
 		}
-		return ItemRule.max(rules, statuses);
+		return parent.getRules()
+				.entrySet()
+				.stream()
+				.map(e -> e.getValue().calculate(findChildren(parent)));
 	}
 
 	private BaseStatus calculateStatus(Item item) {
-		var statusByChild = calculateStatusByChild(item);
-		var statusByEvents = BaseStatus.max(item.getEventsStatus().values());
-		return statusByChild.max(statusByEvents);
+		var rulesStatus = calculateRulesStatus(item);
+		var eventsStatus = item.getEventsStatus().values().stream();
+		return BaseStatus.max(rulesStatus, eventsStatus);
 	}
 
 	private Stream<Map.Entry<Item, ItemFilter>> findFiltersByEqualFields(Map<String, String> fields) {

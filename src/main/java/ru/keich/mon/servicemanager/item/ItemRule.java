@@ -1,8 +1,8 @@
 package ru.keich.mon.servicemanager.item;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -85,23 +85,34 @@ public class ItemRule {
 		this.type = type;
 	}
 	
-	public BaseStatus getStatus(List<BaseStatus> statuses) {
+	public BaseStatus calculate(Stream<Item> items) {
 		switch(type) {
 		case CLUSTER:
-			return doCluster(statuses);
+			return doCluster(items.toList());
 		default:
-			return doDefault(statuses);
+			return doDefault(items);
 		}
 	}
-	
-	private BaseStatus doCluster(List<BaseStatus> statuses) {
-		if(statuses.isEmpty()) {
-			return BaseStatus.CLEAR;
+
+	private BaseStatus doCluster(Stream<Item> items) {
+//		if(items.isEmpty()) {
+//			return BaseStatus.CLEAR;
+//		}
+		
+		var intThreshold = statusThreshold.getInt();
+		var result = items.map(Item::getStatus)
+				.mapToInt(BaseStatus::getInt)
+				.filter(i -> intThreshold >= i)
+				.min();
+		
+		if(result.isPresent()) {
+			
 		}
 		
 		var minStatus = BaseStatus.MAX;
 		var size = 0;
-		for(var status: statuses) {
+		for(var item: items) {
+			var status = item.getStatus();
 			if(statusThreshold.lessThenOrEqual(status)) {
 				if(minStatus.moreThen(status)) {
 					minStatus = status;
@@ -109,48 +120,18 @@ public class ItemRule {
 				size++;
 			}
 		}
-		
-		var percent = 100 * size / statuses.size();
+		var percent = 100 * size / items.size();
 		if (percent >= valueThreshold) {
 			if (usingResultStatus) {
 				return getResultStatus();
 			}
 			return minStatus;
 		}
-		
 		return BaseStatus.CLEAR;
 	}
-	
-	public static BaseStatus doDefault(List<BaseStatus> statuses) {
-		return BaseStatus.max(statuses);
-	}
-	
-	public static BaseStatus max(Collection<ItemRule> rules, List<BaseStatus> statuses) {
-		var maxStatus = BaseStatus.CLEAR;
-		for(var rule: rules) {
-			var status = rule.getStatus(statuses);
-			if(maxStatus.lessThen(status)) {
-				maxStatus = status;
-				if(maxStatus == BaseStatus.MAX) {
-					break;
-				}
-			}
-		}
-		return maxStatus;
-	}
-	
-	public static BaseStatus min(Collection<ItemRule> rules, List<BaseStatus> statuses) {
-		var minStatus = BaseStatus.MAX;
-		for(var rule: rules) {
-			var status = rule.getStatus(statuses);
-			if(minStatus.moreThen(status)) {
-				minStatus = status;
-				if(minStatus == BaseStatus.CLEAR) {
-					break;
-				}
-			}
-		}
-		return minStatus;
+
+	public static BaseStatus doDefault(Stream<Item> items) {
+		return BaseStatus.max(items.map(Item::getStatus));
 	}
 
 }
