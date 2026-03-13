@@ -190,9 +190,7 @@ public class Entity<K> {
 
 	@Getter
 	public static abstract class Builder<K, B extends Entity<K>> {
-		
-		protected boolean changed = false;
-		
+
 		protected final K id;
 		protected Long version;
 		protected String source;
@@ -204,12 +202,12 @@ public class Entity<K> {
 		protected Instant deletedOn;
 		protected Set<String> fromHistory;
 		protected Map<String, String> fields;
-		
+
 		public Builder(K id) {
 			this.id = id;
 			fromHistory = Collections.emptySet();
 		}
-		
+
 		public Builder(B entity) {
 			id = entity.getId();
 			version = entity.getVersion();
@@ -224,71 +222,61 @@ public class Entity<K> {
 			fields = entity.getFields();
 			status = entity.getStatus();
 		}
-		
+
 		public abstract B build();
-		
+
 		public Builder<K, B> source(String source) {
 			this.source = source;
-			changed = true;
 			return this;
 		}
-		
+
 		public  Builder<K, B> sourceKey(String sourceKey) {
 			this.sourceKey = sourceKey;
-			changed = true;
 			return this;
 		}
-		
+
 		public  Builder<K, B> sourceType(SourceType sourceType) {
 			this.sourceType = sourceType;
-			changed = true;
 			return this;
 		}
-		
+
 		public Builder<K, B> version(Long version) {
 			this.version = version;
-			changed = true;
 			return this;
 		}
 
 		public Builder<K, B> createdOn(Instant createdOn) {
 			this.createdOn = createdOn;
-			changed = true;
 			return this;
 		}
-		
+
 		public Builder<K, B> updatedOn(Instant updatedOn) {
 			this.updatedOn = updatedOn;
-			changed = true;
 			return this;
 		}
 
 		public Builder<K, B> deletedOn(Instant deletedOn) {
 			this.deletedOn = deletedOn;
-			changed = true;
 			return this;
 		}
 
 		public Builder<K, B> fromHistory(Set<String> fromHistory) {
 			this.fromHistory = fromHistory;
-			changed = true;
 			return this;
 		}
 
 		public Builder<K, B> fields(Map<String, String> fields) {
 			this.fields = fields;
-			changed = true;
 			return this;
 		}
-		
+
 		public Builder<K, B> status(BaseStatus status) {
 			if(this.status != status) {
 				this.status = status;
-				changed = true;
 			}
 			return this;
 		}
 
 	}
-	
+
 }

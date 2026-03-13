@@ -112,7 +112,7 @@ public class Event extends Entity<String> {
 		public Builder(String id) {
 			super(id);
 		}
-		
+
 		public Builder(Event event) {
 			super(event);
 			summary = event.getSummary();
@@ -137,7 +137,7 @@ public class Event extends Entity<String> {
 				}
 			}
 		}
-		
+
 		@Override
 		public Event build() {
 			return new Event(this.id,
@@ -161,37 +161,31 @@ public class Event extends Entity<String> {
 
 		public Builder type(EventType type) {
 			this.type = type;
-			changed = true;
 			return this;
 		}
-		
+
 		public Builder status(BaseStatus status) {
 			this.status = status;
-			changed = true;
 			return this;
 		}
-		
+
 		public Builder summary(String summary) {
 			this.summary = summary;
-			changed = true;
 			return this;
 		}
-		
+
 		public Builder node(String node) {
 			this.node = node;
-			changed = true;
 			return this;
 		}
-		
+
 		public Builder endsOn(Instant endsOn) {
-			this.endsOn = endsOn;
-			changed = true;
+			this.endsOn = endsOn;;
 			return this;
 		}
 
 		public Builder itemIds(Set<String> itemIds) {
 			this.itemIds = itemIds;
-			changed = true;
 			return this;
 		}
 
@@ -251,10 +245,9 @@ public class Event extends Entity<String> {
 		
 		public Builder calculated(Boolean calculated) {
 			this.calculated = calculated;
-			changed = true;
 			return this;
 		}
-		
+
 	}
 
 	public static Object fieldValueOf(String fieldName, String str) {

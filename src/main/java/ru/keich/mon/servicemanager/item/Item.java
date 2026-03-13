@@ -159,8 +159,7 @@ public class Item extends Entity<String> {
 
 	@Getter 
 	public static class Builder extends Entity.Builder<String, Item>  {
-		
-		
+
 		@Override
 		public String toString() {
 			return "Builder [status=" + status + ", getId()=" + getId() + "]";
@@ -176,14 +175,12 @@ public class Item extends Entity<String> {
 		protected List<Item> parents;
 		protected List<Event> events;
 		protected ItemMaintenance maintenance;
-		
-		
 
 		public Builder(String id) {
 			super(id);
 			aggStatus = AggregateStatus.EMPTY;
 		}
-		
+
 		public Builder(Item item) {
 			super(item);
 			name = item.getName();
@@ -197,7 +194,7 @@ public class Item extends Entity<String> {
 			aggStatus = item.getAggStatus();
 			maintenance = item.maintenance;
 		}
-		
+
 		@Override
 		public Item build() {
 			return new Item(this.id,
@@ -222,36 +219,33 @@ public class Item extends Entity<String> {
 			events,
 			maintenance);
 		}
-		
+
 		public Builder name(String name) {
 			this.name = name;
-			changed = true;
 			return this;
 		}
-		
+
 		public Builder eventsStatus(Map<String, BaseStatus> eventsStatus) {
 			this.eventsStatus = eventsStatus;
-			changed = true;
 			return this;
 		}
-		
+
 		public Builder eventsStatusUpdate(Consumer<Map<String, BaseStatus>> s) {
 			eventsStatus =  new HashMap<>(eventsStatus);
 			s.accept(eventsStatus);
-			changed = true;
 			return this;
 		}
-		
+
 		public Builder setChildren(List<Item> children) {
 			this.children = children;
 			return this;
 		}
-		
+
 		public Builder setParents(List<Item> parents) {
 			this.parents = parents;
 			return this;
 		}
-		
+
 		public Builder setEvents(List<Event> events) {
 			this.events = events;
 			return this;
@@ -310,13 +304,12 @@ public class Item extends Entity<String> {
 			super.fields(fields);
 			return this;
 		}		
-		
+
 		public Builder aggStatus(AggregateStatus aggStatus) {
 			this.aggStatus = aggStatus;
-			changed = true;
 			return this;
 		}
-		
+
 		@Override
 		public Builder status(BaseStatus status) {
 			super.status(status);
@@ -326,16 +319,14 @@ public class Item extends Entity<String> {
 
 		public Builder rules(Map<String, ItemRule> rules) {
 			this.rules = rules;
-			changed = true;
 			return this;
 		}
 
 		public Builder filters(Map<String, ItemFilter> filters) {
 			this.filters = filters;
-			changed = true;
 			return this;
 		}
 
 	}
-	
+
 }
