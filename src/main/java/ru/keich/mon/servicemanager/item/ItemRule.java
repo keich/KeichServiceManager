@@ -1,6 +1,5 @@
 package ru.keich.mon.servicemanager.item;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -84,48 +83,46 @@ public class ItemRule {
 		this.valueThreshold = valueThreshold == null ? 0 : valueThreshold;
 		this.type = type;
 	}
-	
+
 	public BaseStatus calculate(Stream<Item> items) {
 		switch(type) {
 		case CLUSTER:
-			return doCluster(items.toList());
+			return doCluster(items);
 		default:
 			return doDefault(items);
 		}
 	}
 
-	private BaseStatus doCluster(Stream<Item> items) {
-//		if(items.isEmpty()) {
-//			return BaseStatus.CLEAR;
-//		}
-		
-		var intThreshold = statusThreshold.getInt();
-		var result = items.map(Item::getStatus)
-				.mapToInt(BaseStatus::getInt)
-				.filter(i -> intThreshold >= i)
-				.min();
-		
-		if(result.isPresent()) {
-			
-		}
-		
-		var minStatus = BaseStatus.MAX;
-		var size = 0;
-		for(var item: items) {
+	private class ClusterResult {
+		int count = 0;
+		int filteredCount = 0;
+		BaseStatus minStatus = BaseStatus.CLEAR;
+	}
+
+	private BaseStatus doCluster(Stream<Item> items) {				
+		var result = items.reduce(new ClusterResult(), (r, item) -> {
+			r.count++;
 			var status = item.getStatus();
-			if(statusThreshold.lessThenOrEqual(status)) {
-				if(minStatus.moreThen(status)) {
-					minStatus = status;
+			if(statusThreshold.lessThenOrEqual(item.getStatus())) {
+				if(r.minStatus.moreThen(status)) {
+					r.minStatus = status;
 				}
-				size++;
+				r.filteredCount++;
 			}
-		}
-		var percent = 100 * size / items.size();
-		if (percent >= valueThreshold) {
-			if (usingResultStatus) {
-				return getResultStatus();
+			return r;
+		}, (r1, r2) -> {
+			r1.count += r2.count;
+			r1.filteredCount += r2.filteredCount;
+			r1.minStatus = r1.minStatus.min(r2.minStatus);
+			return r1;
+		});
+		if(result.count > 0) {
+			if (100 * result.filteredCount / result.count >= valueThreshold) {
+				if (usingResultStatus) {
+					return getResultStatus();
+				}
+				return result.minStatus;
 			}
-			return minStatus;
 		}
 		return BaseStatus.CLEAR;
 	}
