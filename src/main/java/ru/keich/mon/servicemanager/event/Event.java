@@ -95,7 +95,7 @@ public class Event extends Entity<String> {
 	@Override
 	public String toString() {
 		return "Event [id=" + getId() + ", type=" + type + ", status=" + getStatus() +
-				", createdOn=" + getCreatedOn() + ", createdOn=" + getUpdatedOn() + ", deletedOn=" + getDeletedOn() +
+				", createdOn=" + getCreatedOn() + ", updatedOn=" + getUpdatedOn() + ", deletedOn=" + getDeletedOn() +
 				", fields=" + getFields() + "]";
 	}
 	
