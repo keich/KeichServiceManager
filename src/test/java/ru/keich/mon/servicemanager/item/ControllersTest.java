@@ -1095,6 +1095,35 @@ public class ControllersTest {
 		});
 	}
 	
+	@Test
+	public void eventCalculated() throws IOException, InterruptedException {		
+		var json = """
+				    {
+				    	"id": "eventtstCalculated",
+				        "type": "PROBLEM",
+				        "status": "WARNING",
+				        "source": "source_eventtstCalculated",
+				        "sourceKey": "sourceKey_eventtstCalculated"
+				    }
+				""";
+		var event = mapper.readValue(json, Event.class);
+		
+		entityAdd("/event", event);
+		Thread.sleep(1000);
+		var event1 = entityGetById("/event", event.getId(), Event.class);
+		assertEquals(event.getId(), event1.getId());
+		assertEquals(true, event1.getCalculated());
+		
+		var ids = new ArrayList<String>();
+		ids.add(event.getId());
+		entityRemove("/event", ids);
+		
+		Thread.sleep(1000);
+		var event2 = entityGetById("/event", event.getId(), Event.class);
+		assertEquals(event.getId(), event2.getId());
+		assertEquals(true, event2.getCalculated());
+	}
+	
 	
 	
 	// TODO test update not clear internal fields

@@ -94,6 +94,7 @@ public class EventService extends EntityService<String, Event>{
 			entityChangedQueue.add(new QueueInfo<String>(eventId, QueueInfo.QueueInfoType.UPDATE));
 			return new Event.Builder(oldEvent)
 					.version(getNextVersion())
+					.calculated(true)
 					.fromHistory(Collections.singleton(nodeName))
 					.deletedOn(Instant.now())
 					.build();
