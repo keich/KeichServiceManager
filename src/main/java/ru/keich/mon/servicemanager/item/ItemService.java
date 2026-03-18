@@ -163,13 +163,15 @@ public class ItemService extends EntityService<String, Item> {
 				.forEach(itemId -> itemUpdateEventsStatus(itemId, m -> m.remove(event.getId())));
 	}
 
-	public void eventChanged(Event event) {
-		findFiltersByEqualFields(event.getFields())
-				.forEach(itft -> {
+	public Set<String> eventChanged(Event event) {
+		return findFiltersByEqualFields(event.getFields())
+				.map(itft -> {
 					var itemId = itft.getKey().getId();
 					var newStatus = itft.getValue().getStatus(event);
 					itemUpdateEventsStatus(itemId, m -> m.put(event.getId(), newStatus));
-				});
+					return itemId;
+				})
+				.collect(Collectors.toSet());
 	}
 
 	private Stream<BaseStatus> calculateRulesStatus(Item parent) {	

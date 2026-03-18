@@ -64,12 +64,17 @@ public class EventService extends EntityService<String, Event>{
 					.flatMap(f -> f.entrySet().stream())
 					.collect(Collectors.toMap(e -> e.getKey().intern(), e -> e.getValue().intern()));
 			final Instant createdOn = oldEvent == null ? event.getCreatedOn() : oldEvent.getCreatedOn();
-			final Instant deletedOn = event.isDeleted() ? Instant.now() : null;
+			var calculated = false;
+			Instant deletedOn = null;
+			if(event.isDeleted()) {
+				deletedOn = Instant.now();
+				calculated = true;
+			}
 			final var fromHistory = new HashSet<String>();
 			fromHistory.add(nodeName);
 			entityChangedQueue.add(new QueueInfo<String>(event.getId(), QueueInfo.QueueInfoType.UPDATE));
 			return new Event.Builder(event)
-					.calculated(false)
+					.calculated(calculated)
 					.version(getNextVersion())
 					.fromHistory(fromHistory)
 					.createdOn(createdOn)
@@ -103,12 +108,14 @@ public class EventService extends EntityService<String, Event>{
 				if (event.isDeleted()) {
 					itemService.eventRemoved(event);
 				} else {
-					itemService.eventChanged(event);
+					var itemIds = itemService.eventChanged(event);
+					return new Event.Builder(event)
+							.calculated(true)
+							.version(getNextVersion())
+							.itemIdsUpdate(s-> s.addAll(itemIds))
+							.build();
 				}
-				return new Event.Builder(event)
-						.calculated(true)
-						.version(getNextVersion())
-						.build();
+				return event;
 			});
 		case UPDATED:
 			// not used
@@ -145,14 +152,7 @@ public class EventService extends EntityService<String, Event>{
 
 	@Override
 	protected Stream<Event> enrich(Stream<Event> data, QueryParamsParser qp) {
-		if(qp.getEnrich().contains(Event.FIELD_ITEMIDS)) {
-			return data.map(this::fillItemIds);
-		}
 		return data;
-	}
-
-	Event fillItemIds(Event event) {
-		return new Event.Builder(event).itemIds(findItemIdsByEvent(event)).build();
 	}
 
 }

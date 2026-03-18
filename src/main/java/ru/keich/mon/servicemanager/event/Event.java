@@ -2,8 +2,10 @@ package ru.keich.mon.servicemanager.event;
 
 import java.time.Instant;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -186,6 +188,12 @@ public class Event extends Entity<String> {
 
 		public Builder itemIds(Set<String> itemIds) {
 			this.itemIds = itemIds;
+			return this;
+		}
+		
+		public Builder itemIdsUpdate(Consumer<Set<String>> s) {
+			itemIds = new HashSet<>(itemIds);
+			s.accept(itemIds);
 			return this;
 		}
 
