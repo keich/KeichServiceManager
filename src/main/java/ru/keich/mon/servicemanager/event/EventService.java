@@ -55,6 +55,7 @@ public class EventService extends EntityService<String, Event>{
 		queryValueMapper.put(Event.FIELD_NODE, Event::getNodeForQuery);
 		queryValueMapper.put(Event.FIELD_SUMMARY, Event::getSummaryForQuery);
 		entityCache.addIndexSmallInt(Event.FIELD_CALCULATED, 2, Event::getCalculatedForIndex);
+		registerIndexMetrics();
 	}
 
 	@Override

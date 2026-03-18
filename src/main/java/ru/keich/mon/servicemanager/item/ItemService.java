@@ -65,6 +65,7 @@ public class ItemService extends EntityService<String, Item> {
 		eventService.setItemService(this);
 		queryValueMapper.put(Item.FIELD_NAME, Item::getNameForQuery);
 		queryValueMapper.put(Item.FIELD_AGGSTATUS, Item::getAggStatusForQuery);
+		registerIndexMetrics();
 	}
 
 	@Override

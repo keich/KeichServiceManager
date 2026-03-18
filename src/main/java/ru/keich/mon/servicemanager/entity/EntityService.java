@@ -76,9 +76,12 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	private final Counter metricAdded;
 	private final Counter metricUpdated;
 	private final Counter metricRemoved;
+	private final MeterRegistry registry;
+	private final Tags metricTags;
 
 	public EntityService(String nodeName, MeterRegistry registry, Integer threadCount) {
 		this.nodeName = nodeName;
+		this.registry = registry;
 		var serviceName = this.getClass().getSimpleName();
 		entityCache = new IndexedHashMap<>();
 		entityChangedQueue = new QueueThreadReader<QueueInfo<K>>(serviceName, threadCount, this::queueRead);
@@ -96,24 +99,26 @@ public abstract class EntityService<K, T extends Entity<K>> {
 		entityCache.addIndexEqual(Entity.FIELD_FROMHISTORY, Entity::getFromHistoryForIndex);
 
 		metrics = entityCache.getMetrics();
-		var tags = Tags.of(METRIC_NAME_SERVICENAME, serviceName);
+		metricTags = Tags.of(METRIC_NAME_SERVICENAME, serviceName);
 
-		metricVersion = registry.counter(METRIC_NAME_PREFIX + METRIC_VERSION_NAME, tags);
+		metricVersion = registry.counter(METRIC_NAME_PREFIX + METRIC_VERSION_NAME, metricTags);
 		var opr = METRIC_NAME_PREFIX + METRIC_NAME_OPERATION;
-		metricAdded = registry.counter(opr, tags.and(Tags.of(METRIC_NAME_OPERATION, METRIC_NAME_ADDED)));
-		metricUpdated = registry.counter(opr, tags.and(Tags.of(METRIC_NAME_OPERATION, METRIC_NAME_UPDATED)));
-		metricRemoved = registry.counter(opr, tags.and(Tags.of(METRIC_NAME_OPERATION, METRIC_NAME_REMOVED)));
+		metricAdded = registry.counter(opr, metricTags.and(Tags.of(METRIC_NAME_OPERATION, METRIC_NAME_ADDED)));
+		metricUpdated = registry.counter(opr, metricTags.and(Tags.of(METRIC_NAME_OPERATION, METRIC_NAME_UPDATED)));
+		metricRemoved = registry.counter(opr, metricTags.and(Tags.of(METRIC_NAME_OPERATION, METRIC_NAME_REMOVED)));
 
-		registry.gauge(METRIC_NAME_PREFIX + METRIC_NAME_OBJECTS + METRIC_NAME_SIZE, tags, this, s -> s.getChachedMetrics().objectsSize());
+		registry.gauge(METRIC_NAME_PREFIX + METRIC_NAME_OBJECTS + METRIC_NAME_SIZE, metricTags, this, s -> s.getChachedMetrics().objectsSize());
 
+	}
+	
+	protected void registerIndexMetrics() {
 		var indexSize = entityCache.getMetrics().indexSize();
 		var idxName = METRIC_NAME_PREFIX + METRIC_NAME_INDEX + "_" + METRIC_NAME_SIZE;
 		indexSize.entrySet().forEach(e -> {
 			var indexName = e.getKey();
-			var indexTags = tags.and(Tags.of(METRIC_NAME_INDEX, indexName));
+			var indexTags = metricTags.and(Tags.of(METRIC_NAME_INDEX, indexName));
 			registry.gauge(idxName, indexTags, this, s -> s.getChachedMetrics().indexSize().get(indexName));
 		});
-
 	}
 
 	protected Long getNextVersion() {
