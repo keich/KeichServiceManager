@@ -51,12 +51,17 @@ public class AlertService {
 		var fields = new HashMap<String, String>();
 		fields.putAll(alert.getLabels());
 		alert.getAnnotations().entrySet().forEach(e -> {
-			fields.put(FIELDS_ANNOTATIONS_PREFIX + e.getKey(), e.getValue());
+			var value = e.getValue();
+			var key = e.getKey();
+			if(ANNOTATION_NODE.equals(key)) {
+				value = value.split(":", 2)[0];
+			}
+			fields.put(FIELDS_ANNOTATIONS_PREFIX + key, value);
 		});
 		fields.put(FIELDS_ALERTS_PREFIX + "starts_at", alert.getStartsAt());
 		fields.put(FIELDS_ALERTS_PREFIX + "ends_at", alert.getEndsAt());
 		fields.put(FIELDS_ALERTS_PREFIX + "generator_url", alert.getGeneratorURL());
-		return new Event.Builder(alert.getAnnotations().getOrDefault(ANNOTATION_ALERT_ID, "") + "_" + Instant.parse(alert.getStartsAt()).getEpochSecond())
+		return Event.Builder.getDefault(alert.getAnnotations().getOrDefault(ANNOTATION_ALERT_ID, "") + "_" + Instant.parse(alert.getStartsAt()).getEpochSecond())
 				.node(alert.getAnnotations().getOrDefault(ANNOTATION_NODE, ""))
 				.endsOn(Instant.parse(alert.getEndsAt()))
 				.status(BaseStatus.fromString(alert.getAnnotations().getOrDefault(ANNOTATION_SEVERITY, "1")))
