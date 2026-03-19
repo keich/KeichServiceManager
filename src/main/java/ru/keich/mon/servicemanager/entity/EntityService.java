@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -63,6 +64,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	static final public String METRIC_NAME_INDEX = "index";
 
 	private ru.keich.mon.indexedhashmap.Metrics metrics;
+	private final ReentrantLock updateMetricsLock = new ReentrantLock();
 
 	private AtomicLong incrementVersion = new AtomicLong(VERSION_MIN + 1);
 
@@ -250,18 +252,24 @@ public abstract class EntityService<K, T extends Entity<K>> {
 
 	@Scheduled(fixedRateString = "5", timeUnit = TimeUnit.SECONDS)
 	public void updateMetrics() {
-		synchronized(metrics) {
+		updateMetricsLock.lock();
+		try {
 			this.metrics = entityCache.getMetrics();
 			metricVersion.increment(incrementVersion.doubleValue() - metricVersion.count());
 			metricAdded.increment(metrics.added() - metricAdded.count());
 			metricUpdated.increment(metrics.updated() - metricUpdated.count());
 			metricRemoved.increment(metrics.removed() - metricRemoved.count());
+		} finally {
+			updateMetricsLock.unlock();
 		}
 	}
 
 	private Metrics getChachedMetrics() {
-		synchronized(metrics) {
+		updateMetricsLock.lock();
+		try {
 			return metrics;
+		} finally {
+			updateMetricsLock.unlock();
 		}
 	}
 	
