@@ -272,6 +272,7 @@ public class ControllersTest {
 				        "id": "id_itemAddAndGet1",
 				        "source": "src_itemAddAndGet",
 				        "sourceKey": "src_key_itemAddAndGet",
+				        "name": "",
 				        "fields": {
 				            "name": "Hello",
 				            "description": "World"
@@ -283,7 +284,9 @@ public class ControllersTest {
 				                "usingResultStatus": false,
 				                "equalFields": {"identity": "68FB40A414A49978832133B9D476E5A" }
 				            }
-				        }
+				        },
+				        "childrenIds": [],
+				        "eventsStatus": {}
 				    }
 				""";
 		var item = mapper.readValue(json, Item.class);
@@ -303,7 +306,9 @@ public class ControllersTest {
 				        "id": "id_itemGetChildren1",
 				        "source": "src_itemGetChildren",
 				        "sourceKey": "src_key_itemGetChildren",
-				        "childrenIds": ["id_itemGetChildren2","testid"]
+				        "name": "",
+				        "childrenIds": ["id_itemGetChildren2","testid"],
+				        "eventsStatus": {}
 				    }
 				""";
 		var itemParent = mapper.readValue(jsonParent, Item.class);
@@ -312,7 +317,10 @@ public class ControllersTest {
 					 {
 				        "id": "id_itemGetChildren2",
 				        "source": "src_itemGetChildren",
-				        "sourceKey": "src_key_itemGetChildren"
+				        "sourceKey": "src_key_itemGetChildren",
+				        "name": "",
+				        "childrenIds": [],
+				        "eventsStatus": {}
 				    }
 				""";
 		var itemChild = mapper.readValue(jsonChild, Item.class);
@@ -329,7 +337,7 @@ public class ControllersTest {
 	public void itemVersionFilter() throws IOException {
 		var items = new ArrayList<Item>();
 		for (int i = 0; i < 10; i++) {
-			final var item = new Item.Builder("id_itemVersionFilter_" + i).name("name")
+			final var item = Item.Builder.getDefault("id_itemVersionFilter_" + i).name("name")
 					.source("src_itemVersionFilter").sourceKey("src_key_itemVersionFilter").build();
 			items.add(item);
 		}
@@ -340,8 +348,8 @@ public class ControllersTest {
 	public void itemSourceFilter() throws IOException {
 		final var source = "src_itemSourceFilter";
 		final var sourceKey = "src_key_itemSourceFilter";
-		final var item = new Item.Builder("id_itemSourceFilter").name("name").source(source).sourceKey(sourceKey).build();
-		final var item1 = new Item.Builder("id_itemSourceFilter1").name("name").source(source + "1").sourceKey(sourceKey + "1").build();
+		final var item = Item.Builder.getDefault("id_itemSourceFilter").name("name").source(source).sourceKey(sourceKey).build();
+		final var item1 = Item.Builder.getDefault("id_itemSourceFilter1").name("name").source(source + "1").sourceKey(sourceKey + "1").build();
 		entityAdd("/item", item);
 		entityAdd("/item", item1);
 		
@@ -364,11 +372,11 @@ public class ControllersTest {
 		final var id = "id_itemSourceKeyFilter";
 		final var source = "src_itemSourceKeyFilter";
 		final var sourceKey = "src_key_itemSourceKeyFilter";
-		final var item = new Item.Builder(id)
+		final var item = Item.Builder.getDefault(id)
 				.name("name")
 				.source(source)
 				.sourceKey(sourceKey).build();
-		final var item1 = new Item.Builder(id + "1")
+		final var item1 = Item.Builder.getDefault(id + "1")
 				.name("name")
 				.source(source + "1")
 				.sourceKey(sourceKey + "1").build();
@@ -391,11 +399,11 @@ public class ControllersTest {
 	
 	@Test
 	public void itemDeleteBySoyrceAndSourceKeyNot() throws IOException {
-		final var item1 = new Item.Builder("id_itemDeleteBySoyrceAndSourceKeyNot1")
+		final var item1 = Item.Builder.getDefault("id_itemDeleteBySoyrceAndSourceKeyNot1")
 				.name("name")
 				.source("src_itemDeleteBySoyrceAndSourceKeyNot")
 				.sourceKey("src_key_itemDeleteBySoyrceAndSourceKeyNot").build();
-		final var item2 = new Item.Builder("id_itemDeleteBySoyrceAndSourceKeyNot2")
+		final var item2 = Item.Builder.getDefault("id_itemDeleteBySoyrceAndSourceKeyNot2")
 				.name("name")
 				.source("src_itemDeleteBySoyrceAndSourceKeyNot")
 				.sourceKey("src_key_itemDeleteBySoyrceAndSourceKeyNot_new").build();
@@ -409,8 +417,9 @@ public class ControllersTest {
 			        "id": "id_itemFiltersEventMapping",
 			        "source": "src_itemFiltersEventMapping",
 			        "sourceKey": "src_key_itemFiltersEventMapping",
+			        "name": "Hello",
 			        "fields": {
-			            "name": "Hello",
+			            "name": "Hello1",
 			            "description": "World"
 			        },
 			        "rules": {},
@@ -420,7 +429,8 @@ public class ControllersTest {
 			                "usingResultStatus": false,
 			                "equalFields": { "identity":"68FB40A414A49978832133B9D476E5A1", "manager": "SNMP"}
 			            }
-			        }
+			        },
+			        "eventsStatus": {}
 			    }
 			""";
 		var item = mapper.readValue(json, Item.class);
@@ -431,11 +441,13 @@ public class ControllersTest {
 			        "id": "id_itemFiltersEventMappingROOT",
 			        "source": "src_itemFiltersEventMapping",
 			        "sourceKey": "src_key_itemFiltersEventMapping",
+			        "name": "root",
 			        "fields": {
 			            "name": "root",
 			            "description": "root"
 			        },
-			        "childrenIds": ["id_itemFiltersEventMapping"]
+			        "childrenIds": ["id_itemFiltersEventMapping"],
+			        "eventsStatus": {}
 			    }
 			""";
 		var itemRoot = mapper.readValue(json, Item.class);
@@ -547,6 +559,7 @@ public class ControllersTest {
 			        "id": "itemEventClearItem",
 			        "source": "src_itemEventClear",
 			        "sourceKey": "src_key_itemEventClear",
+			        "name": "Hello",
 			        "fields": {
 			            "name": "Hello",
 			            "description": "World"
@@ -558,7 +571,8 @@ public class ControllersTest {
 			                "usingResultStatus": false,
 			                "equalFields": { "identity": "itemEventClear12046hfy","manager":"SNMP" }
 			            }
-			        }
+			        },
+			        "eventsStatus": {}
 			    }
 			""";
 		var item = mapper.readValue(json, Item.class);
@@ -616,6 +630,7 @@ public class ControllersTest {
 			        "id": "itemEventDeleted",
 			        "source": "src_itemEventDeleted",
 			        "sourceKey": "src_key_itemEventDeleted",
+			        "name": "Hello",
 			        "fields": {
 			            "name": "Hello",
 			            "description": "World"
@@ -627,7 +642,8 @@ public class ControllersTest {
 			                "usingResultStatus": false,
 			                "equalFields": { "identity": "itemEventDeleted12046hfy","manager":"SNMP" }
 			            }
-			        }
+			        },
+			        "eventsStatus": {}
 			    }
 			""";
 		var item = mapper.readValue(json, Item.class);
@@ -813,12 +829,14 @@ public class ControllersTest {
 				        "id": "id_itemTreeRoot",
 				        "source": "src_itemTree",
 				        "sourceKey": "src_key_itemTree",
+				        "name": "itemTreeRoot",
 				        "fields": {
 				            "name": "itemTreeRoot",
 				            "description": "root",
 				            "method": "itemTree"
 				        },
-				        "childrenIds": ["id_itemTreeChild"]
+				        "childrenIds": ["id_itemTreeChild"],
+				       "eventsStatus": {}
 				    }
 				""";
 		var root = mapper.readValue(json, Item.class);
@@ -832,11 +850,13 @@ public class ControllersTest {
 				        "id": "id_itemTreeChild",
 				        "source": "src_itemTree",
 				        "sourceKey": "src_key_itemTree",
+				        "name": "itemTreeChild",
 				        "fields": {
 				            "name": "itemTreeChild",
 				            "description": "root",
 				            "method": "itemTree"
-				        }
+				        },
+				       "eventsStatus": {}
 				    }
 				""";
 		var child = mapper.readValue(json, Item.class);
@@ -866,6 +886,7 @@ public class ControllersTest {
 			        "id": "item_updateItemAndKeepStatus",
 			        "source": "src_updateItemAndKeepStatus",
 			        "sourceKey": "src_key_updateItemAndKeepStatus",
+			        "name": "Hello",
 			        "fields": {
 			            "name": "Hello",
 			            "description": "World"
@@ -877,7 +898,8 @@ public class ControllersTest {
 			                "usingResultStatus": false,
 			                "equalFields": { "identity": "i_updateItemAndKeepStatus" }
 			            }
-			        }
+			        },
+			        "eventsStatus": {}
 			    }]
 			""";
 		var items  = mapper.readValue(json, Item[].class);
@@ -907,6 +929,7 @@ public class ControllersTest {
 			        "id": "item_updateItemAndKeepStatus",
 			        "source": "src_updateItemAndKeepStatus",
 			        "sourceKey": "src_key_updateItemAndKeepStatus1",
+			        "name": "Hello",
 			        "fields": {
 			            "name": "Hello",
 			            "description": "World"
@@ -918,7 +941,8 @@ public class ControllersTest {
 			                "usingResultStatus": false,
 			                "equalFields": { "identity": "i_updateItemAndKeepStatus" }
 			            }
-			        }
+			        },
+			        "eventsStatus": {}
 			    }]
 			""";
 		items  = mapper.readValue(json, Item[].class);
@@ -936,10 +960,12 @@ public class ControllersTest {
 			        "id": "itemSort1",
 			        "source": "src_itemSort",
 			        "sourceKey": "src_key_itemSorts1",
+			        "name": "Hello",
 			        "fields": {
 			            "name": "Hello",
 			            "description": "World"
-			        }
+			        },
+			        "eventsStatus": {}
 			    }]
 			""";
 		var items1  = mapper.readValue(json, Item[].class);
@@ -950,10 +976,12 @@ public class ControllersTest {
 			        "id": "itemSort3",
 			        "source": "src_itemSort",
 			        "sourceKey": "src_key_itemSorts3",
+			        "name": "Hello",
 			        "fields": {
 			            "name": "Hello",
 			            "description": "World"
-			        }
+			        },
+			        "eventsStatus": {}
 			    }]
 			""";
 		var items3  = mapper.readValue(json, Item[].class);
@@ -964,10 +992,12 @@ public class ControllersTest {
 			        "id": "itemSort2",
 			        "source": "src_itemSort",
 			        "sourceKey": "src_key_itemSorts2",
+			        "name": "Hello",
 			        "fields": {
 			            "name": "Hello",
 			            "description": "World"
-			        }
+			        },
+			        "eventsStatus": {}
 			    }]
 			""";
 		var items2  = mapper.readValue(json, Item[].class);
@@ -1021,10 +1051,12 @@ public class ControllersTest {
 			    	"id": "id_itemDeleteLogic",
 			        "source": "source_itemDeleteLogic",
 			        "sourceKey": "sourceKey_itemDeleteLogic",
+			        "name": "Hello",
 			        "fields": {
 			            "name": "Hello",
 			            "description": "World"
-			        }
+			        },
+			        "eventsStatus": {} 
 			    }
 			""";
 		var item = mapper.readValue(json, Item.class);
@@ -1043,10 +1075,12 @@ public class ControllersTest {
 			    	"id": "itemMaintenanceAbsolute",
 			        "source": "source_itemMaintenanceAbsolute",
 			        "sourceKey": "sourceKey_itemMaintenanceAbsolute",
+			        "name": "Hello",
 			        "fields": {
 			            "name": "Hello",
 			            "description": "World"
 			        },
+			        "eventsStatus": {},
 			        "maintenance": {
 				        "absolute": {
 					        "startsOn": """
@@ -1073,10 +1107,12 @@ public class ControllersTest {
 			    	"id": "itemMaintenanceAbsolute",
 			        "source": "source_itemMaintenanceAbsolute",
 			        "sourceKey": "sourceKey_itemMaintenanceAbsolute",
+			        "name": "Hello",
 			        "fields": {
 			            "name": "Hello",
 			            "description": "World"
 			        },
+			        "eventsStatus": {},
 			        "maintenance": {
 				        "absolute": {
 					        "startsOn": """

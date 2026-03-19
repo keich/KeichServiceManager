@@ -79,12 +79,12 @@ public class Entity<K> {
 		this.source = source;
 		this.sourceKey = sourceKey;
 		this.sourceType = sourceType == null ? SourceType.OTHER : (sourceType);
-		this.fromHistory = fromHistory == null ? Collections.emptySet() : Collections.unmodifiableSet(fromHistory);
-		this.createdOn = createdOn == null ? Instant.now() : createdOn;
-		this.updatedOn = updatedOn == null ? Instant.now() : updatedOn;
+		this.fromHistory = fromHistory;
+		this.createdOn = createdOn;
+		this.updatedOn = updatedOn;
 		this.deletedOn = deletedOn;
-		this.fields = fields == null ? Collections.emptyMap() : Collections.unmodifiableMap(fields);
-		this.status = status == null ? BaseStatus.CLEAR : status;
+		this.fields = fields;
+		this.status = status;
 	}
 	
 	public static Set<Object> getSourceForIndex(Entity<?> entity) {
@@ -214,13 +214,12 @@ public class Entity<K> {
 			source = entity.getSource();
 			sourceKey = entity.getSourceKey();
 			sourceType = entity.getSourceType();
-			fields = entity.getFields();
+			status = entity.getStatus();
 			createdOn = entity.getCreatedOn();
 			updatedOn = entity.getUpdatedOn();
 			deletedOn = entity.getDeletedOn();
 			fromHistory = entity.getFromHistory();
 			fields = entity.getFields();
-			status = entity.getStatus();
 		}
 
 		public abstract B build();

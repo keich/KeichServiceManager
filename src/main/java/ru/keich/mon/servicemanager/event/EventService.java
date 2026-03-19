@@ -60,28 +60,60 @@ public class EventService extends EntityService<String, Event>{
 
 	@Override
 	public void addOrUpdate(Event event) {
-		entityCache.compute(event.getId(), (k, oldEvent) -> {
-			var fileds = Stream.ofNullable(event.getFields())
-					.flatMap(f -> f.entrySet().stream())
-					.collect(Collectors.toMap(e -> e.getKey().intern(), e -> e.getValue().intern()));
-			final Instant createdOn = oldEvent == null ? event.getCreatedOn() : oldEvent.getCreatedOn();
-			var calculated = false;
-			Instant deletedOn = null;
-			if(event.isDeleted()) {
-				deletedOn = Instant.now();
-				calculated = true;
+		entityCache.compute(event.getId(), (eventId, oldEvent) -> {
+			Event.Builder builder;
+			if(oldEvent != null) {
+				builder = new Event.Builder(oldEvent);
+				builder.updatedOn(Instant.now());
+			} else {
+				builder = Event.Builder.getDefault(eventId);
+				if(event.getCreatedOn() != null) {
+					builder.createdOn(event.getCreatedOn());
+				}
 			}
-			final var fromHistory = new HashSet<String>();
+			if(event.getFields() != null) {
+				var fields = event.getFields().entrySet().stream()
+						.collect(Collectors.toMap(e -> e.getKey().intern(), e -> e.getValue().intern()));
+				builder.fields(Collections.unmodifiableMap(fields));
+			}
+			Set<String> fromHistory = new HashSet<String>();
 			fromHistory.add(nodeName);
+			if(event.getFromHistory() != null) {
+				fromHistory.addAll(event.getFromHistory().stream().map(String::intern).toList());
+			}
+			builder.fromHistory(fromHistory);
+			if(event.isDeleted()) {
+				builder.deletedOn(Instant.now()).calculated(true);
+			} else {
+				builder.deletedOn(null).calculated(false);
+			}
+			if (event.getNode() == null) {
+				if(event.getFields() != null) {
+					var fieldsNode = event.getFields().get("node");
+					builder.node(fieldsNode != null ? fieldsNode.intern() : "");
+				}
+			} else {
+				builder.node(event.getNode().intern());
+			}
+			if (event.getSummary() == null) {
+				if(event.getFields() != null) {
+					var fieldsSummary = event.getFields().get("summary");
+					builder.summary(fieldsSummary != null ? fieldsSummary : "");
+				}
+			} else {
+				builder.summary(event.getSummary());
+			}
+			if(event.getSourceType() != null) {
+				builder.sourceType(event.getSourceType());
+			}
 			entityChangedQueue.add(new QueueInfo<String>(event.getId(), QueueInfo.QueueInfoType.UPDATE));
-			return new Event.Builder(event)
-					.calculated(calculated)
+			return builder
+					.source(event.getSource())
+					.sourceKey(event.getSourceKey())
+					.status(event.getStatus())
+					.type(event.getType())
+					.endsOn(event.getEndsOn())
 					.version(getNextVersion())
-					.fromHistory(fromHistory)
-					.createdOn(createdOn)
-					.updatedOn(Instant.now())
-					.deletedOn(deletedOn)
-					.fields(fileds)
 					.build();
 		});
 	}

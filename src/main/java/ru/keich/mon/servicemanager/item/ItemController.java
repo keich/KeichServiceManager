@@ -141,7 +141,7 @@ public class ItemController extends EntityController<String, Item> {
 				})
 				.map(child -> setChildren(child, history))
 				.toList();
-		outItem.setChildren(l);
+		outItem.children(l);
 		history.remove(parentId);
 		return outItem.build();
 	}
@@ -172,7 +172,7 @@ public class ItemController extends EntityController<String, Item> {
 			})
 			.map(parent -> setParents(parent, history))
 			.toList();
-			outItem.setParents(l);
+			outItem.parents(l);
 		});
 		history.remove(childId);
 		return outItem.build();

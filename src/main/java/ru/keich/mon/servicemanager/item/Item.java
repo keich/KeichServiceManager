@@ -95,23 +95,21 @@ public class Item extends Entity<String> {
 			@JsonProperty(value = "maintenance", required = false) ItemMaintenance maintenance
 			) {
 		super(id, version, source, sourceKey, sourceType, fields, fromHistory, createdOn, updatedOn, deletedOn, status);
-
-		this.name = name == null ? "" : name;
-		
-		this.rules = rules == null ? Collections.emptyMap() : Collections.unmodifiableMap(rules);
-		this.filters = filters == null ? Collections.emptyMap() : Collections.unmodifiableMap(filters);
-		this.childrenIds = childrenIds == null ? Collections.emptySet() : Collections.unmodifiableSet(childrenIds);
-		this.hasChildren = this.childrenIds.size() > 0;
-		this.eventsStatus = eventsStatus == null ? Collections.emptyMap() : Collections.unmodifiableMap(eventsStatus);
-		this.children = children == null ? Collections.emptyList() : Collections.unmodifiableList(children);
-		this.parents = parents == null ? Collections.emptyList() : Collections.unmodifiableList(parents);
-		this.events = events == null ? Collections.emptyList() : Collections.unmodifiableList(events);
-		this.aggStatus = aggStatus == null ? AggregateStatus.EMPTY : aggStatus;
-		this.maintenance = maintenance == null ? ItemMaintenance.EMPTY : maintenance;
+		this.name = name;
+		this.rules = rules;
+		this.filters = filters;
+		this.childrenIds = childrenIds;
+		this.hasChildren = childrenIds != null ? this.childrenIds.size() > 0 : false;
+		this.eventsStatus = eventsStatus;
+		this.children = children;
+		this.parents = parents;
+		this.events = events;
+		this.aggStatus = aggStatus;
+		this.maintenance = maintenance;
 	}
 	
 	public boolean isMaintenanceOn() {
-		return maintenance.test();
+		return maintenance == null ? false : maintenance.test();
 	}
 
 	public static Set<Object> getFiltersForIndex(Item item) {
@@ -183,15 +181,15 @@ public class Item extends Entity<String> {
 
 		public Builder(Item item) {
 			super(item);
-			name = item.getName();
 			rules = item.getRules();
 			filters = item.getFilters();
-			childrenIds = item.getChildrenIds();
 			eventsStatus = item.getEventsStatus();
+			aggStatus = item.getAggStatus();
+			childrenIds = item.getChildrenIds();
+			name = item.getName();
 			children = item.getChildren();
 			parents = item.getParents();
 			events = item.getEvents();
-			aggStatus = item.getAggStatus();
 			maintenance = item.maintenance;
 		}
 
@@ -212,12 +210,36 @@ public class Item extends Entity<String> {
 			createdOn,
 			updatedOn,
 			deletedOn,
-			eventsStatus,
+			Collections.unmodifiableMap(eventsStatus),
 			aggStatus,
 			children,
 			parents,
 			events,
 			maintenance);
+		}
+		
+		public static Item.Builder getDefault(String id) {
+			return new Item
+					.Builder(id)
+					.version(0L)
+					.source("")
+					.sourceKey("")
+					.sourceType(SourceType.OTHER)
+					.status(BaseStatus.CLEAR)
+					.name("")
+					.fields(Collections.emptyMap())
+					.rules(Collections.emptyMap())
+					.filters(Collections.emptyMap())
+					.childrenIds(Collections.emptySet())
+					.fromHistory(Collections.emptySet())
+					.createdOn(Instant.now())
+					.updatedOn(Instant.now())
+					.eventsStatus(Collections.emptyMap())
+					.aggStatus(AggregateStatus.EMPTY)
+					.children(Collections.emptyList())
+					.parents(Collections.emptyList())
+					.events(Collections.emptyList())
+					.maintenance(ItemMaintenance.EMPTY);
 		}
 
 		public Builder name(String name) {
@@ -236,17 +258,17 @@ public class Item extends Entity<String> {
 			return this;
 		}
 
-		public Builder setChildren(List<Item> children) {
+		public Builder children(List<Item> children) {
 			this.children = children;
 			return this;
 		}
 
-		public Builder setParents(List<Item> parents) {
+		public Builder parents(List<Item> parents) {
 			this.parents = parents;
 			return this;
 		}
 
-		public Builder setEvents(List<Event> events) {
+		public Builder events(List<Event> events) {
 			this.events = events;
 			return this;
 		}
@@ -324,6 +346,16 @@ public class Item extends Entity<String> {
 
 		public Builder filters(Map<String, ItemFilter> filters) {
 			this.filters = filters;
+			return this;
+		}
+
+		public Builder childrenIds(Set<String> childrenIds) {
+			this.childrenIds = childrenIds;
+			return this;
+		}
+
+		public Builder maintenance(ItemMaintenance maintenance) {
+			this.maintenance = maintenance;
 			return this;
 		}
 

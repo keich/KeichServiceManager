@@ -71,11 +71,11 @@ public class Event extends Entity<String> {
 			@JsonProperty(value = "calculated") Boolean calculated) {
 		super(id, version, source, sourceKey, sourceType, fields, fromHistory, createdOn, updatedOn, deletedOn, status);
 		this.type = type;
-		this.node = node == null ? "" : node;
-		this.summary = summary == null ? "" : summary;
+		this.node = node;
+		this.summary = summary;
 		this.endsOn = endsOn;
-		this.itemIds = itemIds == null ? Collections.emptySet() : Collections.unmodifiableSet(itemIds);
-		this.calculated = calculated == null ? false: calculated;
+		this.itemIds = itemIds;
+		this.calculated = calculated;
 	}
 
 	public static Set<Object> getEndsOnForIndex(Event event) {
@@ -122,22 +122,8 @@ public class Event extends Entity<String> {
 			status = event.getStatus();
 			endsOn = event.getEndsOn();
 			itemIds = event.getItemIds();
-
 			node = event.getNode();
-			if (node == null) {
-				var fieldsNode = event.getFields().get("node");
-				if (fieldsNode != null) {
-					node = fieldsNode;
-				}
-			}
-
 			summary = event.getSummary();
-			if (summary == null) {
-				var fieldsSummary = event.getFields().get("summary");
-				if (fieldsSummary != null) {
-					summary = fieldsSummary;
-				}
-			}
 		}
 
 		@Override
@@ -159,6 +145,25 @@ public class Event extends Entity<String> {
 			endsOn,
 			itemIds,
 			calculated);
+		}
+
+		public static Event.Builder getDefault(String id) {
+			return new Event.Builder(id)
+					.version(0L)
+					.source("")
+					.sourceKey("")
+					.sourceType(SourceType.OTHER)
+					.status(BaseStatus.CLEAR)
+					.node("")
+					.summary("")
+					.type(EventType.PROBLEM)
+					.status(BaseStatus.CRITICAL)
+					.fields(Collections.emptyMap())
+					.fromHistory(Collections.emptySet())
+					.createdOn(Instant.now())
+					.updatedOn(Instant.now())
+					.itemIds(Collections.emptySet())
+					.calculated(false);
 		}
 
 		public Builder type(EventType type) {

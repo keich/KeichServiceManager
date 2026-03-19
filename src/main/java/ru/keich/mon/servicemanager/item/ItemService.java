@@ -70,34 +70,56 @@ public class ItemService extends EntityService<String, Item> {
 
 	@Override
 	public void addOrUpdate(Item item) {
-		entityCache.compute(item.getId(), (k, oldItem) -> {
-			var fileds = Stream.ofNullable(item.getFields())
-					.flatMap(f -> f.entrySet().stream())
-					.collect(Collectors.toMap(e -> e.getKey().intern(), e -> e.getValue().intern()));
-			Map<String, BaseStatus> eventsStatus = Collections.emptyMap();
-			BaseStatus status = BaseStatus.CLEAR;
-			AggregateStatus aggStatus = null;
-			Instant createdOn = Instant.now();
-			Instant deletedOn = item.isDeleted() ? Instant.now() : null;
+		entityCache.compute(item.getId(), (eventId, oldItem) -> {
+			Item.Builder builder;
 			if(oldItem != null) {
-				eventsStatus = oldItem.getEventsStatus();
-				status = oldItem.getStatus();
-				aggStatus = oldItem.getAggStatus();
-				createdOn = oldItem.getCreatedOn();
+				builder = new Item.Builder(oldItem);
+				builder.updatedOn(Instant.now());
+			} else {
+				builder = Item.Builder.getDefault(eventId);
+				if(item.getCreatedOn() != null) {
+					builder.createdOn(item.getCreatedOn());
+				}
 			}
-			final var fromHistory = new HashSet<String>(item.getFromHistory());
+			if(item.getFields() != null) {
+				var fields = item.getFields().entrySet().stream()
+						.collect(Collectors.toMap(e -> e.getKey().intern(), e -> e.getValue().intern()));
+				builder.fields(Collections.unmodifiableMap(fields));
+			}
+			Set<String> fromHistory = new HashSet<String>();
 			fromHistory.add(nodeName);
+			if(item.getFromHistory() != null) {
+				fromHistory.addAll(item.getFromHistory().stream().map(String::intern).toList());
+			}
+			builder.fromHistory(fromHistory);
+			if(item.isDeleted()) {
+				builder.deletedOn(Instant.now());
+			} else {
+				builder.deletedOn(null);
+			}
+			if(item.getName() != null) {
+				builder.name(item.getName());
+			}
+			if(item.getRules() != null) {
+				builder.rules(Collections.unmodifiableMap(item.getRules()));
+			}
+			if(item.getFilters() != null) {
+				builder.filters(Collections.unmodifiableMap(item.getFilters()));
+			}
+			if(item.getChildrenIds() != null) {
+				builder.childrenIds(Collections.unmodifiableSet(item.getChildrenIds()));
+			}
+			if(item.getMaintenance()  != null) {
+				builder.maintenance(item.getMaintenance());
+			}
+			if(item.getSourceType()  != null) {
+				builder.sourceType(item.getSourceType());
+			}
 			entityChangedQueue.add(new QueueInfo<String>(item.getId(), QueueInfo.QueueInfoType.UPDATE));
-			return new Item.Builder(item)
-					.eventsStatus(eventsStatus)
-					.status(status)
-					.aggStatus(aggStatus)
+			return builder
 					.version(getNextVersion())
-					.fromHistory(fromHistory)
-					.createdOn(createdOn)
-					.updatedOn(Instant.now())
-					.deletedOn(deletedOn)
-					.fields(fileds)
+					.source(item.getSource())
+					.sourceKey(item.getSourceKey())
 					.build();
 		});
 
@@ -297,7 +319,7 @@ public class ItemService extends EntityService<String, Item> {
 
 	Item fillEvents(Item item) {
 		return new Item.Builder(item)
-				.setEvents(findAllEventsById(item.getId()).toList())
+				.events(findAllEventsById(item.getId()).toList())
 				.build();
 	}
 

@@ -82,7 +82,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	private final Tags metricTags;
 
 	public EntityService(String nodeName, MeterRegistry registry, Integer threadCount) {
-		this.nodeName = nodeName;
+		this.nodeName = nodeName.intern();
 		this.registry = registry;
 		var serviceName = this.getClass().getSimpleName();
 		entityCache = new IndexedHashMap<>();

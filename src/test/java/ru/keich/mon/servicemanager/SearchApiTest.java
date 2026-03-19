@@ -24,12 +24,11 @@ public class SearchApiTest {
 
 	@Autowired
 	private ApiWrapper apiWrapper;
-
+	
 	private void addItems(int size, String keyName) {
 		var items = new ArrayList<Item>();
 		for (int i = 0; i < size; i++) {
-			final var item = new Item
-					.Builder(keyName + "_" + i)
+			final var item = Item.Builder.getDefault(keyName + "_" + i)
 					.name("name_" + i)
 					.source("src_" + keyName)
 					.sourceKey("src_key_" + keyName)
@@ -54,8 +53,7 @@ public class SearchApiTest {
 		var name = "itemNameEqual_name";
 		addItems(10, "itemNameEqual");
 		var items = new ArrayList<Item>();
-		final var item = new Item
-				.Builder(id)
+		final var item = Item.Builder.getDefault(id)
 				.name(name)
 				.source("src_itemNameEqual")
 				.sourceKey("src_key_itemNameEqual")
@@ -100,8 +98,7 @@ public class SearchApiTest {
 		var id = "itemSourceTypeEqual_t";
 		addItems(10, "itemSourceTypeEqual");
 		var items = new ArrayList<Item>();
-		final var item = new Item
-				.Builder(id)
+		final var item  = Item.Builder.getDefault(id)
 				.name("name")
 				.source("src_itemSourceTypeEqual")
 				.sourceKey("src_key_itemSourceTypeEqual")
@@ -122,8 +119,7 @@ public class SearchApiTest {
 		filters.put("filter_itemStatusEqual", itemRule);
 		
 		var items = new ArrayList<Item>();
-		final var item = new Item
-				.Builder("itemStatusEqual_t")
+		final var item = Item.Builder.getDefault("itemStatusEqual_t")
 				.name("name")
 				.source("src_itemStatusEqual")
 				.sourceKey("src_key_itemStatusEqual")
@@ -165,8 +161,7 @@ public class SearchApiTest {
 	public void itemFieldsEqual() {
 		var id = "itemFieldsEqual_t";
 		var items = new ArrayList<Item>();
-		final var item = new Item
-				.Builder(id)
+		final var item = Item.Builder.getDefault(id)
 				.name("name")
 				.source("src_itemFieldsEqual")
 				.sourceKey("src_key_itemFieldsEqual")
@@ -185,8 +180,7 @@ public class SearchApiTest {
 		var fromHistory = new HashSet<String>();
 		fromHistory.add("itemFromHistoryEqual_node1");
 		fromHistory.add("itemFromHistoryEqual_node2");
-		final var item = new Item
-				.Builder(id)
+		final var item = Item.Builder.getDefault(id)
 				.name("name")
 				.source("src_itemFromHistoryEqual")
 				.sourceKey("src_key_itemFromHistoryEqual")
