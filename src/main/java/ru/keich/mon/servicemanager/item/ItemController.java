@@ -94,13 +94,16 @@ public class ItemController extends EntityController<String, Item> {
 	@GetMapping("/item/{id}/parents")
 	@CrossOrigin(origins = "*")
 	ResponseEntity<MappingJacksonValue> findParentsById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
-		var opt = itemService.findParentsById(id);
+		var opt = itemService.findById(id);
 		if(opt.isEmpty()) {
 			return ResponseEntity.notFound().build();
 		}
-		return itemService.sortAndLimitEnrich(reqParam, qp -> opt.get(), (s, qp) -> {
-			return applyFilter(s.toList(), qp);
-		});
+		var parentIds =itemService.findParentIds(opt.get());
+		return itemService.sortAndLimitEnrich(reqParam, qp -> {
+			if(parentIds.size() == 0) return Stream.empty();
+			if(qp.getPredicates().size() == 0) return itemService.findByIds(parentIds).stream().filter(Item::isNotDeleted);
+			return find(qp, parentIds).filter(Item::isNotDeleted);
+		}, (s, qp) -> applyFilter(s.toList(), qp));
 	}
 
 	@Override

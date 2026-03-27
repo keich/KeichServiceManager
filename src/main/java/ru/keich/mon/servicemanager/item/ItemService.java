@@ -233,7 +233,7 @@ public class ItemService extends EntityService<String, Item> {
 		return entityCache.keySetIndexEq(Item.FIELD_PARENTS, itemId);
 	}
 
-	private Set<String> findParentIds(Item item) {
+	public Set<String> findParentIds(Item item) {
 		return findParentIdsById(item.getId());
 	}
 
