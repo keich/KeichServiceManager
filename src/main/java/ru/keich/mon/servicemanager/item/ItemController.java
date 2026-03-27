@@ -3,6 +3,7 @@ package ru.keich.mon.servicemanager.item;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.json.MappingJacksonValue;
@@ -78,13 +79,16 @@ public class ItemController extends EntityController<String, Item> {
 	@GetMapping("/item/{id}/children")
 	@CrossOrigin(origins = "*")
 	ResponseEntity<MappingJacksonValue> findChildrenById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
-		var opt = itemService.findChildrenById(id);
+		var opt = itemService.findById(id);
 		if(opt.isEmpty()) {
 			return ResponseEntity.notFound().build();
 		}
-		return itemService.sortAndLimitEnrich(reqParam, qp -> opt.get(), (s, qp) -> {
-			return applyFilter(s.toList(), qp);
-		});
+		var chindrenIds = opt.get().getChildrenIds();
+		return itemService.sortAndLimitEnrich(reqParam, qp -> {
+			if(chindrenIds.size() == 0) return Stream.empty();
+			if(qp.getPredicates().size() == 0) return itemService.findByIds(chindrenIds).stream().filter(Item::isNotDeleted);
+			return find(qp, chindrenIds).filter(Item::isNotDeleted);
+		}, (s, qp) -> applyFilter(s.toList(), qp));
 	}
 
 	@GetMapping("/item/{id}/parents")

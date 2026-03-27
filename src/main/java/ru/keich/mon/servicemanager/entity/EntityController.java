@@ -81,21 +81,23 @@ public class EntityController<K, T extends Entity<K>> {
 		return ResponseEntity.ok(data);
 	}
 
-	protected Stream<T> findByPredicates(List<QueryPredicate> predicates) {
-		return predicates.stream()
+	protected Stream<T> findByPredicates(List<QueryPredicate> predicates, Set<K> filterbyId) {
+		var opt = predicates.stream()
 				.map(p -> entityService.find(p))
 				.reduce((result, el) -> { 
 					result.retainAll(el);
 					return result;
-				})
-				.orElse(Collections.emptySet())
-				.stream()
-				.map(entityService::findById)
+				});
+		var s = opt.orElse(Collections.emptySet()).stream();
+		if(filterbyId.size() > 0) {
+			s = s.filter(id -> filterbyId.contains(id));
+		}
+		return	s.map(entityService::findById)
 				.filter(Optional::isPresent)
 				.map(Optional::get);
 	}
 
-	protected Stream<T> findBySearch(String search) {
+	protected Stream<T> findBySearch(String search, Set<K> filterbyId) {
 		var lexer = new KSearchLexer(CharStreams.fromString(search));
 		var tokens = new CommonTokenStream(lexer);
 		var parser = new KSearchParser(tokens);
@@ -103,18 +105,28 @@ public class EntityController<K, T extends Entity<K>> {
 		var walker = new ParseTreeWalker();
 		var q = new SearchListener<K, T>(entityService);
 		walker.walk(q, tree);
-		return q.getResult()
-				.stream()
-				.map(entityService::findById)
+		var s = q.getResult().stream();
+		if(filterbyId.size() > 0) {
+			s = s.filter(id -> filterbyId.contains(id));
+		}
+		return s.map(entityService::findById)
 				.filter(Optional::isPresent)
 				.map(Optional::get);
 	}
 	
+	protected Stream<T> find(QueryParamsParser qp, Set<K> filterbyId) {
+		if(qp.isHasSearch()) {
+			return findBySearch(qp.getSearch(), filterbyId);
+		} else {
+			return findByPredicates(qp.getPredicates(), filterbyId);
+		}
+	}
+	
 	protected Stream<T> find(QueryParamsParser qp) {
 		if(qp.isHasSearch()) {
-			return findBySearch(qp.getSearch());
+			return findBySearch(qp.getSearch(), Collections.emptySet());
 		} else {
-			return findByPredicates(qp.getPredicates());
+			return findByPredicates(qp.getPredicates(), Collections.emptySet());
 		}
 	}
 
