@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import lombok.extern.java.Log;
 import ru.keich.mon.servicemanager.entity.EntityController;
+import ru.keich.mon.servicemanager.event.Event;
 import ru.keich.mon.servicemanager.event.EventService;
 
 /*
@@ -86,8 +87,8 @@ public class ItemController extends EntityController<String, Item> {
 		var chindrenIds = opt.get().getChildrenIds();
 		return itemService.sortAndLimitEnrich(reqParam, qp -> {
 			if(chindrenIds.size() == 0) return Stream.empty();
-			if(qp.getPredicates().size() == 0) return itemService.findByIds(chindrenIds).stream().filter(Item::isNotDeleted);
-			return find(qp, chindrenIds).filter(Item::isNotDeleted);
+			if(!qp.isHasPredicates() && !qp.isHasSearch()) return itemService.findByIds(chindrenIds).stream().filter(Item::isNotDeleted);
+			return itemService.find(qp, chindrenIds).filter(Item::isNotDeleted);
 		}, (s, qp) -> applyFilter(s.toList(), qp));
 	}
 
@@ -101,8 +102,8 @@ public class ItemController extends EntityController<String, Item> {
 		var parentIds =itemService.findParentIds(opt.get());
 		return itemService.sortAndLimitEnrich(reqParam, qp -> {
 			if(parentIds.size() == 0) return Stream.empty();
-			if(qp.getPredicates().size() == 0) return itemService.findByIds(parentIds).stream().filter(Item::isNotDeleted);
-			return find(qp, parentIds).filter(Item::isNotDeleted);
+			if(!qp.isHasPredicates() && !qp.isHasSearch()) return itemService.findByIds(parentIds).stream().filter(Item::isNotDeleted);
+			return itemService.find(qp, parentIds).filter(Item::isNotDeleted);
 		}, (s, qp) -> applyFilter(s.toList(), qp));
 	}
 
@@ -116,7 +117,12 @@ public class ItemController extends EntityController<String, Item> {
 	@GetMapping("/item/{id}/events")
 	@CrossOrigin(origins = "*")
 	public ResponseEntity<MappingJacksonValue> findAllEventsById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
-		return eventService.sortAndLimitEnrich(reqParam, qp -> itemService.findAllEventsById(id), (s, qp) -> {
+		return eventService.sortAndLimitEnrich(reqParam, qp -> { 
+			var eventIds = itemService.findAllEventIdsById(id);
+			if(eventIds.size() == 0) return Stream.empty();
+			if(!qp.isHasPredicates() && !qp.isHasSearch()) return eventService.findByIds(eventIds).stream().filter(Event::isNotDeleted);
+			return eventService.find(qp, eventIds).filter(Event::isNotDeleted);
+		}, (s, qp) -> {
 			return applyFilter(s.toList(), qp);
 		});
 	}

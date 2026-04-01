@@ -277,16 +277,17 @@ public class ItemService extends EntityService<String, Item> {
 		}
 		return history;
 	}
-
-	public Stream<Event> findAllEventsById(String id) {
-		 var ids = findByIds(findAllChildrenById(id)).stream()
+	
+	public Set<String> findAllEventIdsById(String id) {
+		 return findByIds(findAllChildrenById(id)).stream()
 				.map(Item::getEventsStatus)
 				.map(Map::keySet)
 				.flatMap(Set::stream)
 				.collect(Collectors.toSet());
-		
-		 return eventService.findByIds(ids).stream()
-				 .filter(Event::isNotDeleted);
+	}
+
+	public Stream<Event> findAllEventsById(String id) {		
+		 return eventService.findByIds(findAllEventIdsById(id)).stream().filter(Event::isNotDeleted);
 	}
 
 	@Override

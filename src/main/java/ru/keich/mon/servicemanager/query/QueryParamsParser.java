@@ -39,6 +39,7 @@ public class QueryParamsParser {
 	private long limit = -1;
 	private String search = "";
 	private boolean hasSearch = false;
+	private boolean hasPredicates = false;
 	private final List<QueryPredicate> predicates = new ArrayList<QueryPredicate>();
 	
 	public QueryParamsParser(MultiValueMap<String, String> reqParam, BiFunction<String, String, Object> valueConverter) {	
@@ -86,6 +87,7 @@ public class QueryParamsParser {
 						sorts.add(qparam.getSort());
 						break;
 					case PREDICATE:
+						hasPredicates = true;
 						predicates.add(qparam.getPredocate());
 						break;
 					}

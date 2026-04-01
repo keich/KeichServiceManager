@@ -1,6 +1,7 @@
 package ru.keich.mon.servicemanager.entity;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,6 +17,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.util.MultiValueMap;
@@ -26,6 +30,8 @@ import io.micrometer.core.instrument.Tags;
 import ru.keich.mon.indexedhashmap.IndexedHashMap;
 import ru.keich.mon.indexedhashmap.Metrics;
 import ru.keich.mon.servicemanager.BaseStatus;
+import ru.keich.mon.servicemanager.KSearchLexer;
+import ru.keich.mon.servicemanager.KSearchParser;
 import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.QueueThreadReader;
 import ru.keich.mon.servicemanager.item.Item;
@@ -33,6 +39,7 @@ import ru.keich.mon.servicemanager.query.Operator;
 import ru.keich.mon.servicemanager.query.QueryParamsParser;
 import ru.keich.mon.servicemanager.query.QueryPredicate;
 import ru.keich.mon.servicemanager.query.QuerySort;
+import ru.keich.mon.servicemanager.search.SearchListener;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -217,6 +224,39 @@ public abstract class EntityService<K, T extends Entity<K>> {
 		return data;
 	}
 
+	public Stream<T> findByPredicates(List<QueryPredicate> predicates, Set<K> filterbyId) {
+		var opt = predicates.stream()
+				.map(this::find)
+				.reduce((result, el) -> { 
+					result.retainAll(el);
+					return result;
+				});
+		var s = opt.orElse(Collections.emptySet()).stream();
+		if(filterbyId.size() > 0) {
+			s = s.filter(id -> filterbyId.contains(id));
+		}
+		return	s.map(this::findById)
+				.filter(Optional::isPresent)
+				.map(Optional::get);
+	}
+
+	public Stream<T> findBySearch(String search, Set<K> filterbyId) {
+		var lexer = new KSearchLexer(CharStreams.fromString(search));
+		var tokens = new CommonTokenStream(lexer);
+		var parser = new KSearchParser(tokens);
+		var tree = parser.parse();
+		var walker = new ParseTreeWalker();
+		var q = new SearchListener<K, T>(this);
+		walker.walk(q, tree);
+		var s = q.getResult().stream();
+		if(filterbyId.size() > 0) {
+			s = s.filter(id -> filterbyId.contains(id));
+		}
+		return s.map(this::findById)
+				.filter(Optional::isPresent)
+				.map(Optional::get);
+	}
+
 	public Set<K> find(QueryPredicate predicate) {
 		var fieldName = predicate.getName();
 		var indexNames = entityCache.getIndexNames();
@@ -248,6 +288,22 @@ public abstract class EntityService<K, T extends Entity<K>> {
 			return entityCache.keySetPredicate(queryValueMapper.get(fieldName), predicate.getPredicate());
 		}
 		return new HashSet<>(0);
+	}
+
+	public Stream<T> find(QueryParamsParser qp, Set<K> filterbyId) {
+		if(qp.isHasSearch()) {
+			return findBySearch(qp.getSearch(), filterbyId);
+		} else {
+			return findByPredicates(qp.getPredicates(), filterbyId);
+		}
+	}
+
+	public Stream<T> find(QueryParamsParser qp) {
+		if(qp.isHasSearch()) {
+			return findBySearch(qp.getSearch(), Collections.emptySet());
+		} else {
+			return findByPredicates(qp.getPredicates(), Collections.emptySet());
+		}
 	}
 
 	@Scheduled(fixedRateString = "5", timeUnit = TimeUnit.SECONDS)

@@ -1,15 +1,8 @@
 package ru.keich.mon.servicemanager.entity;
-
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Stream;
 
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.json.MappingJacksonValue;
 import org.springframework.util.MultiValueMap;
@@ -19,11 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 
-import ru.keich.mon.servicemanager.KSearchLexer;
-import ru.keich.mon.servicemanager.KSearchParser;
 import ru.keich.mon.servicemanager.query.QueryParamsParser;
-import ru.keich.mon.servicemanager.query.QueryPredicate;
-import ru.keich.mon.servicemanager.search.SearchListener;
 
 
 /*
@@ -81,57 +70,8 @@ public class EntityController<K, T extends Entity<K>> {
 		return ResponseEntity.ok(data);
 	}
 
-	protected Stream<T> findByPredicates(List<QueryPredicate> predicates, Set<K> filterbyId) {
-		var opt = predicates.stream()
-				.map(p -> entityService.find(p))
-				.reduce((result, el) -> { 
-					result.retainAll(el);
-					return result;
-				});
-		var s = opt.orElse(Collections.emptySet()).stream();
-		if(filterbyId.size() > 0) {
-			s = s.filter(id -> filterbyId.contains(id));
-		}
-		return	s.map(entityService::findById)
-				.filter(Optional::isPresent)
-				.map(Optional::get);
-	}
-
-	protected Stream<T> findBySearch(String search, Set<K> filterbyId) {
-		var lexer = new KSearchLexer(CharStreams.fromString(search));
-		var tokens = new CommonTokenStream(lexer);
-		var parser = new KSearchParser(tokens);
-		var tree = parser.parse();
-		var walker = new ParseTreeWalker();
-		var q = new SearchListener<K, T>(entityService);
-		walker.walk(q, tree);
-		var s = q.getResult().stream();
-		if(filterbyId.size() > 0) {
-			s = s.filter(id -> filterbyId.contains(id));
-		}
-		return s.map(entityService::findById)
-				.filter(Optional::isPresent)
-				.map(Optional::get);
-	}
-	
-	protected Stream<T> find(QueryParamsParser qp, Set<K> filterbyId) {
-		if(qp.isHasSearch()) {
-			return findBySearch(qp.getSearch(), filterbyId);
-		} else {
-			return findByPredicates(qp.getPredicates(), filterbyId);
-		}
-	}
-	
-	protected Stream<T> find(QueryParamsParser qp) {
-		if(qp.isHasSearch()) {
-			return findBySearch(qp.getSearch(), Collections.emptySet());
-		} else {
-			return findByPredicates(qp.getPredicates(), Collections.emptySet());
-		}
-	}
-
 	public ResponseEntity<MappingJacksonValue> find(MultiValueMap<String, String> reqParam) {
-		return entityService.sortAndLimitEnrich(reqParam, this::find, (s, qp) -> applyFilter(s.toList(), qp));
+		return entityService.sortAndLimitEnrich(reqParam, entityService::find, (s, qp) -> applyFilter(s.toList(), qp));
 	}
 
 	public ResponseEntity<MappingJacksonValue> findById(K id, MultiValueMap<String, String> reqParam) {
