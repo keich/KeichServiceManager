@@ -94,6 +94,7 @@ AGGSTATUS: A G G S T A T U S;
  
 STRING
  : '"' (ESC | SAFECODEPOINT)* '"'
+ | '\'' (ESC | SAFECODEPOINTSINGLE)* '\''
  ;
 
 WHITE_SPACE: [ \t\r\n]+ -> skip;
@@ -139,5 +140,8 @@ fragment ESC
 
 fragment SAFECODEPOINT
  : ~ ["\\\u0000-\u001F]
+ ;
+ fragment SAFECODEPOINTSINGLE
+ : ~ ['\\\u0000-\u001F]
  ;
    

@@ -146,7 +146,7 @@ public class SearchListener<K, T extends Entity<K>> extends KSearchBaseListener 
 
 	private String pullString(ExprContext ctx, int idx) {
 		var value = ctx.getChild(idx).getText();
-		if ('"' == value.charAt(0)) {
+		if ('"' == value.charAt(0) || '\'' == value.charAt(0)) {
 			return value.substring(1, value.length() - 1);
 		}
 		return value;
