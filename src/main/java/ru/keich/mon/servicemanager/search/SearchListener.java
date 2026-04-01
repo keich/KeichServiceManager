@@ -16,6 +16,7 @@ import ru.keich.mon.servicemanager.KSearchParser.ExprContext;
 import ru.keich.mon.servicemanager.KSearchParser.ExprEqualContext;
 import ru.keich.mon.servicemanager.KSearchParser.ExprFieldsContainContext;
 import ru.keich.mon.servicemanager.KSearchParser.ExprFieldsEqualContext;
+import ru.keich.mon.servicemanager.KSearchParser.ExprFieldsInEqualContext;
 import ru.keich.mon.servicemanager.KSearchParser.ExprGreaterEqualContext;
 import ru.keich.mon.servicemanager.KSearchParser.ExprGreaterThanContext;
 import ru.keich.mon.servicemanager.KSearchParser.ExprInEqualContext;
@@ -149,6 +150,22 @@ public class SearchListener<K, T extends Entity<K>> extends KSearchBaseListener 
 			return value.substring(1, value.length() - 1);
 		}
 		return value;
+	}
+
+	@Override
+	public void exitExprFieldsInEqual(ExprFieldsInEqualContext ctx) {
+		var key = pullString(ctx, 2);
+		var list = new ArrayList<String>();
+		childToList(ctx.getChild(5), list);
+		var r = list.stream()
+		.map(str -> Map.entry(key, str))
+		.map(e -> QueryPredicate.equal(Entity.FIELD_FIELDS, e))
+		.map(p -> entityService.find(p))
+		.reduce((result, el) -> {
+			result.addAll(el);
+			return result;
+		}).orElse(Collections.emptySet());
+		stack.push(r);
 	}
 
 	@Override

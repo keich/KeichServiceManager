@@ -15,6 +15,7 @@ expr
  | expr_props NOT LIKE expr_val    # ExprNotContain
  | expr_props HAS NOT expr_val     # ExprNotInclude
  | expr_props IN '(' expr_str_list ')' # ExprInEqual
+ | FIELDS '.' STRING IN '(' expr_str_list ')' # ExprFieldsInEqual
  | FIELDS '.' STRING '='  STRING   # ExprFieldsEqual
  | FIELDS '.' STRING LIKE STRING   # ExprFieldsContain
  | '(' expr ')'                    # ExprParentheses
