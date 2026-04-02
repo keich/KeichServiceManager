@@ -6,21 +6,21 @@ parse
  
  
 expr 
- : expr_props '='  expr_val        # ExprEqual
- | expr_props '!=' expr_val        # ExprNotEqual
- | expr_props '<'  expr_val        # ExprLessThan
- | expr_props '>'  expr_val        # ExprGreaterThan
- | expr_props '>=' expr_val        # ExprGreaterEqual
- | expr_props LIKE expr_val        # ExprContain
- | expr_props NOT LIKE expr_val    # ExprNotContain
- | expr_props HAS NOT expr_val     # ExprNotInclude
- | expr_props IN '(' expr_str_list ')' # ExprInEqual
- | FIELDS '.' STRING IN '(' expr_str_list ')' # ExprFieldsInEqual
- | FIELDS '.' STRING '='  STRING   # ExprFieldsEqual
- | FIELDS '.' STRING LIKE STRING   # ExprFieldsContain
- | '(' expr ')'                    # ExprParentheses
- | expr AND expr                 # ExprAND
- | expr OR expr                  # ExprOR
+ : expr_props '='  expr_val                      # ExprEqual
+ | expr_props '!=' expr_val                      # ExprNotEqual
+ | expr_props '<'  expr_val                      # ExprLessThan
+ | expr_props '>'  expr_val                      # ExprGreaterThan
+ | expr_props '>=' expr_val                      # ExprGreaterEqual
+ | expr_props LIKE expr_val                      # ExprContain
+ | expr_props NOT LIKE expr_val                  # ExprNotContain
+ | expr_props HAS NOT expr_val                   # ExprNotInclude
+ | expr_props IN '(' expr_str_list ')'           # ExprInEqual
+ | FIELDS '.' STRING IN '(' expr_str_list ')'    # ExprFieldsInEqual
+ | FIELDS '.' STRING '='  STRING                 # ExprFieldsEqual
+ | FIELDS '.' STRING LIKE STRING                 # ExprFieldsContain
+ | '(' expr ')'                                  # ExprParentheses
+ | expr AND expr                                 # ExprAND
+ | expr OR expr                                  # ExprOR
  ;
 
 expr_val
@@ -36,17 +36,17 @@ expr_str_list
  
 expr_props
  : ID
- | NAME
  | VERSION
  | SOURCE
  | SOURCEKEY
  | SOURCETYPE
  | STATUS
- | FIELDS
- | FROMHISTORY
  | CREATEDON
  | UPDATEDON
  | DELETEDON
+ | FROMHISTORY
+ | FIELDS
+ | NAME
  | AGGSTATUS
  ;
 
