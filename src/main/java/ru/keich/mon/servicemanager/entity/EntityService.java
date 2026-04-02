@@ -272,6 +272,14 @@ public abstract class EntityService<K, T extends Entity<K>> {
 				return new HashSet<>(0);
 			}
 		} else if (Entity.FIELD_ID.equals(fieldName)) {
+			if(predicate.getOperator() == Operator.EQ) {
+				var id = predicate.getValue();
+				var entity = entityCache.get(id);
+				if(entity != null) {
+					return new HashSet<>(Collections.singletonList(entity.getId()));
+				}
+				return new HashSet<>(0);
+			}
 			return entityCache.keySet().stream().filter(predicate.getPredicate()).collect(Collectors.toSet());
 		} else if (queryValueMapper.containsKey(fieldName)) {
 			return entityCache.keySetPredicate(queryValueMapper.get(fieldName), predicate.getPredicate());
