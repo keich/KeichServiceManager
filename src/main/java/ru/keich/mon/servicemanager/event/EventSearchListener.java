@@ -63,7 +63,6 @@ public class EventSearchListener extends KEventSearchBaseListener implements Ent
 
 	@Override
 	public void exitExprEqual(ExprEqualContext ctx) {
-		System.out.println("============== DEBUG0");
 		var name = getFieldName(ctx, 0);
 		var value = pullString(ctx, 2);
 		var p = QueryPredicate.equal(name, eventService.fieldValueOf(name, value));
