@@ -1,4 +1,4 @@
-package ru.keich.mon.servicemanager.search;
+package ru.keich.mon.servicemanager.item;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -9,24 +9,24 @@ import java.util.Stack;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import ru.keich.mon.servicemanager.KSearchBaseListener;
-import ru.keich.mon.servicemanager.KSearchParser.ExprANDContext;
-import ru.keich.mon.servicemanager.KSearchParser.ExprContainContext;
-import ru.keich.mon.servicemanager.KSearchParser.ExprContext;
-import ru.keich.mon.servicemanager.KSearchParser.ExprEqualContext;
-import ru.keich.mon.servicemanager.KSearchParser.ExprFieldsContainContext;
-import ru.keich.mon.servicemanager.KSearchParser.ExprFieldsEqualContext;
-import ru.keich.mon.servicemanager.KSearchParser.ExprFieldsInEqualContext;
-import ru.keich.mon.servicemanager.KSearchParser.ExprGreaterEqualContext;
-import ru.keich.mon.servicemanager.KSearchParser.ExprGreaterThanContext;
-import ru.keich.mon.servicemanager.KSearchParser.ExprInEqualContext;
-import ru.keich.mon.servicemanager.KSearchParser.ExprLessThanContext;
-import ru.keich.mon.servicemanager.KSearchParser.ExprNotContainContext;
-import ru.keich.mon.servicemanager.KSearchParser.ExprNotEqualContext;
-import ru.keich.mon.servicemanager.KSearchParser.ExprNotIncludeContext;
-import ru.keich.mon.servicemanager.KSearchParser.ExprORContext;
+import ru.keich.mon.servicemanager.KItemSearchBaseListener;
+import ru.keich.mon.servicemanager.KItemSearchParser.ExprANDContext;
+import ru.keich.mon.servicemanager.KItemSearchParser.ExprContainContext;
+import ru.keich.mon.servicemanager.KItemSearchParser.ExprContext;
+import ru.keich.mon.servicemanager.KItemSearchParser.ExprEqualContext;
+import ru.keich.mon.servicemanager.KItemSearchParser.ExprFieldsContainContext;
+import ru.keich.mon.servicemanager.KItemSearchParser.ExprFieldsEqualContext;
+import ru.keich.mon.servicemanager.KItemSearchParser.ExprFieldsInEqualContext;
+import ru.keich.mon.servicemanager.KItemSearchParser.ExprGreaterEqualContext;
+import ru.keich.mon.servicemanager.KItemSearchParser.ExprGreaterThanContext;
+import ru.keich.mon.servicemanager.KItemSearchParser.ExprInEqualContext;
+import ru.keich.mon.servicemanager.KItemSearchParser.ExprLessThanContext;
+import ru.keich.mon.servicemanager.KItemSearchParser.ExprNotContainContext;
+import ru.keich.mon.servicemanager.KItemSearchParser.ExprNotEqualContext;
+import ru.keich.mon.servicemanager.KItemSearchParser.ExprNotIncludeContext;
+import ru.keich.mon.servicemanager.KItemSearchParser.ExprORContext;
 import ru.keich.mon.servicemanager.entity.Entity;
-import ru.keich.mon.servicemanager.entity.EntityService;
+import ru.keich.mon.servicemanager.entity.EntitySearchResult;
 import ru.keich.mon.servicemanager.query.QueryPredicate;
 
 /*
@@ -45,13 +45,13 @@ import ru.keich.mon.servicemanager.query.QueryPredicate;
  * limitations under the License.
  */
 
-public class SearchListener<K, T extends Entity<K>> extends KSearchBaseListener {
+public class ItemSearchListener extends KItemSearchBaseListener implements EntitySearchResult<String> {
 
-	private final EntityService<K, T> entityService;
-	private final Stack<Set<K>> stack = new Stack<>();
+	private final ItemService itemService;
+	private final Stack<Set<String>> stack = new Stack<>();
 
-	public SearchListener(EntityService<K, T> entityService) {
-		this.entityService = entityService;
+	public ItemSearchListener(ItemService itemService) {
+		this.itemService = itemService;
 	}
 
 	@Override
@@ -72,8 +72,8 @@ public class SearchListener<K, T extends Entity<K>> extends KSearchBaseListener 
 	public void exitExprNotEqual(ExprNotEqualContext ctx) {
 		var name = getFieldName(ctx, 0);
 		var value = pullString(ctx, 2);
-		var p = QueryPredicate.notEqual(name, entityService.fieldValueOf(name, value));
-		var r = entityService.find(p);
+		var p = QueryPredicate.notEqual(name, itemService.fieldValueOf(name, value));
+		var r = itemService.find(p);
 		stack.push(r);
 	}
 
@@ -81,8 +81,8 @@ public class SearchListener<K, T extends Entity<K>> extends KSearchBaseListener 
 	public void exitExprEqual(ExprEqualContext ctx) {
 		var name = getFieldName(ctx, 0);
 		var value = pullString(ctx, 2);
-		var p = QueryPredicate.equal(name, entityService.fieldValueOf(name, value));
-		var r = entityService.find(p);
+		var p = QueryPredicate.equal(name, itemService.fieldValueOf(name, value));
+		var r = itemService.find(p);
 		stack.push(r);
 	}
 
@@ -90,8 +90,8 @@ public class SearchListener<K, T extends Entity<K>> extends KSearchBaseListener 
 	public void exitExprNotContain(ExprNotContainContext ctx) {
 		var name = getFieldName(ctx, 0);
 		var value = pullString(ctx, 3);
-		var p = QueryPredicate.notContain(name, entityService.fieldValueOf(name, value));
-		var r = entityService.find(p);
+		var p = QueryPredicate.notContain(name, itemService.fieldValueOf(name, value));
+		var r = itemService.find(p);
 		stack.push(r);
 	}
 
@@ -99,8 +99,8 @@ public class SearchListener<K, T extends Entity<K>> extends KSearchBaseListener 
 	public void exitExprNotInclude(ExprNotIncludeContext ctx) {
 		var name = getFieldName(ctx, 0);
 		var value = pullString(ctx, 3);
-		var p = QueryPredicate.notInclude(name, entityService.fieldValueOf(name, value));
-		var r = entityService.find(p);
+		var p = QueryPredicate.notInclude(name, itemService.fieldValueOf(name, value));
+		var r = itemService.find(p);
 		stack.push(r);
 	}
 
@@ -108,8 +108,8 @@ public class SearchListener<K, T extends Entity<K>> extends KSearchBaseListener 
 	public void exitExprLessThan(ExprLessThanContext ctx) {
 		var name = getFieldName(ctx, 0);
 		var value = pullString(ctx, 2);
-		var p = QueryPredicate.lessThan(name, entityService.fieldValueOf(name, value));
-		var r = entityService.find(p);
+		var p = QueryPredicate.lessThan(name, itemService.fieldValueOf(name, value));
+		var r = itemService.find(p);
 		stack.push(r);
 	}
 
@@ -117,8 +117,8 @@ public class SearchListener<K, T extends Entity<K>> extends KSearchBaseListener 
 	public void exitExprGreaterEqual(ExprGreaterEqualContext ctx) {
 		var name = getFieldName(ctx, 0);
 		var value = pullString(ctx, 2);
-		var p = QueryPredicate.greaterEqual(name, entityService.fieldValueOf(name, value));
-		var r = entityService.find(p);
+		var p = QueryPredicate.greaterEqual(name, itemService.fieldValueOf(name, value));
+		var r = itemService.find(p);
 		stack.push(r);
 	}
 
@@ -126,8 +126,8 @@ public class SearchListener<K, T extends Entity<K>> extends KSearchBaseListener 
 	public void exitExprContain(ExprContainContext ctx) {
 		var name = getFieldName(ctx, 0);
 		var value = pullString(ctx, 2);
-		var p = QueryPredicate.contain(name, entityService.fieldValueOf(name, value));
-		var r = entityService.find(p);
+		var p = QueryPredicate.contain(name, itemService.fieldValueOf(name, value));
+		var r = itemService.find(p);
 		stack.push(r);
 	}
 
@@ -135,8 +135,8 @@ public class SearchListener<K, T extends Entity<K>> extends KSearchBaseListener 
 	public void exitExprGreaterThan(ExprGreaterThanContext ctx) {
 		var name = getFieldName(ctx, 0);
 		var value = pullString(ctx, 2);
-		var p = QueryPredicate.greaterThan(name, entityService.fieldValueOf(name, value));
-		var r = entityService.find(p);
+		var p = QueryPredicate.greaterThan(name, itemService.fieldValueOf(name, value));
+		var r = itemService.find(p);
 		stack.push(r);
 	}
 
@@ -160,7 +160,7 @@ public class SearchListener<K, T extends Entity<K>> extends KSearchBaseListener 
 		var r = list.stream()
 		.map(str -> Map.entry(key, str))
 		.map(e -> QueryPredicate.equal(Entity.FIELD_FIELDS, e))
-		.map(p -> entityService.find(p))
+		.map(p -> itemService.find(p))
 		.reduce((result, el) -> {
 			result.addAll(el);
 			return result;
@@ -174,7 +174,7 @@ public class SearchListener<K, T extends Entity<K>> extends KSearchBaseListener 
 		var value = pullString(ctx, 4);
 		var entry = Map.entry(key, value);
 		var p = QueryPredicate.contain(Entity.FIELD_FIELDS, entry);
-		var r = entityService.find(p);
+		var r = itemService.find(p);
 		stack.push(r);
 	}
 
@@ -184,7 +184,7 @@ public class SearchListener<K, T extends Entity<K>> extends KSearchBaseListener 
 		var value = pullString(ctx, 4);
 		var entry = Map.entry(key, value);
 		var p = QueryPredicate.equal(Entity.FIELD_FIELDS, entry);
-		var r = entityService.find(p);
+		var r = itemService.find(p);
 		stack.push(r);
 	}
 
@@ -210,8 +210,8 @@ public class SearchListener<K, T extends Entity<K>> extends KSearchBaseListener 
 		var list = new ArrayList<String>();
 		childToList(ctx.getChild(3), list);
 		var r = list.stream().map(value -> {
-			var p = QueryPredicate.equal(name, entityService.fieldValueOf(name, value));
-			return entityService.find(p);
+			var p = QueryPredicate.equal(name, itemService.fieldValueOf(name, value));
+			return itemService.find(p);
 		}).reduce((result, el) -> {
 			result.addAll(el);
 			return result;
@@ -220,7 +220,7 @@ public class SearchListener<K, T extends Entity<K>> extends KSearchBaseListener 
 		stack.push(r);
 	}
 
-	public Set<K> getResult() {
+	public Set<String> getResult() {
 		return stack.pop();
 	}
 

@@ -17,9 +17,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.util.MultiValueMap;
@@ -30,8 +27,6 @@ import io.micrometer.core.instrument.Tags;
 import ru.keich.mon.indexedhashmap.IndexedHashMap;
 import ru.keich.mon.indexedhashmap.Metrics;
 import ru.keich.mon.servicemanager.BaseStatus;
-import ru.keich.mon.servicemanager.KSearchLexer;
-import ru.keich.mon.servicemanager.KSearchParser;
 import ru.keich.mon.servicemanager.QueueInfo;
 import ru.keich.mon.servicemanager.QueueThreadReader;
 import ru.keich.mon.servicemanager.item.Item;
@@ -39,7 +34,6 @@ import ru.keich.mon.servicemanager.query.Operator;
 import ru.keich.mon.servicemanager.query.QueryParamsParser;
 import ru.keich.mon.servicemanager.query.QueryPredicate;
 import ru.keich.mon.servicemanager.query.QuerySort;
-import ru.keich.mon.servicemanager.search.SearchListener;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -239,16 +233,11 @@ public abstract class EntityService<K, T extends Entity<K>> {
 				.filter(Optional::isPresent)
 				.map(Optional::get);
 	}
+	
+	protected abstract EntitySearchResult<K> getEntitySearchResult(String search);
 
 	public Stream<T> findBySearch(String search, Set<K> filterbyId) {
-		var lexer = new KSearchLexer(CharStreams.fromString(search));
-		var tokens = new CommonTokenStream(lexer);
-		var parser = new KSearchParser(tokens);
-		var tree = parser.parse();
-		var walker = new ParseTreeWalker();
-		var q = new SearchListener<K, T>(this);
-		walker.walk(q, tree);
-		var s = q.getResult().stream();
+		var s = getEntitySearchResult(search).getResult().stream();
 		if(filterbyId.size() > 0) {
 			s = s.filter(id -> filterbyId.contains(id));
 		}

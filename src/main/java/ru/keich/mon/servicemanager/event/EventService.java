@@ -26,12 +26,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import ru.keich.mon.servicemanager.KEventSearchLexer;
+import ru.keich.mon.servicemanager.KEventSearchParser;
 import ru.keich.mon.servicemanager.QueueInfo;
+import ru.keich.mon.servicemanager.entity.EntitySearchResult;
 import ru.keich.mon.servicemanager.entity.EntityService;
 import ru.keich.mon.servicemanager.item.ItemService;
 import ru.keich.mon.servicemanager.query.Operator;
@@ -187,6 +193,18 @@ public class EventService extends EntityService<String, Event>{
 	@Override
 	protected Stream<Event> enrich(Stream<Event> data, QueryParamsParser qp) {
 		return data;
+	}
+
+	@Override
+	protected EntitySearchResult<String> getEntitySearchResult(String search) {
+		var lexer = new KEventSearchLexer(CharStreams.fromString(search));
+		var tokens = new CommonTokenStream(lexer);
+		var parser = new KEventSearchParser(tokens);
+		var tree = parser.parse();
+		var walker = new ParseTreeWalker();
+		var q = new EventSearchListener(this);
+		walker.walk(q, tree);
+		return q;
 	}
 
 }

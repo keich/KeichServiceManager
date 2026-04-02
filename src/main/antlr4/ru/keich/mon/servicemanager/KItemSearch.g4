@@ -1,4 +1,4 @@
-grammar KSearch;
+grammar KItemSearch;
 
 parse
  : expr EOF
@@ -48,8 +48,6 @@ expr_props
  | UPDATEDON
  | DELETEDON
  | AGGSTATUS
- | SUMMARY
- | NODE
  ;
 
 base_status
@@ -94,7 +92,7 @@ AGGSTATUS: A G G S T A T U S;
  
 STRING
  : '"' (ESC | SAFECODEPOINT)* '"'
- | '\'' (ESC | SAFECODEPOINTSINGLE)* '\''
+ | '\'' (ESCSINGLE | SAFECODEPOINTSINGLE)* '\''
  ;
 
 WHITE_SPACE: [ \t\r\n]+ -> skip;
@@ -137,6 +135,11 @@ fragment DEC_DIGIT   : [0-9];
 fragment ESC
  : '\\' (["])
  ;
+ 
+ fragment ESCSINGLE
+ : '\\' (['])
+ ;
+ 
 
 fragment SAFECODEPOINT
  : ~ ["\\\u0000-\u001F]

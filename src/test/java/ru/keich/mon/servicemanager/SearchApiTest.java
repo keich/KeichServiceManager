@@ -24,7 +24,7 @@ public class SearchApiTest {
 
 	@Autowired
 	private ApiWrapper apiWrapper;
-	
+
 	private void addItems(int size, String keyName) {
 		var items = new ArrayList<Item>();
 		for (int i = 0; i < size; i++) {
@@ -36,6 +36,19 @@ public class SearchApiTest {
 			items.add(item);
 		}
 		apiWrapper.itemAdd(items);
+	}
+
+	private void addEvents(int size, String keyName) {
+		var events = new ArrayList<Event>();
+		for (int i = 0; i < size; i++) {
+			final var item = Event.Builder.getDefault(keyName + "_" + i)
+					.node("name_" + i)
+					.source("src_" + keyName)
+					.sourceKey("src_key_" + keyName)
+					.build();
+			events.add(item);
+		}
+		apiWrapper.eventAdd(events);
 	}
 
 	@Test
@@ -139,7 +152,7 @@ public class SearchApiTest {
 				.build();
 		events.add(event);
 		apiWrapper.eventAdd(events);
-		
+	
 		for (int i = 0; i < 3; i++) {
 			var result = apiWrapper.itemSeach("source = \"src_itemStatusEqual\" and status = \"WARNING\"");
 			if(result.size() == 1) {
@@ -165,14 +178,14 @@ public class SearchApiTest {
 				.name("name")
 				.source("src_itemFieldsEqual")
 				.sourceKey("src_key_itemFieldsEqual")
-				.fields(Collections.singletonMap("itemFieldsEqual_name", "itemFieldsEqual_value"))
+				.fields(Collections.singletonMap("it\\\"emFieldsEqual_name", "itemFieldsEqual_value"))
 				.build();
 		items.add(item);
 		apiWrapper.itemAdd(items);
-		var result = apiWrapper.itemSeach("fields.\"itemFieldsEqual_name\" = \"itemFieldsEqual_value\"");
+		var result = apiWrapper.itemSeach("fields.\"it\\\"emFieldsEqual_name\" = \"itemFieldsEqual_value\"");
 		assertTrue(result.stream().filter(i -> id.equals(i.getId())).findAny().isPresent());
 	}
-	
+
 	@Test
 	public void itemFromHistoryEqual() {
 		var id = "itemFromHistoryEqual_t";
@@ -202,7 +215,7 @@ public class SearchApiTest {
 		var result1 = apiWrapper.itemSeach("createdOn = \"" + createdOn + "\"");
 		assertTrue(result1.stream().filter(i -> id.equals(i.getId())).findAny().isPresent());
 	}
-	
+
 	@Test
 	public void itemUpdatedOnEqual() {
 		var id = "itemUpdatedOnEqual_1";
@@ -213,7 +226,7 @@ public class SearchApiTest {
 		var result1 = apiWrapper.itemSeach("updatedOn = \"" + updatedOn + "\"");
 		assertTrue(result1.stream().filter(i -> id.equals(i.getId())).findAny().isPresent());
 	}
-	
+
 	@Test
 	public void itemDeletedOnEqual() throws JsonProcessingException, InterruptedException {
 		var id = "itemDeletedOnEqual_1";
@@ -232,7 +245,16 @@ public class SearchApiTest {
 		}
 		assertTrue(false);
 	}
-	
+
+	@Test
+	public void eventIdEqual() {
+		addEvents(10, "eventIdEqual");
+		var id = "eventIdEqual_3";
+		var result = apiWrapper.eventSeach("id = \"" + id + "\"");
+		assertEquals(1, result.size());
+		assertEquals(id, result.get(0).getId());
+	}
+
 	@Test
 	public void eventNodeEqual() {
 		var id = "eventNodeEqual_t";
@@ -250,7 +272,18 @@ public class SearchApiTest {
 		var result = apiWrapper.eventSeach("node = \"" + node + "\"");
 		assertTrue(result.stream().filter(i -> id.equals(i.getId())).findAny().isPresent());
 	}
-	
+
+	@Test
+	public void eventVersionEqual() {
+		var id = "eventVersionEqual_1";
+		addEvents(10, "eventVersionEqual");
+		var result = apiWrapper.eventSeach("id = \"" + id + "\"");
+		assertEquals(1, result.size());
+		var ver = result.get(0).getVersion();
+		var result1 = apiWrapper.eventSeach("version = " + ver);
+		assertTrue(result1.stream().filter(i -> id.equals(i.getId())).findAny().isPresent());
+	}
+
 	@Test
 	public void eventSummaryEqual() {
 		var id = "eventSummaryEqual_t";
@@ -267,6 +300,98 @@ public class SearchApiTest {
 		events.add(event);
 		apiWrapper.eventAdd(events);
 		var result = apiWrapper.eventSeach("summary = \"" + summary + "\"");
+		assertTrue(result.stream().filter(i -> id.equals(i.getId())).findAny().isPresent());
+	}
+
+	@Test
+	public void eventSourceEqual() {
+		addEvents(10, "eventSourceEqual");
+		addEvents(10, "eventSourceEqual_");
+		var source = "src_eventSourceEqual";
+		var result = apiWrapper.eventSeach("source = \"" + source + "\"");
+		assertEquals(10, result.size());
+	}
+
+	@Test
+	public void eventSourceKeyEqual() {
+		addEvents(10, "eventSourceKeyEqual");
+		addEvents(10, "eventSourceKeyEqual_");
+		var source = "src_key_eventSourceKeyEqual";
+		var result = apiWrapper.eventSeach("sourceKey = \"" + source + "\"");
+		assertEquals(10, result.size());
+	}
+
+	@Test
+	public void eventSourceTypeEqual() {
+		var id = "eventSourceTypeEqual_t";
+		addEvents(10, "eventSourceTypeEqual");
+		var events = new ArrayList<Event>();
+		final var event  = Event.Builder.getDefault(id)
+				.node("node")
+				.source("src_eventSourceTypeEqual")
+				.sourceKey("src_key_eventSourceTypeEqual")
+				.sourceType(SourceType.ZABBIX)
+				.build();
+		events.add(event);
+		apiWrapper.eventAdd(events);
+		var result = apiWrapper.eventSeach("sourceType = \"ZABBIX\"");
+		assertTrue(result.stream().filter(i -> id.equals(i.getId())).findAny().isPresent());
+	}
+
+	@Test
+	public void eventStatusEqual() throws InterruptedException {
+		addEvents(10, "eventStatusEqual");
+		var events = new ArrayList<Event>();
+		var id = "eventStatusEqual_t";
+		final var event = new Event
+				.Builder(id)
+				.node("name")
+				.source("src_eventStatusEqual")
+				.sourceKey("src_key_eventStatusEqual")
+				.status(BaseStatus.WARNING)
+				.fields(Collections.singletonMap("filter", "itemStatusEqual"))
+				.build();
+		events.add(event);
+		apiWrapper.eventAdd(events);
+		var result = apiWrapper.eventSeach("source = \"src_eventStatusEqual\" and status = \"WARNING\"");
+		assertEquals(1, result.size());
+		assertEquals(id, result.get(0).getId());
+	}
+
+	@Test
+	public void eventFieldsEqual() {
+		var id = "eventFieldsEqual_t";
+		var events = new ArrayList<Event>();
+		final var event = new Event
+				.Builder(id)
+				.node("name")
+				.source("src_eventFieldsEqual")
+				.sourceKey("src_key_eventFieldsEqual")
+				.status(BaseStatus.WARNING)
+				.fields(Collections.singletonMap("eventFieldsEqual_name", "eventFieldsEqual_value"))
+				.build();
+		events.add(event);
+		apiWrapper.eventAdd(events);
+		var result = apiWrapper.eventSeach("fields.\"eventFieldsEqual_name\" = \"eventFieldsEqual_value\"");
+		assertTrue(result.stream().filter(i -> id.equals(i.getId())).findAny().isPresent());
+	}
+
+	@Test
+	public void eventFromHistoryEqual() {
+		var id = "eventFromHistoryEqual_t";
+		var events = new ArrayList<Event>();
+		var fromHistory = new HashSet<String>();
+		fromHistory.add("eventFromHistoryEqual_node1");
+		fromHistory.add("eventFromHistoryEqual_node2");
+		final var event = Event.Builder.getDefault(id)
+				.node("node")
+				.source("src_eventFromHistoryEqual")
+				.sourceKey("src_key_eventFromHistoryEqual")
+				.fromHistory(fromHistory)
+				.build();
+		events.add(event);
+		apiWrapper.eventAdd(events);
+		var result = apiWrapper.eventSeach("fromHistory = \"eventFromHistoryEqual_node1\"");
 		assertTrue(result.stream().filter(i -> id.equals(i.getId())).findAny().isPresent());
 	}
 

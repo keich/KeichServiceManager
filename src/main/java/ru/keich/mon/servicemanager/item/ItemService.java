@@ -13,13 +13,19 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.java.Log;
 import ru.keich.mon.servicemanager.BaseStatus;
+import ru.keich.mon.servicemanager.KItemSearchLexer;
+import ru.keich.mon.servicemanager.KItemSearchParser;
 import ru.keich.mon.servicemanager.QueueInfo;
+import ru.keich.mon.servicemanager.entity.EntitySearchResult;
 import ru.keich.mon.servicemanager.entity.EntityService;
 import ru.keich.mon.servicemanager.event.Event;
 import ru.keich.mon.servicemanager.event.EventService;
@@ -322,6 +328,18 @@ public class ItemService extends EntityService<String, Item> {
 		return new Item.Builder(item)
 				.events(findAllEventsById(item.getId()).toList())
 				.build();
+	}
+
+	@Override
+	protected EntitySearchResult<String> getEntitySearchResult(String search) {
+		var lexer = new KItemSearchLexer(CharStreams.fromString(search));
+		var tokens = new CommonTokenStream(lexer);
+		var parser = new KItemSearchParser(tokens);
+		var tree = parser.parse();
+		var walker = new ParseTreeWalker();
+		var q = new ItemSearchListener(this);
+		walker.walk(q, tree);
+		return q;
 	}
 
 }
