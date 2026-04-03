@@ -34,9 +34,11 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import ru.keich.mon.servicemanager.KEventSearchLexer;
-import ru.keich.mon.servicemanager.KEventSearchParser;
+import ru.keich.mon.servicemanager.KSearchLexer;
+import ru.keich.mon.servicemanager.KSearchParser;
 import ru.keich.mon.servicemanager.QueueInfo;
+import ru.keich.mon.servicemanager.entity.EntitySearchListener;
+import ru.keich.mon.servicemanager.entity.EntitySearchListener.ServiceType;
 import ru.keich.mon.servicemanager.entity.EntitySearchResult;
 import ru.keich.mon.servicemanager.entity.EntityService;
 import ru.keich.mon.servicemanager.item.ItemService;
@@ -197,12 +199,12 @@ public class EventService extends EntityService<String, Event>{
 
 	@Override
 	protected EntitySearchResult<String> getEntitySearchResult(String search) {
-		var lexer = new KEventSearchLexer(CharStreams.fromString(search));
+		var lexer = new KSearchLexer(CharStreams.fromString(search));
 		var tokens = new CommonTokenStream(lexer);
-		var parser = new KEventSearchParser(tokens);
+		var parser = new KSearchParser(tokens);
 		var tree = parser.parse();
 		var walker = new ParseTreeWalker();
-		var q = new EventSearchListener(this);
+		var q = new EntitySearchListener(this, itemService, ServiceType.EVENT);
 		walker.walk(q, tree);
 		return q;
 	}

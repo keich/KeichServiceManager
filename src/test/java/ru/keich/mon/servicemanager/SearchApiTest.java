@@ -254,6 +254,42 @@ public class SearchApiTest {
 		assertEquals(1, result.size());
 		assertEquals(id, result.get(0).getId());
 	}
+	
+	@Test
+	public void eventItemIdEqual() {
+		addEvents(10, "eventItemIdEqual");
+		addItems(10, "eventItemIdEqual");
+		
+		var itemRule = new ItemFilter(null, false, Collections.singletonMap("filter", "eventItemIdEqual"));
+		Map<String, ItemFilter> filters = new HashMap<>();
+		filters.put("filter_eventItemIdEqual", itemRule);
+		
+		var items = new ArrayList<Item>();
+		final var item = Item.Builder.getDefault("eventItemIdEqual_t")
+				.name("name")
+				.source("src_eventItemIdEqual")
+				.sourceKey("src_key_eventItemIdEqual")
+				.filters(filters)
+				.build();
+		items.add(item);
+		apiWrapper.itemAdd(items);
+		
+		var events = new ArrayList<Event>();
+		final var event = new Event
+				.Builder("eventItemIdEqual_t")
+				.node("name")
+				.source("src_eventItemIdEqual")
+				.sourceKey("src_key_eventItemIdEqual")
+				.status(BaseStatus.WARNING)
+				.fields(Collections.singletonMap("filter", "eventItemIdEqual"))
+				.build();
+		events.add(event);
+		apiWrapper.eventAdd(events);
+		var id = "eventItemIdEqual_t";
+		var result = apiWrapper.eventSeach("item.id = \"" + id + "\"");
+		assertEquals(1, result.size());
+		assertEquals(id, result.get(0).getId());
+	}
 
 	@Test
 	public void eventNodeEqual() {

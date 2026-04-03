@@ -1,10 +1,9 @@
-grammar KEventSearch;
+grammar KSearch;
 
 parse
  : expr EOF
  ;
- 
- 
+
 expr 
  : expr_props '='  expr_val                       # ExprEqual
  | expr_props '!=' expr_val                       # ExprNotEqual
@@ -16,9 +15,6 @@ expr
  | expr_props HAS NOT expr_val                    # ExprNotInclude
  | expr_props IN '(' expr_str_list ')'            # ExprInEqual
  | expr_props_boolean '=' boolean                 # ExprBooleanEqual
- | FIELDS '.' STRING IN '(' expr_str_list ')'     # ExprFieldsInEqual
- | FIELDS '.' STRING '='  STRING                  # ExprFieldsEqual
- | FIELDS '.' STRING LIKE STRING                  # ExprFieldsContain
  | '(' expr ')'                                   # ExprParentheses
  | expr AND expr                                  # ExprAND
  | expr OR expr                                   # ExprOR
@@ -34,8 +30,20 @@ expr_str_list
  : STRING
  | STRING ',' expr_str_list
  ;
- 
+
 expr_props
+ : expr_props_fields
+ | expr_field_type '.' expr_props_fields
+ | FIELDS '.' STRING
+ | expr_field_type '.' FIELDS '.' STRING
+ ;
+ 
+expr_field_type
+ : ITEM
+ | EVENT
+ ;
+ 
+expr_props_fields
  : ID
  | VERSION
  | SOURCE
@@ -45,10 +53,12 @@ expr_props
  | CREATEDON
  | UPDATEDON
  | DELETEDON
+ | ENDSON
  | FROMHISTORY
  | NODE
  | SUMMARY
- | ENDSON
+ | NAME
+ | AGGSTATUS
  ;
 
  expr_props_boolean
@@ -107,6 +117,8 @@ STRING
  ;
 TRUE: T R U E;
 FALSE: F A L S E;
+ITEM: I T E M;
+EVENT: E V E N T;
 
 WHITE_SPACE: [ \t\r\n]+ -> skip;
 
