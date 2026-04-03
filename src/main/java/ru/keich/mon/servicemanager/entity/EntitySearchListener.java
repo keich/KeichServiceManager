@@ -15,6 +15,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 
 import ru.keich.mon.servicemanager.KSearchBaseListener;
 import ru.keich.mon.servicemanager.KSearchParser.ExprANDContext;
+import ru.keich.mon.servicemanager.KSearchParser.ExprBooleanEqualContext;
 import ru.keich.mon.servicemanager.KSearchParser.ExprContainContext;
 import ru.keich.mon.servicemanager.KSearchParser.ExprContext;
 import ru.keich.mon.servicemanager.KSearchParser.ExprEqualContext;
@@ -168,7 +169,14 @@ public class EntitySearchListener extends KSearchBaseListener implements EntityS
 		childToList(ctx.getChild(3), values);
 		evaluate(field, values, QueryPredicate::greaterThan);
 	}
-	
+
+	@Override
+	public void exitExprBooleanEqual(ExprBooleanEqualContext ctx) {
+		var field = getFieldName(ctx.getChild(0));
+		var strValue = pullString(ctx, 2);
+		evaluate(field, Collections.singletonList(strValue), QueryPredicate::equal);
+	}
+
 	private void childToList(ParseTree child, List<String> out) {
 		if (child.getChildCount() == 0) {
 			var val = child.getText();

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
@@ -53,89 +54,210 @@ public class SearchApiTest {
 
 	@Test
 	public void itemIdEqual() {
-		addItems(10, "itemIdEqual");
-		var id = "itemIdEqual_3";
+		var key = "itemIdEqual";
+		addItems(10, key);
+		var id = key + "_3";
 		var result = apiWrapper.itemSeach("id = \"" + id + "\"");
 		assertEquals(1, result.size());
 		assertEquals(id, result.get(0).getId());
+		result = apiWrapper.itemSeach("item.id = \"" + id + "\"");
+		assertEquals(1, result.size());
+		assertEquals(id, result.get(0).getId());
+	}
+	
+	@Test
+	public void itemIdNotEqual() {
+		var key = "itemIdNotEqual";
+		addItems(10, key);
+		var id = key + "_3";
+		var result = apiWrapper.itemSeach("id != \"" + id + "\" AND source = \"src_" + key + "\"");
+		assertEquals(9, result.stream().filter(i -> !id.equals(i.getId())).count());
+		assertEquals(0, result.stream().filter(i -> id.equals(i.getId())).count());
+		result = apiWrapper.itemSeach("item.id != \"" + id + "\" AND item.source = \"src_" + key + "\"");
+		assertEquals(9, result.stream().filter(i -> !id.equals(i.getId())).count());
+		assertEquals(0, result.stream().filter(i -> id.equals(i.getId())).count());
 	}
 
 	@Test
 	public void itemNameEqual() {
-		var id = "itemNameEqual_t";
-		var name = "itemNameEqual_name";
-		addItems(10, "itemNameEqual");
+		var key = "itemNameEqual";
+		var id = key + "_t";
+		var name = key + "_name";
+		addItems(10, key);
 		var items = new ArrayList<Item>();
 		final var item = Item.Builder.getDefault(id)
 				.name(name)
-				.source("src_itemNameEqual")
-				.sourceKey("src_key_itemNameEqual")
+				.source("src_" + key)
+				.sourceKey("src_key_" + key)
 				.build();
 		items.add(item);
 		apiWrapper.itemAdd(items);
 		var result = apiWrapper.itemSeach("name = \"" + name + "\"");
 		assertTrue(result.stream().filter(i -> id.equals(i.getId())).findAny().isPresent());
+		result = apiWrapper.itemSeach("item.name = \"" + name + "\"");
+		assertTrue(result.stream().filter(i -> id.equals(i.getId())).findAny().isPresent());
+	}
+	
+	@Test
+	public void itemNameNotEqual() {
+		var key = "itemNameNotEqual";
+		var id = key + "_t";
+		var name = key + "_name";
+		addItems(10, key);
+		var items = new ArrayList<Item>();
+		final var item = Item.Builder.getDefault(id)
+				.name(name)
+				.source("src_" + key)
+				.sourceKey("src_key_" + key)
+				.build();
+		items.add(item);
+		apiWrapper.itemAdd(items);
+		var result = apiWrapper.itemSeach("name != \"" + name + "\" AND source = \"src_" + key + "\"");
+		assertEquals(10, result.stream().filter(i -> !id.equals(i.getId())).count());
+		assertEquals(0, result.stream().filter(i -> id.equals(i.getId())).count());
+		result = apiWrapper.itemSeach("item.name != \"" + name + "\" AND item.source = \"src_" + key + "\"");
+		assertEquals(10, result.stream().filter(i -> !id.equals(i.getId())).count());
+		assertEquals(0, result.stream().filter(i -> id.equals(i.getId())).count());
 	}
 
 	@Test
 	public void itemVersionEqual() {
-		var id = "itemVersionEqual_1";
-		addItems(10, "itemVersionEqual");
+		var key = "itemVersionEqual";
+		var id = key + "_1";
+		addItems(10, key);
 		var result = apiWrapper.itemSeach("id = \"" + id + "\"");
 		assertEquals(1, result.size());
 		var ver = result.get(0).getVersion();
-		var result1 = apiWrapper.itemSeach("version = " + ver);
-		assertTrue(result1.stream().filter(i -> id.equals(i.getId())).findAny().isPresent());
+		result = apiWrapper.itemSeach("version = " + ver);
+		assertEquals(1, result.stream().filter(i -> id.equals(i.getId())).count());
+	}
+	
+	@Test
+	public void itemVersionNotEqual() {
+		var key = "itemVersionNotEqual";
+		var id = key + "_1";
+		addItems(10, key);
+		var result = apiWrapper.itemSeach("id = \"" + id + "\"");
+		assertEquals(1, result.size());
+		var ver = result.get(0).getVersion();
+		result = apiWrapper.itemSeach("version != " + ver + " AND source = \"src_" + key + "\"");
+		assertEquals(9, result.stream().filter(i -> i.getVersion() != ver).count());
+		assertEquals(0, result.stream().filter(i -> i.getVersion() == ver).count());
+		result = apiWrapper.itemSeach("item.version != " + ver + " AND item.source = \"src_" + key + "\"");
+		assertEquals(9, result.stream().filter(i -> i.getVersion() != ver).count());
+		assertEquals(0, result.stream().filter(i -> i.getVersion() == ver).count());
 	}
 
 	@Test
 	public void itemSourceEqual() {
-		addItems(10, "itemSourceEqual");
-		addItems(10, "itemSourceEqual_");
-		var source = "src_itemSourceEqual";
+		var key = "itemSourceEqual";
+		addItems(10, key);
+		addItems(10, key + "_");
+		var source = "src_" + key;
 		var result = apiWrapper.itemSeach("source = \"" + source + "\"");
 		assertEquals(10, result.size());
+		result = apiWrapper.itemSeach("item.source = \"" + source + "\"");
+		assertEquals(10, result.size());
+	}
+	
+	@Test
+	public void itemSourceNotEqual() {
+		var key = "itemSourceNotEqual";
+		addItems(10, key);
+		addItems(10, key + "_");
+		var source = "src_" + key;
+		var result = apiWrapper.itemSeach("source != \"" + source + "\"");
+		assertTrue(result.size() > 0);
+		assertEquals(0, result.stream().filter(i -> i.getSource() == source).count());
+		result = apiWrapper.itemSeach("item.source != \"" + source + "\"");
+		assertTrue(result.size() > 0);
+		assertEquals(0, result.stream().filter(i -> i.getSource() == source).count());
 	}
 
 	@Test
 	public void itemSourceKeyEqual() {
-		addItems(10, "itemSourceKeyEqual");
-		addItems(10, "itemSourceKeyEqual_");
-		var source = "src_key_itemSourceKeyEqual";
-		var result = apiWrapper.itemSeach("sourceKey = \"" + source + "\"");
+		var key = "itemSourceKeyEqual";
+		addItems(10, key);
+		addItems(10, key + "_");
+		var sourceKey = "src_key_" + key;
+		var result = apiWrapper.itemSeach("sourceKey = \"" + sourceKey + "\"");
 		assertEquals(10, result.size());
+		result = apiWrapper.itemSeach("item.sourceKey = \"" + sourceKey + "\"");
+		assertEquals(10, result.size());
+	}
+	
+	@Test
+	public void itemSourceKeyNotEqual() {
+		var key = "itemSourceKeyNotEqual";
+		addItems(10, key);
+		addItems(10, key + "_");
+		var sourceKey = "src_key_" + key;
+		var result = apiWrapper.itemSeach("source != \"" + sourceKey + "\"");
+		assertTrue(result.size() > 0);
+		assertEquals(0, result.stream().filter(i -> i.getSourceKey() == sourceKey).count());
+		result = apiWrapper.itemSeach("item.source != \"" + sourceKey + "\"");
+		assertTrue(result.size() > 0);
+		assertEquals(0, result.stream().filter(i -> i.getSourceKey() == sourceKey).count());
 	}
 
 	@Test
 	public void itemSourceTypeEqual() {
-		var id = "itemSourceTypeEqual_t";
-		addItems(10, "itemSourceTypeEqual");
+		var key = "itemSourceTypeEqual";
+		var id = key + "_t";
+		addItems(10, key);
 		var items = new ArrayList<Item>();
 		final var item  = Item.Builder.getDefault(id)
 				.name("name")
-				.source("src_itemSourceTypeEqual")
-				.sourceKey("src_key_itemSourceTypeEqual")
+				.source("src_" + key)
+				.sourceKey("src_key_" + key)
 				.sourceType(SourceType.ZABBIX)
 				.build();
 		items.add(item);
 		apiWrapper.itemAdd(items);
-		var result = apiWrapper.itemSeach("sourceType = \"ZABBIX\"");
+		var result = apiWrapper.itemSeach("sourceType = \"" + SourceType.ZABBIX.toString() + "\"");
 		assertTrue(result.stream().filter(i -> id.equals(i.getId())).findAny().isPresent());
+		result = apiWrapper.itemSeach("item.sourceType = \"" + SourceType.ZABBIX.toString() + "\"");
+		assertTrue(result.stream().filter(i -> id.equals(i.getId())).findAny().isPresent());
+	}
+	
+	@Test
+	public void itemSourceTypeNotEqual() {
+		var key = "itemSourceTypeNotEqual";
+		var id = key + "_t";
+		addItems(10, key);
+		var items = new ArrayList<Item>();
+		final var item  = Item.Builder.getDefault(id)
+				.name("name")
+				.source("src_" + key)
+				.sourceKey("src_key_" + key)
+				.sourceType(SourceType.ZABBIX)
+				.build();
+		items.add(item);
+		apiWrapper.itemAdd(items);
+		var result = apiWrapper.itemSeach("sourceType != \"" + SourceType.ZABBIX.toString() + "\"");
+		assertTrue(result.size() > 0);
+		assertEquals(0, result.stream().filter(i -> i.getSourceKey() == SourceType.ZABBIX.toString()).count());
+		result = apiWrapper.itemSeach("item.sourceType != \"" + SourceType.ZABBIX.toString() + "\"");
+		assertTrue(result.size() > 0);
+		assertEquals(0, result.stream().filter(i -> i.getSourceKey() == SourceType.ZABBIX.toString()).count());
 	}
 
 	@Test
-	public void itemStatusEqual() throws InterruptedException {
-		addItems(10, "itemStatusEqual");
+	public void itemStatus() throws InterruptedException {
+		var key = "itemStatus";
+		addItems(10, key);
+		addEvents(10, key);
 		
-		var itemRule = new ItemFilter(null, false, Collections.singletonMap("filter", "itemStatusEqual"));
+		var itemRule = new ItemFilter(null, false, Collections.singletonMap("filter", key));
 		Map<String, ItemFilter> filters = new HashMap<>();
-		filters.put("filter_itemStatusEqual", itemRule);
+		filters.put("filter_" + key, itemRule);
 		
 		var items = new ArrayList<Item>();
-		final var item = Item.Builder.getDefault("itemStatusEqual_t")
+		var id = key + "_t";
+		final var item = Item.Builder.getDefault(id)
 				.name("name")
-				.source("src_itemStatusEqual")
-				.sourceKey("src_key_itemStatusEqual")
+				.source("src_" + key)
+				.sourceKey("src_key_" + key)
 				.filters(filters)
 				.build();
 		items.add(item);
@@ -143,72 +265,127 @@ public class SearchApiTest {
 		
 		var events = new ArrayList<Event>();
 		final var event = new Event
-				.Builder("itemStatusEqual_t")
+				.Builder(key + "_t")
 				.node("name")
-				.source("src_itemStatusEqual")
-				.sourceKey("src_key_itemStatusEqual")
+				.source("src_" + key)
+				.sourceKey("src_key_" + key)
 				.status(BaseStatus.WARNING)
-				.fields(Collections.singletonMap("filter", "itemStatusEqual"))
+				.fields(Collections.singletonMap("filter", key))
 				.build();
 		events.add(event);
 		apiWrapper.eventAdd(events);
 	
+		List<Item> result = Collections.emptyList();
 		for (int i = 0; i < 3; i++) {
-			var result = apiWrapper.itemSeach("source = \"src_itemStatusEqual\" and status = \"WARNING\"");
+			result = apiWrapper.itemSeach("source = \"src_" + key + "\" and status = " + BaseStatus.WARNING.toString());
 			if(result.size() == 1) {
-				return;
+				break;
 			}
 			Thread.sleep(1000);
 		}
-		for (int i = 0; i < 3; i++) {
-			var result = apiWrapper.itemSeach("source = \"src_itemStatusEqual\" and aggStatus = \"WARNING\"");
-			if(result.size() == 1) {
-				return;
-			}
-			Thread.sleep(1000);
-		}
-		assertTrue(false);
+		assertEquals(1, result.size());
+		assertEquals(id, result.get(0).getId());
+		result = apiWrapper.itemSeach("source = \"src_" + key + "\" and status != " + BaseStatus.WARNING.toString());
+		assertEquals(10, result.size());
+		assertEquals(0, result.stream().filter(i -> i.getStatus() == BaseStatus.WARNING).count());
+		result = apiWrapper.itemSeach("source = \"src_" + key + "\" and aggStatus = " + BaseStatus.WARNING.toString());
+		assertEquals(1, result.size());
+		assertEquals(id, result.get(0).getId());
+
 	}
 
 	@Test
 	public void itemFieldsEqual() {
-		var id = "itemFieldsEqual_t";
+		var key = "itemFieldsEqual";
+		addItems(10, key);
+		var id1 = key + "_t1";
+		var id2 = key + "_t2";
 		var items = new ArrayList<Item>();
-		final var item = Item.Builder.getDefault(id)
+		var item = Item.Builder.getDefault(id1)
 				.name("name")
-				.source("src_itemFieldsEqual")
-				.sourceKey("src_key_itemFieldsEqual")
-				.fields(Collections.singletonMap("it\\\"emFieldsEqual_name", "itemFieldsEqual_value"))
+				.source("src_"  + key)
+				.sourceKey("src_key_" + key)
+				.fields(Collections.singletonMap(key + "_name", key + "_value"))
+				.build();
+		items.add(item);
+		item = Item.Builder.getDefault(id2)
+				.name("name")
+				.source("src_"  + key)
+				.sourceKey("src_key_" + key)
+				.fields(Collections.singletonMap(key + "_name", key + "_value1"))
 				.build();
 		items.add(item);
 		apiWrapper.itemAdd(items);
-		var result = apiWrapper.itemSeach("fields.\"it\\\"emFieldsEqual_name\" = \"itemFieldsEqual_value\"");
-		assertTrue(result.stream().filter(i -> id.equals(i.getId())).findAny().isPresent());
+		var result = apiWrapper.itemSeach("fields.\"" + key + "_name\" = \"" + key + "_value\" AND source = \"src_" + key + "\"");
+		assertTrue(result.stream().filter(i -> id1.equals(i.getId())).findAny().isPresent());
+		assertEquals(0, result.stream().filter(i -> id2.equals(i.getId())).count());
+		result = apiWrapper.itemSeach("item.fields.\"" + key + "_name\" = \"" + key + "_value\" AND source = \"src_" + key + "\"");
+		assertTrue(result.stream().filter(i -> id1.equals(i.getId())).findAny().isPresent());
+		assertEquals(0, result.stream().filter(i -> id2.equals(i.getId())).count());
 	}
 
 	@Test
 	public void itemFromHistoryEqual() {
-		var id = "itemFromHistoryEqual_t";
+		var key = "itemFromHistoryEqual";
+		addItems(10, key);
+		var id = key + "_t";
 		var items = new ArrayList<Item>();
 		var fromHistory = new HashSet<String>();
-		fromHistory.add("itemFromHistoryEqual_node1");
-		fromHistory.add("itemFromHistoryEqual_node2");
+		fromHistory.add(key + "_node1");
+		fromHistory.add(key + "_node2");
 		final var item = Item.Builder.getDefault(id)
 				.name("name")
-				.source("src_itemFromHistoryEqual")
-				.sourceKey("src_key_itemFromHistoryEqual")
+				.source("src_" + key)
+				.sourceKey("src_key_" + key)
 				.fromHistory(fromHistory)
 				.build();
 		items.add(item);
 		apiWrapper.itemAdd(items);
-		var result = apiWrapper.itemSeach("fromHistory = \"itemFromHistoryEqual_node1\"");
+		var result = apiWrapper.itemSeach("fromHistory = \"" + key + "_node1\"");
 		assertTrue(result.stream().filter(i -> id.equals(i.getId())).findAny().isPresent());
 	}
 
 	@Test
+	public void itemFromHistoryNotContain() {
+		var key = "itemFromHistoryNotContain";
+		var id1 = key + "_t1";
+		var id2 = key + "_t2";
+		var items = new ArrayList<Item>();
+		var fromHistory = new HashSet<String>();
+		fromHistory.add(key + "_node2");
+		fromHistory.add(key + "_node3");
+		var event = Item.Builder.getDefault(id1)
+				.name("name")
+				.source("src_" + key)
+				.sourceKey("src_key_" + key)
+				.fromHistory(fromHistory)
+				.build();
+		items.add(event);
+		new HashSet<String>();
+		fromHistory = new HashSet<String>();
+		fromHistory.add(key + "_node1");
+		fromHistory.add(key + "_node3");
+		event = Item.Builder.getDefault(id2)
+				.name("name")
+				.source("src_" + key)
+				.sourceKey("src_key_" + key)
+				.fromHistory(fromHistory)
+				.build();
+		items.add(event);
+		apiWrapper.itemAdd(items);
+		var result = apiWrapper.itemSeach("fromHistory HAS NOT \"" + key +"_node1\" AND source = \"src_" + key + "\"");
+		assertEquals(1, result.size());
+		assertEquals(1, result.stream().filter(i -> id1.equals(i.getId())).count());
+		result = apiWrapper.itemSeach("fromHistory HAS NOT \"" + key +"_node2\" AND source = \"src_" + key + "\"");
+		assertEquals(1, result.size());
+		assertEquals(1, result.stream().filter(i -> id2.equals(i.getId())).count());
+	}
+
+	@Test
 	public void itemCreatedOnEqual() {
-		var id = "itemCreatedOnEqual_1";
-		addItems(10, "itemCreatedOnEqual");
+		var key = "itemCreatedOnEqual";
+		addItems(10, key);
+		var id = key + "_1";
 		var result = apiWrapper.itemSeach("id = \"" + id + "\"");
 		assertEquals(1, result.size());
 		var createdOn = result.get(0).getCreatedOn();
@@ -218,8 +395,9 @@ public class SearchApiTest {
 
 	@Test
 	public void itemUpdatedOnEqual() {
-		var id = "itemUpdatedOnEqual_1";
-		addItems(10, "itemUpdatedOnEqual");
+		var key = "itemUpdatedOnEqual";
+		var id = key + "_1";
+		addItems(10, key);
 		var result = apiWrapper.itemSeach("id = \"" + id + "\"");
 		assertEquals(1, result.size());
 		var updatedOn = result.get(0).getUpdatedOn();
@@ -229,8 +407,9 @@ public class SearchApiTest {
 
 	@Test
 	public void itemDeletedOnEqual() throws JsonProcessingException, InterruptedException {
-		var id = "itemDeletedOnEqual_1";
-		addItems(10, "itemDeletedOnEqual");
+		var key = "itemDeletedOnEqual";
+		var id = key + "_1";
+		addItems(10, key);
 		apiWrapper.itemDel(Collections.singletonList(id));
 		for (int i = 0; i < 3; i++) {
 			var result = apiWrapper.itemSeach("id = \"" + id + "\"");
@@ -247,28 +426,257 @@ public class SearchApiTest {
 	}
 
 	@Test
+	public void itemAndEventLink() throws InterruptedException {
+		var key = "itemAndEventLink";
+		addEvents(10, key);
+		addItems(10, key);
+		
+		var itemRule = new ItemFilter(null, false, Collections.singletonMap("filter", key));
+		Map<String, ItemFilter> filters = new HashMap<>();
+		filters.put("filter_" + key, itemRule);
+		
+		var items = new ArrayList<Item>();
+		var itemId = key + "_t";
+		final var item = Item.Builder.getDefault(itemId)
+				.name("name")
+				.source("src_" + key)
+				.sourceKey("src_key_" + key)
+				.filters(filters)
+				.build();
+		items.add(item);
+		apiWrapper.itemAdd(items);
+		
+		var eventId = key + "_t";
+		var events = new ArrayList<Event>();
+		final var event = new Event
+				.Builder(eventId)
+				.node("name")
+				.source("src_" + key)
+				.sourceKey("src_key_" + key)
+				.status(BaseStatus.WARNING)
+				.fields(Collections.singletonMap("filter", key))
+				.build();
+		events.add(event);
+		apiWrapper.eventAdd(events);
+	
+		List<Item> result = Collections.emptyList();
+		for (int i = 0; i < 3; i++) {
+			result = apiWrapper.itemSeach("event.source = \"src_" + key + "\"");
+			if(result.size() == 1) {
+				break;
+			}
+			Thread.sleep(1000);
+		}
+		assertEquals(1, result.size());
+		assertEquals(itemId, result.get(0).getId());
+	}
+
+	@Test
 	public void eventIdEqual() {
-		addEvents(10, "eventIdEqual");
-		var id = "eventIdEqual_3";
+		var key = "eventIdEqual";
+		addEvents(10, key);
+		var id = key + "_3";
 		var result = apiWrapper.eventSeach("id = \"" + id + "\"");
+		assertEquals(1, result.size());
+		assertEquals(id, result.get(0).getId());
+		result = apiWrapper.eventSeach("event.id = \"" + id + "\"");
 		assertEquals(1, result.size());
 		assertEquals(id, result.get(0).getId());
 	}
 	
 	@Test
-	public void eventItemIdEqual() {
-		addEvents(10, "eventItemIdEqual");
-		addItems(10, "eventItemIdEqual");
+	public void eventIdNotEqual() {
+		var key = "eventIdNotEqual";
+		addEvents(10, key);
+		var id = key + "_3";
+		var result = apiWrapper.eventSeach("id != \"" + id + "\" AND source = \"src_" + key + "\"");
+		assertEquals(9, result.stream().filter(i -> !id.equals(i.getId())).count());
+		assertEquals(0, result.stream().filter(i -> id.equals(i.getId())).count());
+		result = apiWrapper.eventSeach("event.id != \"" + id + "\" AND event.source = \"src_" + key + "\"");
+		assertEquals(9, result.stream().filter(i -> !id.equals(i.getId())).count());
+		assertEquals(0, result.stream().filter(i -> id.equals(i.getId())).count());
+	}
+
+	@Test
+	public void eventNodeEqual() {
+		var key = "eventNodeEqual";
+		var id = key + "_t";
+		var node = key + "_nodeName";
+		addEvents(10, key);
+		var events = new ArrayList<Event>();
+		final var event = Event.Builder.getDefault(id)
+				.node(node)
+				.source("src_" + key)
+				.sourceKey("src_key_" + key)
+				.build();
+		events.add(event);
+		apiWrapper.eventAdd(events);
+		var result = apiWrapper.eventSeach("node = \"" + node + "\"");
+		assertTrue(result.stream().filter(i -> id.equals(i.getId())).findAny().isPresent());
+		result = apiWrapper.eventSeach("event.node = \"" + node + "\"");
+		assertTrue(result.stream().filter(i -> id.equals(i.getId())).findAny().isPresent());
+	}
+	
+	@Test
+	public void eventNodeNotEqual() {
+		var key = "eventNodeNotEqual";
+		var id = key + "_t";
+		var node = key + "_nodeName";
+		addEvents(10, key);
+		var events = new ArrayList<Event>();
+		final var event = Event.Builder.getDefault(id)
+				.node(node)
+				.source("src_" + key)
+				.sourceKey("src_key_" + key)
+				.build();
+		events.add(event);
+		apiWrapper.eventAdd(events);
+		var result = apiWrapper.eventSeach("node != \"" + node + "\" AND source = \"src_" + key + "\"");
+		assertEquals(10, result.stream().filter(i -> !id.equals(i.getId())).count());
+		assertEquals(0, result.stream().filter(i -> id.equals(i.getId())).count());
+		result = apiWrapper.eventSeach("event.node != \"" + node + "\" AND event.source = \"src_" + key + "\"");
+		assertEquals(10, result.stream().filter(i -> !id.equals(i.getId())).count());
+		assertEquals(0, result.stream().filter(i -> id.equals(i.getId())).count());
+	}
+
+	@Test
+	public void eventVersionEqual() {
+		var key = "eventVersionEqual";
+		var id = key + "_1";
+		addEvents(10, key);
+		var result = apiWrapper.eventSeach("id = \"" + id + "\"");
+		assertEquals(1, result.size());
+		var ver = result.get(0).getVersion();
+		result = apiWrapper.eventSeach("version = " + ver);
+		assertEquals(1, result.stream().filter(i -> id.equals(i.getId())).count());
+	}
+	
+	@Test
+	public void eventVersionNotEqual() {
+		var key = "eventVersionNotEqual";
+		var id = key + "_1";
+		addEvents(10, key);
+		var result = apiWrapper.eventSeach("id = \"" + id + "\"");
+		assertEquals(1, result.size());
+		var ver = result.get(0).getVersion();
+		result = apiWrapper.eventSeach("version != " + ver + " AND source = \"src_" + key + "\"");
+		assertEquals(9, result.stream().filter(i -> i.getVersion() != ver).count());
+		assertEquals(0, result.stream().filter(i -> i.getVersion() == ver).count());
+		result = apiWrapper.eventSeach("event.version != " + ver + " AND event.source = \"src_" + key + "\"");
+		assertEquals(9, result.stream().filter(i -> i.getVersion() != ver).count());
+		assertEquals(0, result.stream().filter(i -> i.getVersion() == ver).count());
+	}
+
+	@Test
+	public void eventSourceEqual() {
+		var key = "eventSourceEqual";
+		addEvents(10, key);
+		addEvents(10, key + "_");
+		var source = "src_" + key;
+		var result = apiWrapper.eventSeach("source = \"" + source + "\"");
+		assertEquals(10, result.size());
+		result = apiWrapper.eventSeach("event.source = \"" + source + "\"");
+		assertEquals(10, result.size());
+	}
+	
+	@Test
+	public void eventSourceNotEqual() {
+		var key = "eventSourceNotEqual";
+		addEvents(10, key);
+		addEvents(10, key + "_");
+		var source = "src_" + key;
+		var result = apiWrapper.eventSeach("source != \"" + source + "\"");
+		assertTrue(result.size() > 0);
+		assertEquals(0, result.stream().filter(i -> i.getSource() == source).count());
+		result = apiWrapper.eventSeach("event.source != \"" + source + "\"");
+		assertTrue(result.size() > 0);
+		assertEquals(0, result.stream().filter(i -> i.getSource() == source).count());
+	}
+
+	@Test
+	public void eventSourceKeyEqual() {
+		var key = "eventSourceKeyEqual";
+		addEvents(10, key);
+		addEvents(10, key + "_");
+		var sourceKey = "src_key_" + key;
+		var result = apiWrapper.eventSeach("sourceKey = \"" + sourceKey + "\"");
+		assertEquals(10, result.size());
+		result = apiWrapper.eventSeach("event.sourceKey = \"" + sourceKey + "\"");
+		assertEquals(10, result.size());
+	}
+	
+	@Test
+	public void eventSourceKeyNotEqual() {
+		var key = "eventSourceKeyNotEqual";
+		addEvents(10, key);
+		addEvents(10, key + "_");
+		var sourceKey = "src_key_" + key;
+		var result = apiWrapper.eventSeach("source != \"" + sourceKey + "\"");
+		assertTrue(result.size() > 0);
+		assertEquals(0, result.stream().filter(i -> i.getSourceKey() == sourceKey).count());
+		result = apiWrapper.eventSeach("event.source != \"" + sourceKey + "\"");
+		assertTrue(result.size() > 0);
+		assertEquals(0, result.stream().filter(i -> i.getSourceKey() == sourceKey).count());
+	}
+
+	@Test
+	public void eventSourceTypeEqual() {
+		var key = "eventSourceTypeEqual";
+		var id = key + "_t";
+		addEvents(10, key);
+		var events = new ArrayList<Event>();
+		final var event  = Event.Builder.getDefault(id)
+				.node("name")
+				.source("src_" + key)
+				.sourceKey("src_key_" + key)
+				.sourceType(SourceType.ZABBIX)
+				.build();
+		events.add(event);
+		apiWrapper.eventAdd(events);
+		var result = apiWrapper.eventSeach("sourceType = \"" + SourceType.ZABBIX.toString() + "\"");
+		assertTrue(result.stream().filter(i -> id.equals(i.getId())).findAny().isPresent());
+		result = apiWrapper.eventSeach("event.sourceType = \"" + SourceType.ZABBIX.toString() + "\"");
+		assertTrue(result.stream().filter(i -> id.equals(i.getId())).findAny().isPresent());
+	}
+	
+	@Test
+	public void eventSourceTypeNotEqual() {
+		var key = "eventSourceTypeNotEqual";
+		var id = key + "_t";
+		addEvents(10, key);
+		var events = new ArrayList<Event>();
+		final var event  = Event.Builder.getDefault(id)
+				.node("name")
+				.source("src_" + key)
+				.sourceKey("src_key_" + key)
+				.sourceType(SourceType.ZABBIX)
+				.build();
+		events.add(event);
+		apiWrapper.eventAdd(events);
+		var result = apiWrapper.eventSeach("sourceType != \"" + SourceType.ZABBIX.toString() + "\"");
+		assertTrue(result.size() > 0);
+		assertEquals(0, result.stream().filter(i -> i.getSourceKey() == SourceType.ZABBIX.toString()).count());
+		result = apiWrapper.eventSeach("event.sourceType != \"" + SourceType.ZABBIX.toString() + "\"");
+		assertTrue(result.size() > 0);
+		assertEquals(0, result.stream().filter(i -> i.getSourceKey() == SourceType.ZABBIX.toString()).count());
+	}
+
+	@Test
+	public void eventStatus() throws InterruptedException {
+		var key = "eventStatus";
+		addEvents(10, key);
+		addItems(10, key);
 		
-		var itemRule = new ItemFilter(null, false, Collections.singletonMap("filter", "eventItemIdEqual"));
+		var itemRule = new ItemFilter(null, false, Collections.singletonMap("filter", key));
 		Map<String, ItemFilter> filters = new HashMap<>();
-		filters.put("filter_eventItemIdEqual", itemRule);
+		filters.put("filter_" + key, itemRule);
 		
 		var items = new ArrayList<Item>();
-		final var item = Item.Builder.getDefault("eventItemIdEqual_t")
+		var id = key + "_t";
+		final var item = Item.Builder.getDefault(id)
 				.name("name")
-				.source("src_eventItemIdEqual")
-				.sourceKey("src_key_eventItemIdEqual")
+				.source("src_" + key)
+				.sourceKey("src_key_" + key)
 				.filters(filters)
 				.build();
 		items.add(item);
@@ -276,159 +684,165 @@ public class SearchApiTest {
 		
 		var events = new ArrayList<Event>();
 		final var event = new Event
-				.Builder("eventItemIdEqual_t")
+				.Builder(key + "_t")
 				.node("name")
-				.source("src_eventItemIdEqual")
-				.sourceKey("src_key_eventItemIdEqual")
+				.source("src_" + key)
+				.sourceKey("src_key_" + key)
 				.status(BaseStatus.WARNING)
-				.fields(Collections.singletonMap("filter", "eventItemIdEqual"))
+				.fields(Collections.singletonMap("filter", key))
 				.build();
 		events.add(event);
 		apiWrapper.eventAdd(events);
-		var id = "eventItemIdEqual_t";
-		var result = apiWrapper.eventSeach("item.id = \"" + id + "\"");
+	
+		List<Event> result = Collections.emptyList();
+		for (int i = 0; i < 3; i++) {
+			result = apiWrapper.eventSeach("source = \"src_" + key + "\" and status = " + BaseStatus.WARNING.toString());
+			if(result.size() == 1) {
+				break;
+			}
+			Thread.sleep(1000);
+		}
 		assertEquals(1, result.size());
 		assertEquals(id, result.get(0).getId());
-	}
-
-	@Test
-	public void eventNodeEqual() {
-		var id = "eventNodeEqual_t";
-		var node = "eventNodeEqual_name";
-		var events = new ArrayList<Event>();
-		final var event = new Event
-				.Builder(id)
-				.node(node)
-				.source("src_eventNodeEqual")
-				.sourceKey("src_key_eventNodeEqual")
-				.status(BaseStatus.WARNING)
-				.build();
-		events.add(event);
-		apiWrapper.eventAdd(events);
-		var result = apiWrapper.eventSeach("node = \"" + node + "\"");
-		assertTrue(result.stream().filter(i -> id.equals(i.getId())).findAny().isPresent());
-	}
-
-	@Test
-	public void eventVersionEqual() {
-		var id = "eventVersionEqual_1";
-		addEvents(10, "eventVersionEqual");
-		var result = apiWrapper.eventSeach("id = \"" + id + "\"");
-		assertEquals(1, result.size());
-		var ver = result.get(0).getVersion();
-		var result1 = apiWrapper.eventSeach("version = " + ver);
-		assertTrue(result1.stream().filter(i -> id.equals(i.getId())).findAny().isPresent());
-	}
-
-	@Test
-	public void eventSummaryEqual() {
-		var id = "eventSummaryEqual_t";
-		var summary = "eventSummaryEqual_summary";
-		var events = new ArrayList<Event>();
-		final var event = new Event
-				.Builder(id)
-				.node("name")
-				.summary(summary)
-				.source("src_eventSummaryEqual")
-				.sourceKey("src_key_eventSummaryEqual")
-				.status(BaseStatus.WARNING)
-				.build();
-		events.add(event);
-		apiWrapper.eventAdd(events);
-		var result = apiWrapper.eventSeach("summary = \"" + summary + "\"");
-		assertTrue(result.stream().filter(i -> id.equals(i.getId())).findAny().isPresent());
-	}
-
-	@Test
-	public void eventSourceEqual() {
-		addEvents(10, "eventSourceEqual");
-		addEvents(10, "eventSourceEqual_");
-		var source = "src_eventSourceEqual";
-		var result = apiWrapper.eventSeach("source = \"" + source + "\"");
+		result = apiWrapper.eventSeach("source = \"src_" + key + "\" and status != " + BaseStatus.WARNING.toString());
 		assertEquals(10, result.size());
-	}
+		assertEquals(0, result.stream().filter(i -> i.getStatus() == BaseStatus.WARNING).count());
 
-	@Test
-	public void eventSourceKeyEqual() {
-		addEvents(10, "eventSourceKeyEqual");
-		addEvents(10, "eventSourceKeyEqual_");
-		var source = "src_key_eventSourceKeyEqual";
-		var result = apiWrapper.eventSeach("sourceKey = \"" + source + "\"");
-		assertEquals(10, result.size());
 	}
-
+	
 	@Test
-	public void eventSourceTypeEqual() {
-		var id = "eventSourceTypeEqual_t";
-		addEvents(10, "eventSourceTypeEqual");
-		var events = new ArrayList<Event>();
-		final var event  = Event.Builder.getDefault(id)
-				.node("node")
-				.source("src_eventSourceTypeEqual")
-				.sourceKey("src_key_eventSourceTypeEqual")
-				.sourceType(SourceType.ZABBIX)
+	public void eventAndItemLink() throws InterruptedException {
+		var key = "eventAndItemLink";
+		addEvents(10, key);
+		addItems(10, key);
+		
+		var itemRule = new ItemFilter(null, false, Collections.singletonMap("filter", key));
+		Map<String, ItemFilter> filters = new HashMap<>();
+		filters.put("filter_" + key, itemRule);
+		
+		var items = new ArrayList<Item>();
+		var itemId = key + "_t";
+		final var item = Item.Builder.getDefault(itemId)
+				.name("name")
+				.source("src_" + key)
+				.sourceKey("src_key_" + key)
+				.filters(filters)
 				.build();
-		events.add(event);
-		apiWrapper.eventAdd(events);
-		var result = apiWrapper.eventSeach("sourceType = \"ZABBIX\"");
-		assertTrue(result.stream().filter(i -> id.equals(i.getId())).findAny().isPresent());
-	}
-
-	@Test
-	public void eventStatusEqual() throws InterruptedException {
-		addEvents(10, "eventStatusEqual");
+		items.add(item);
+		apiWrapper.itemAdd(items);
+		
+		var eventId = key + "_t";
 		var events = new ArrayList<Event>();
-		var id = "eventStatusEqual_t";
 		final var event = new Event
-				.Builder(id)
+				.Builder(eventId)
 				.node("name")
-				.source("src_eventStatusEqual")
-				.sourceKey("src_key_eventStatusEqual")
+				.source("src_" + key)
+				.sourceKey("src_key_" + key)
 				.status(BaseStatus.WARNING)
-				.fields(Collections.singletonMap("filter", "itemStatusEqual"))
+				.fields(Collections.singletonMap("filter", key))
 				.build();
 		events.add(event);
 		apiWrapper.eventAdd(events);
-		var result = apiWrapper.eventSeach("source = \"src_eventStatusEqual\" and status = \"WARNING\"");
+	
+		List<Event> result = Collections.emptyList();
+		for (int i = 0; i < 3; i++) {
+			result = apiWrapper.eventSeach("item.source = \"src_" + key + "\" and calculated = true");
+			if(result.size() == 1) {
+				break;
+			}
+			Thread.sleep(1000);
+		}
 		assertEquals(1, result.size());
-		assertEquals(id, result.get(0).getId());
+		assertEquals(eventId, result.get(0).getId());
 	}
 
 	@Test
 	public void eventFieldsEqual() {
-		var id = "eventFieldsEqual_t";
+		var key = "eventFieldsEqual";
+		var id1 = key + "_t1";
+		var id2 = key + "_t2";
 		var events = new ArrayList<Event>();
-		final var event = new Event
-				.Builder(id)
+		var event = new Event
+				.Builder(id1)
 				.node("name")
-				.source("src_eventFieldsEqual")
-				.sourceKey("src_key_eventFieldsEqual")
+				.source("src_" + key)
+				.sourceKey("src_key_" + key)
 				.status(BaseStatus.WARNING)
-				.fields(Collections.singletonMap("eventFieldsEqual_name", "eventFieldsEqual_value"))
+				.fields(Collections.singletonMap(key + "_name", key + "_value"))
+				.build();
+		events.add(event);
+		event = new Event
+				.Builder(id2)
+				.node("name")
+				.source("src_" + key)
+				.sourceKey("src_key_" + key)
+				.status(BaseStatus.WARNING)
+				.fields(Collections.singletonMap(key + "_name", key + "_value1"))
 				.build();
 		events.add(event);
 		apiWrapper.eventAdd(events);
-		var result = apiWrapper.eventSeach("fields.\"eventFieldsEqual_name\" = \"eventFieldsEqual_value\"");
-		assertTrue(result.stream().filter(i -> id.equals(i.getId())).findAny().isPresent());
+		var result = apiWrapper.eventSeach("fields.\"" + key + "_name\" = \"" + key + "_value\"");
+		assertTrue(result.stream().filter(i -> id1.equals(i.getId())).findAny().isPresent());
+		assertEquals(0, result.stream().filter(i -> id2.equals(i.getId())).count());
+		result = apiWrapper.eventSeach("event.fields.\"" + key + "_name\" = \"" + key + "_value\"");
+		assertTrue(result.stream().filter(i -> id1.equals(i.getId())).findAny().isPresent());
+		assertEquals(0, result.stream().filter(i -> id2.equals(i.getId())).count());
 	}
 
 	@Test
 	public void eventFromHistoryEqual() {
-		var id = "eventFromHistoryEqual_t";
+		var key = "eventFromHistoryEqual";
+		var id = key + "_t";
 		var events = new ArrayList<Event>();
 		var fromHistory = new HashSet<String>();
-		fromHistory.add("eventFromHistoryEqual_node1");
-		fromHistory.add("eventFromHistoryEqual_node2");
+		fromHistory.add(key + "_node1");
+		fromHistory.add(key + "_node2");
 		final var event = Event.Builder.getDefault(id)
 				.node("node")
-				.source("src_eventFromHistoryEqual")
-				.sourceKey("src_key_eventFromHistoryEqual")
+				.source("src_" + key)
+				.sourceKey("src_key_" + key)
 				.fromHistory(fromHistory)
 				.build();
 		events.add(event);
 		apiWrapper.eventAdd(events);
-		var result = apiWrapper.eventSeach("fromHistory = \"eventFromHistoryEqual_node1\"");
+		var result = apiWrapper.eventSeach("fromHistory = \"" + key +"_node1\""); 
 		assertTrue(result.stream().filter(i -> id.equals(i.getId())).findAny().isPresent());
+	}
+	
+	@Test
+	public void eventFromHistoryNotContain() {
+		var key = "eventFromHistoryNotContain";
+		var id1 = key + "_t1";
+		var id2 = key + "_t2";
+		var events = new ArrayList<Event>();
+		var fromHistory = new HashSet<String>();
+		fromHistory.add(key + "_node2");
+		fromHistory.add(key + "_node3");
+		var event = Event.Builder.getDefault(id1)
+				.node("node")
+				.source("src_" + key)
+				.sourceKey("src_key_" + key)
+				.fromHistory(fromHistory)
+				.build();
+		events.add(event);
+		new HashSet<String>();
+		fromHistory = new HashSet<String>();
+		fromHistory.add(key + "_node1");
+		fromHistory.add(key + "_node3");
+		event = Event.Builder.getDefault(id2)
+				.node("node")
+				.source("src_" + key)
+				.sourceKey("src_key_" + key)
+				.fromHistory(fromHistory)
+				.build();
+		events.add(event);
+		apiWrapper.eventAdd(events);
+		var result = apiWrapper.eventSeach("fromHistory HAS NOT \"" + key +"_node1\" AND source = \"src_" + key + "\"");
+		assertEquals(1, result.size());
+		assertEquals(1, result.stream().filter(i -> id1.equals(i.getId())).count());
+		result = apiWrapper.eventSeach("fromHistory HAS NOT \"" + key +"_node2\" AND source = \"src_" + key + "\"");
+		assertEquals(1, result.size());
+		assertEquals(1, result.stream().filter(i -> id2.equals(i.getId())).count());
 	}
 
 }

@@ -37,6 +37,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import ru.keich.mon.servicemanager.KSearchLexer;
 import ru.keich.mon.servicemanager.KSearchParser;
 import ru.keich.mon.servicemanager.QueueInfo;
+import ru.keich.mon.servicemanager.entity.EntityErrorListener;
 import ru.keich.mon.servicemanager.entity.EntitySearchListener;
 import ru.keich.mon.servicemanager.entity.EntitySearchListener.ServiceType;
 import ru.keich.mon.servicemanager.entity.EntitySearchResult;
@@ -200,6 +201,8 @@ public class EventService extends EntityService<String, Event>{
 	@Override
 	protected EntitySearchResult<String> getEntitySearchResult(String search) {
 		var lexer = new KSearchLexer(CharStreams.fromString(search));
+		lexer.removeErrorListeners();
+		lexer.addErrorListener(new EntityErrorListener());
 		var tokens = new CommonTokenStream(lexer);
 		var parser = new KSearchParser(tokens);
 		var tree = parser.parse();
