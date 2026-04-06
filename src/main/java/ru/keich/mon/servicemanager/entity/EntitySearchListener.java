@@ -167,7 +167,7 @@ public class EntitySearchListener extends KSearchBaseListener implements EntityS
 		var field = getFieldName(ctx.getChild(0));
 		var values = new ArrayList<String>();
 		childToList(ctx.getChild(3), values);
-		evaluate(field, values, QueryPredicate::greaterThan);
+		evaluate(field, values, QueryPredicate::equal);
 	}
 
 	@Override

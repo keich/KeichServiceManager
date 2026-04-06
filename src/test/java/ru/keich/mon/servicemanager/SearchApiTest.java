@@ -64,7 +64,7 @@ public class SearchApiTest {
 		assertEquals(1, result.size());
 		assertEquals(id, result.get(0).getId());
 	}
-	
+
 	@Test
 	public void itemIdNotEqual() {
 		var key = "itemIdNotEqual";
@@ -76,6 +76,17 @@ public class SearchApiTest {
 		result = apiWrapper.itemSeach("item.id != \"" + id + "\" AND item.source = \"src_" + key + "\"");
 		assertEquals(9, result.stream().filter(i -> !id.equals(i.getId())).count());
 		assertEquals(0, result.stream().filter(i -> id.equals(i.getId())).count());
+	}
+
+	@Test
+	public void itemIdInEqual() {
+		var key = "itemIdInEqual";
+		addItems(10, key);
+		var id1 = key + "_3";
+		var id2 = key + "_8";
+		var result = apiWrapper.itemSeach("id IN (\"" + id1 + "\",\"" + id2 + "\")");
+		assertEquals(2, result.size());
+		assertEquals(2, result.stream().filter(i -> id1.equals(i.getId()) || id2.equals(i.getId())).count());
 	}
 
 	@Test
@@ -118,6 +129,17 @@ public class SearchApiTest {
 		result = apiWrapper.itemSeach("item.name != \"" + name + "\" AND item.source = \"src_" + key + "\"");
 		assertEquals(10, result.stream().filter(i -> !id.equals(i.getId())).count());
 		assertEquals(0, result.stream().filter(i -> id.equals(i.getId())).count());
+	}
+	
+	@Test
+	public void itemNameInEqual() {
+		var key = "itemNameInEqual";
+		addItems(10, key);
+		var name1 = "name_3";
+		var name2 = "name_8";
+		var result = apiWrapper.itemSeach("name IN (\"" + name1 + "\",\"" + name2 + "\") AND item.source = \"src_" + key + "\"");
+		assertEquals(2, result.size());
+		assertEquals(2, result.stream().filter(i -> name1.equals(i.getName()) || name2.equals(i.getName())).count());
 	}
 
 	@Test
@@ -496,6 +518,17 @@ public class SearchApiTest {
 		assertEquals(9, result.stream().filter(i -> !id.equals(i.getId())).count());
 		assertEquals(0, result.stream().filter(i -> id.equals(i.getId())).count());
 	}
+	
+	@Test
+	public void eventIdInEqual() {
+		var key = "eventIdInEqual";
+		addEvents(10, key);
+		var id1 = key + "_3";
+		var id2 = key + "_8";
+		var result = apiWrapper.eventSeach("id IN (\"" + id1 + "\",\"" + id2 + "\")");
+		assertEquals(2, result.size());
+		assertEquals(2, result.stream().filter(i -> id1.equals(i.getId()) || id2.equals(i.getId())).count());
+	}
 
 	@Test
 	public void eventNodeEqual() {
@@ -537,6 +570,17 @@ public class SearchApiTest {
 		result = apiWrapper.eventSeach("event.node != \"" + node + "\" AND event.source = \"src_" + key + "\"");
 		assertEquals(10, result.stream().filter(i -> !id.equals(i.getId())).count());
 		assertEquals(0, result.stream().filter(i -> id.equals(i.getId())).count());
+	}
+	
+	@Test
+	public void eventNodeInEqual() {
+		var key = "eventNodeInEqual";
+		addEvents(10, key);
+		var node1 = "name_3";
+		var node2 = "name_8";
+		var result = apiWrapper.eventSeach("node IN (\"" + node1 + "\",\"" + node2 + "\") AND source = \"src_" + key + "\"");
+		assertEquals(2, result.size());
+		assertEquals(2, result.stream().filter(i -> node1.equals(i.getNode()) || node2.equals(i.getNode())).count());
 	}
 
 	@Test
