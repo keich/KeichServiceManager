@@ -88,7 +88,7 @@ public class QueryParamsParser {
 						break;
 					case PREDICATE:
 						hasPredicates = true;
-						predicates.add(qparam.getPredocate());
+						predicates.add(qparam.getQueryPredicate());
 						break;
 					}
 				});

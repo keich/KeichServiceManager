@@ -126,7 +126,7 @@ public class QueryPredicate implements QueryParam {
 	}
 
 	@Override
-	public QueryPredicate getPredocate() {
+	public QueryPredicate getQueryPredicate() {
 		return this;
 	}
 

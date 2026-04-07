@@ -6,7 +6,7 @@ public interface QueryParam {
 		SORT, PREDICATE
 	}
 
-	public default QueryPredicate getPredocate() {
+	public default QueryPredicate getQueryPredicate() {
 		return null;
 	}
 
