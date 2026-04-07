@@ -120,6 +120,10 @@ public class QueryPredicate implements QueryParam {
 		final Predicate<Object> predicate =  v -> !v.toString().contains(value.toString());
 		return new QueryPredicate(name, Operator.NI, value, predicate);
 	}
+	
+	public static QueryPredicate isNull(String name, Object value) {
+		return new QueryPredicate(name, Operator.ISNULL, value, (v) -> false);
+	}
 
 	@Override
 	public QueryPredicate getPredocate() {

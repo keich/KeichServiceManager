@@ -22,6 +22,7 @@ import ru.keich.mon.servicemanager.KSearchParser.ExprEqualContext;
 import ru.keich.mon.servicemanager.KSearchParser.ExprGreaterEqualContext;
 import ru.keich.mon.servicemanager.KSearchParser.ExprGreaterThanContext;
 import ru.keich.mon.servicemanager.KSearchParser.ExprInEqualContext;
+import ru.keich.mon.servicemanager.KSearchParser.ExprIsNullContext;
 import ru.keich.mon.servicemanager.KSearchParser.ExprLessThanContext;
 import ru.keich.mon.servicemanager.KSearchParser.ExprNotContainContext;
 import ru.keich.mon.servicemanager.KSearchParser.ExprNotEqualContext;
@@ -81,7 +82,10 @@ public class EntitySearchListener extends KSearchBaseListener implements EntityS
 		}
 		final Stream<Object> values;
 		if(field.isFields()) {
-			values = strValues.stream().map(str -> Map.entry(field.subName, fieldValueOf.apply(field.name, str)));
+			values = strValues.stream().map(str -> {
+				if(str == null) return field.subName;
+				return Map.entry(field.subName, str);
+			});
 		} else {
 			values = strValues.stream().map(str -> fieldValueOf.apply(field.name, str));
 		}		
@@ -175,6 +179,12 @@ public class EntitySearchListener extends KSearchBaseListener implements EntityS
 		var field = getFieldName(ctx.getChild(0));
 		var strValue = pullString(ctx, 2);
 		evaluate(field, Collections.singletonList(strValue), QueryPredicate::equal);
+	}
+
+	@Override
+	public void exitExprIsNull(ExprIsNullContext ctx) {
+		var field = getFieldName(ctx.getChild(0));
+		evaluate(field, Collections.singletonList(null), QueryPredicate::isNull);
 	}
 
 	private void childToList(ParseTree child, List<String> out) {

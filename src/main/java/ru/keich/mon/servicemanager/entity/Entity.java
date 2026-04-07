@@ -143,6 +143,9 @@ public class Entity<K> {
 	}
 	
 	public static Object fieldValueOf(String fieldName, String str) {
+		if(str == null) {
+			return null;
+		}
 		switch (fieldName) {
 		case FIELD_VERSION:
 			return Long.valueOf(str);

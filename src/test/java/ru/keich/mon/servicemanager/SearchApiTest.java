@@ -3,6 +3,7 @@ package ru.keich.mon.servicemanager;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,11 +29,24 @@ public class SearchApiTest {
 
 	private void addItems(int size, String keyName) {
 		var items = new ArrayList<Item>();
+		
 		for (int i = 0; i < size; i++) {
+			Map<String, String> fields = Collections.emptyMap();
+			if(i < 2) {
+				fields = new HashMap<String, String>();
+				fields.put(keyName + "_field0" + i, keyName + "_value0" + i);
+				fields.put(keyName + "_field1" + i, keyName + "_value1" + i);
+			}
+			Instant deletedOn = null;
+			if(i == 3) {
+				deletedOn = Instant.now();
+			}
 			final var item = Item.Builder.getDefault(keyName + "_" + i)
 					.name("name_" + i)
 					.source("src_" + keyName)
 					.sourceKey("src_key_" + keyName)
+					.fields(fields)
+					.deletedOn(deletedOn)
 					.build();
 			items.add(item);
 		}
@@ -42,10 +56,22 @@ public class SearchApiTest {
 	private void addEvents(int size, String keyName) {
 		var events = new ArrayList<Event>();
 		for (int i = 0; i < size; i++) {
+			Map<String, String> fields = Collections.emptyMap();
+			if(i < 2) {
+				fields = new HashMap<String, String>();
+				fields.put(keyName + "_field0" + i, keyName + "_value0" + i);
+				fields.put(keyName + "_field1" + i, keyName + "_value1" + i);
+			}
+			Instant deletedOn = null;
+			if(i == 3) {
+				deletedOn = Instant.now();
+			}
 			final var item = Event.Builder.getDefault(keyName + "_" + i)
 					.node("name_" + i)
 					.source("src_" + keyName)
 					.sourceKey("src_key_" + keyName)
+					.deletedOn(deletedOn)
+					.fields(fields)
 					.build();
 			events.add(item);
 		}
@@ -494,6 +520,26 @@ public class SearchApiTest {
 	}
 
 	@Test
+	public void itemFieldsIsNull() {
+		var key = "itemFieldsIsNull";
+		addItems(10, key);
+		var name = key + "_field01";
+		var result = apiWrapper.itemSeach("fields.\"" + name + "\" IS NULL"+ " AND source = \"src_" + key + "\"");
+		assertEquals(0, result.stream().filter(i -> i.getFields().keySet().contains(name)).count());
+		assertEquals(9, result.size());
+	}
+	
+	@Test
+	public void itemDeletedOnIsNull() {
+		var key = "itemDeletedOnIsNull";
+		addItems(10, key);
+		var result = apiWrapper.itemSeach("deletedOn IS NULL" + " AND source = \"src_" + key + "\"");
+		assertEquals(0, result.stream().filter(i -> i.getDeletedOn() != null).count());
+		assertEquals(9, result.size());
+
+	}
+	
+	@Test
 	public void eventIdEqual() {
 		var key = "eventIdEqual";
 		addEvents(10, key);
@@ -887,6 +933,26 @@ public class SearchApiTest {
 		result = apiWrapper.eventSeach("fromHistory HAS NOT \"" + key +"_node2\" AND source = \"src_" + key + "\"");
 		assertEquals(1, result.size());
 		assertEquals(1, result.stream().filter(i -> id2.equals(i.getId())).count());
+	}
+
+	@Test
+	public void eventDeletedOnIsNull() {
+		var key = "eventDeletedOnIsNull";
+		addEvents(10, key);
+		var result = apiWrapper.eventSeach("deletedOn IS NULL" + " AND source = \"src_" + key + "\"");
+		assertEquals(0, result.stream().filter(i -> i.getDeletedOn() != null).count());
+		assertEquals(9, result.size());
+
+	}
+
+	@Test
+	public void eventFieldsIsNull() {
+		var key = "eventFieldsIsNull";
+		addEvents(10, key);
+		var name = key + "_field01";
+		var result = apiWrapper.eventSeach("fields.\"" + name + "\" IS NULL"+ " AND source = \"src_" + key + "\"");
+		assertEquals(0, result.stream().filter(i -> i.getFields().keySet().contains(name)).count());
+		assertEquals(9, result.size());
 	}
 
 }

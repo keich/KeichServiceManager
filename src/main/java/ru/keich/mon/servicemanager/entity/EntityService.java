@@ -246,6 +246,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 				.map(Optional::get);
 	}
 
+	@SuppressWarnings("rawtypes")
 	public Set<K> find(QueryPredicate predicate) {
 		var fieldName = predicate.getName();
 		var indexNames = entityCache.getIndexNames();
@@ -268,6 +269,20 @@ public abstract class EntityService<K, T extends Entity<K>> {
 				return entityCache.keySetIndexGetAfter(fieldName, predicate.getValue());
 			case GE:
 				return entityCache.keySetIndexGetAfterEqual(fieldName, predicate.getValue());
+			case ISNULL:
+				Set<K> eq;
+				if(Entity.FIELD_FIELDS.equals(fieldName)) {
+					var subName = predicate.getValue();
+					eq = entityCache.keySetIndexPredicate(fieldName, o -> {
+						if(((Map.Entry)o).getKey().equals(subName)) return true;
+						return false;
+					});
+				} else {
+					eq = entityCache.keySetIndexAll(fieldName);
+				}
+				var all = entityCache.keySet();
+				all.removeAll(eq);
+				return all;
 			default:
 				return new HashSet<>(0);
 			}

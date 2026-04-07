@@ -18,6 +18,7 @@ expr
  | '(' expr ')'                                   # ExprParentheses
  | expr AND expr                                  # ExprAND
  | expr OR expr                                   # ExprOR
+ | expr_props IS NULL                             # ExprIsNull
  ;
 
 expr_val
@@ -85,6 +86,8 @@ IN: I N;
 LIKE: L I K E;
 NOT: N O T;
 HAS: H A S;
+IS: I S;
+NULL: N U L L;
 
 
 CLEAR: C L E A R;
