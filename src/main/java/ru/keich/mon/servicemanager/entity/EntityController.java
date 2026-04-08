@@ -64,7 +64,6 @@ public class EntityController<K, T extends Entity<K>> {
 	}
 
 	public ResponseEntity<String> find(MultiValueMap<String, String> reqParam) {
-		System.out.println("Debug " + reqParam);
 		return entityService.sortAndLimitEnrich(reqParam, entityService::find, (s, qp) -> applyFilter(s.toList(), qp));
 	}
 
