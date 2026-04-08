@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.client.RestTestClient;
 import org.springframework.util.MultiValueMap;
 
 import ru.keich.mon.servicemanager.alert.Alert;
+import ru.keich.mon.servicemanager.entity.Entity;
 import ru.keich.mon.servicemanager.event.Event;
 import ru.keich.mon.servicemanager.item.Item;
 import ru.keich.mon.servicemanager.query.QueryParamsParser;
@@ -69,6 +70,27 @@ public class ApiWrapper {
 				.expectBody(responseType)
 				.returnResult()
 				.getResponseBody();
+	}
+	
+	private <T> String entityDelete(String path, MultiValueMap<String, String> reqParam) {
+		return restTestClient.delete()
+				.uri(uriBuilder  -> uriBuilder
+						.path("/api/v1" + path)
+						.queryParams(reqParam)
+						.build())
+				.exchangeSuccessfully()
+				.expectBody(String.class)
+				.returnResult()
+				.getResponseBody();
+	}
+	
+	public String itemDeleteBySourceAndSourceKeyNot(String source, String sourceKey) {
+		var reqParam = Map.of(
+				Entity.FIELD_SOURCE, Collections.singletonList(source)
+				,Entity.FIELD_SOURCEKEY, Collections.singletonList(sourceKey)
+				,"query", Collections.singletonList("bySourceAndSourceKeyNot")
+			);
+		return entityDelete("/item", MultiValueMap.fromMultiValue(reqParam));
 	}
 
 	public void itemAdd(List<Item> items) {

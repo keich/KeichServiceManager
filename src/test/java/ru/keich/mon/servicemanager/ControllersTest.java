@@ -285,6 +285,51 @@ public class ControllersTest {
 	}
 
 	@Test
+	public void itemDeleteBySoyrceAndSourceKeyNot() throws IOException {
+		var key = "itemDeleteBySoyrceAndSourceKeyNot";
+		var source = ApiWrapper.PREFIX_SOURCE + key;
+		var sourceKey = ApiWrapper.PREFIX_SOURCEKEY + key;
+		final var item1 = Item.Builder.getDefault(key + "_id1")
+				.name("name")
+				.source(source)
+				.sourceKey(sourceKey)
+				.build();
+		final var item2 = Item.Builder.getDefault(key + "_id2")
+				.name("name")
+				.source(source)
+				.sourceKey(sourceKey + "_2")
+				.build();
+		apiWrapper.itemAdd(List.of(item1, item2));
+		apiWrapper.itemDeleteBySourceAndSourceKeyNot(source, sourceKey);
+		assertNull(apiWrapper.itemGet(item1.getId()).getDeletedOn());
+		assertNotNull(apiWrapper.itemGet(item2.getId()).getDeletedOn());
+	}
+	
+	@Test
+	public void itemTestChangedSourceKey() throws IOException {
+		var key = "itemTestChangedSourceKey";
+		var source = ApiWrapper.PREFIX_SOURCE + key;
+		var sourceKey1 = ApiWrapper.PREFIX_SOURCEKEY + key;
+		var sourceKey2 = sourceKey1 + "_";
+		var item = Item.Builder.getDefault(key + "_id1")
+				.name("name")
+				.source(source)
+				.sourceKey(sourceKey1)
+				.build();
+		apiWrapper.itemAdd(List.of(item));
+		assertEquals(source, apiWrapper.itemGet(item.getId()).getSource());
+		assertEquals(sourceKey1, apiWrapper.itemGet(item.getId()).getSourceKey());
+		
+		item = new Item.Builder(item)
+				.source(source)
+				.sourceKey(sourceKey2)
+				.build();
+		apiWrapper.itemAdd(List.of(item));
+		assertEquals(source, apiWrapper.itemGet(item.getId()).getSource());
+		assertEquals(sourceKey2, apiWrapper.itemGet(item.getId()).getSourceKey());
+	}
+
+	@Test
 	public void eventAddAndGet() {
 		var key = "eventAddAndGet";
 		apiWrapper.addEvents(10, key);

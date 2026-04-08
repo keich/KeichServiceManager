@@ -9,6 +9,7 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import lombok.extern.java.Log;
+import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.ser.std.SimpleFilterProvider;
 
 /*
@@ -50,7 +51,9 @@ public class WebApplicationConfig implements WebMvcConfigurer {
 
 	@Bean
 	JsonMapperBuilderCustomizer jacksonCustomizer() {
-	    return builder -> builder.filterProvider(new SimpleFilterProvider().setFailOnUnknownId(false));
+	    return builder -> builder
+	    		.filterProvider(new SimpleFilterProvider().setFailOnUnknownId(false))
+	    		.disable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES);
 	}
 
 }
