@@ -3,6 +3,8 @@ package ru.keich.mon.servicemanager;
 import java.io.IOException;
 import java.time.Instant;
 
+import org.springframework.stereotype.Component;
+
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -12,6 +14,7 @@ import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletResponse;
 
 @WebFilter("/api/*")
+@Component
 public class AddResponseHeaderFilter implements Filter {
 	
 	public final static String HEADER_START_TIME = "KeichServiceManager-Start-Time";
