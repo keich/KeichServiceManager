@@ -1,18 +1,18 @@
 package ru.keich.mon.servicemanager.entity;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.json.MappingJacksonValue;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
-import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
-
 import ru.keich.mon.servicemanager.query.QueryParamsParser;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.ser.std.SimpleBeanPropertyFilter;
+import tools.jackson.databind.ser.std.SimpleFilterProvider;
 
 
 /*
@@ -36,45 +36,39 @@ public class EntityController<K, T extends Entity<K>> {
 	private EntityService<K, T> entityService;
 
 	public static final String FILTER_NAME = "propertiesFilter";
-	
+
 	protected final SimpleFilterProvider jsonDefaultFilter;
-	
-	public EntityController(EntityService<K, T> entityService, SimpleFilterProvider jsonDefaultFilter) {
-		super();
-		this.entityService = entityService;
-		this.jsonDefaultFilter = jsonDefaultFilter;
-	}
-	
+
 	public EntityController(EntityService<K, T> entityService) {
 		super();
 		this.entityService = entityService;
-		this.jsonDefaultFilter = new SimpleFilterProvider().addFilter(FILTER_NAME, SimpleBeanPropertyFilter.serializeAll());
+		this.jsonDefaultFilter = new SimpleFilterProvider().addFilter(FILTER_NAME, SimpleBeanPropertyFilter.serializeAll()).setFailOnUnknownId(false);
 	}
-	
+
 	public ResponseEntity<String> addOrUpdate(@RequestBody List<T> objs) {
 		objs.forEach(entityService::addOrUpdate);
 		return ResponseEntity.ok("ok");
 	}
-	
+
 	protected SimpleFilterProvider getJsonFilter(Set<String> properties){
 		if(!properties.isEmpty()) {
-			return new SimpleFilterProvider().addFilter(FILTER_NAME, SimpleBeanPropertyFilter.filterOutAllExcept(properties));
+			return new SimpleFilterProvider().addFilter(FILTER_NAME, SimpleBeanPropertyFilter.filterOutAllExcept(properties)).setFailOnUnknownId(false);
 		}
 		return jsonDefaultFilter;
 	}
-	
-	protected ResponseEntity<MappingJacksonValue> applyFilter(Object obj, QueryParamsParser qp) {
-		final SimpleFilterProvider jsonFilter = getJsonFilter(qp.getProperties());
-		var data = new MappingJacksonValue(obj);
-		data.setFilters(jsonFilter);
-		return ResponseEntity.ok(data);
+
+	protected ResponseEntity<String> applyFilter(Object obj, QueryParamsParser qp) {
+		var jsonFilter = getJsonFilter(qp.getProperties());
+		var mapper = JsonMapper.builder().filterProvider(jsonFilter).build();
+		return ResponseEntity.ok(mapper.writeValueAsString(obj));
 	}
 
-	public ResponseEntity<MappingJacksonValue> find(MultiValueMap<String, String> reqParam) {
+	public ResponseEntity<String> find(MultiValueMap<String, String> reqParam) {
+		System.out.println("Debug " + reqParam);
 		return entityService.sortAndLimitEnrich(reqParam, entityService::find, (s, qp) -> applyFilter(s.toList(), qp));
 	}
 
-	public ResponseEntity<MappingJacksonValue> findById(K id, MultiValueMap<String, String> reqParam) {
+	public ResponseEntity<String> findById(K id, MultiValueMap<String, String> reqParam) {
 		return entityService.sortAndLimitEnrich(reqParam, qp -> entityService.findById(id).stream(), (s, qp) -> { 
 			var opt = s.findFirst();
 			if(opt.isEmpty()) {

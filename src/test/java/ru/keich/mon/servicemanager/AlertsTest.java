@@ -1,48 +1,28 @@
-package ru.keich.mon.servicemanager.item;
+package ru.keich.mon.servicemanager;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.ArrayList;
+import java.util.Collections;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.alert.Alert;
-import ru.keich.mon.servicemanager.event.Event;
+import tools.jackson.databind.json.JsonMapper;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class AlertsTest {
-	ObjectMapper mapper = new ObjectMapper();
 
 	@Autowired
-	private TestRestTemplate restTemplate;
-	
-	private void alertAdd(Alert alert) {
-		var headers = new HttpHeaders();
-		headers.setContentType(MediaType.APPLICATION_JSON);
-		var list = new ArrayList<Alert>();
-		list.add(alert);
-		var result = restTemplate.postForEntity("/api/v2/alerts", list, String.class);
-		assertEquals(HttpStatus.OK, result.getStatusCode());
-	}
-	
-	private Event eventGet(String id) {
-		var result = restTemplate.getForEntity("/api/v1/event/" + id , Event.class);
-		assertEquals(HttpStatus.OK, result.getStatusCode());
-		return result.getBody();
-	}
-	
+	public ApiWrapper apiWrapper;
+
+	@Autowired
+	JsonMapper mapper;
+
 	@Test
 	public void alertPut() throws IOException {
 		String json = """
@@ -63,8 +43,8 @@ public class AlertsTest {
 		var startAt = Instant.parse("2024-11-06T10:31:00+03:00");
 		Alert alert = mapper.readValue(json, Alert.class);
 		alert.setEndsAt(Instant.now().plusSeconds(60).toString());
-		alertAdd(alert);
-		var event = eventGet("7380901136023483174_" + startAt.getEpochSecond());
+		apiWrapper.alertAdd(Collections.singletonList(alert));
+		var event = apiWrapper.eventGet("7380901136023483174_" + startAt.getEpochSecond());
 		assertEquals(BaseStatus.WARNING, event.getStatus());
 		assertNotNull(event.getEndsOn());
 	}

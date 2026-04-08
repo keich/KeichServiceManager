@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.json.MappingJacksonValue;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -59,27 +58,27 @@ public class ItemController extends EntityController<String, Item> {
 	}
 
 	@Override
-	@PostMapping("/item")
+	@PostMapping(value = "/item", produces = "application/json")
 	public ResponseEntity<String> addOrUpdate(@RequestBody List<Item> items) {
 		return super.addOrUpdate(items);
 	}
 
 	@Override
-	@GetMapping("/item")
+	@GetMapping(value = "/item", produces = "application/json")
 	@CrossOrigin(origins = "*")
-	public ResponseEntity<MappingJacksonValue> find(@RequestParam MultiValueMap<String, String> reqParam) {
+	public ResponseEntity<String> find(@RequestParam MultiValueMap<String, String> reqParam) {
 		return super.find(reqParam);
 	}
 
-	@GetMapping("/item/{id}")
+	@GetMapping(value = "/item/{id}", produces = "application/json")
 	@CrossOrigin(origins = "*")
-	public ResponseEntity<MappingJacksonValue> findById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
+	public ResponseEntity<String> findById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
 		return super.findById(id, reqParam);
 	}
 
-	@GetMapping("/item/{id}/children")
+	@GetMapping(value = "/item/{id}/children", produces = "application/json")
 	@CrossOrigin(origins = "*")
-	ResponseEntity<MappingJacksonValue> findChildrenById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
+	ResponseEntity<String> findChildrenById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
 		var opt = itemService.findById(id);
 		if(opt.isEmpty()) {
 			return ResponseEntity.notFound().build();
@@ -92,9 +91,9 @@ public class ItemController extends EntityController<String, Item> {
 		}, (s, qp) -> applyFilter(s.toList(), qp));
 	}
 
-	@GetMapping("/item/{id}/parents")
+	@GetMapping(value = "/item/{id}/parents", produces = "application/json")
 	@CrossOrigin(origins = "*")
-	ResponseEntity<MappingJacksonValue> findParentsById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
+	ResponseEntity<String> findParentsById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
 		var opt = itemService.findById(id);
 		if(opt.isEmpty()) {
 			return ResponseEntity.notFound().build();
@@ -108,15 +107,15 @@ public class ItemController extends EntityController<String, Item> {
 	}
 
 	@Override
-	@DeleteMapping("/item")
+	@DeleteMapping(value = "/item", produces = "application/json")
 	@CrossOrigin(origins = "*")
 	public ResponseEntity<Integer> deleteByFilter(@RequestBody(required = false) List<String> ids, @RequestParam Map<String, String> reqParam) {
 		return super.deleteByFilter(ids, reqParam);
 	}
 
-	@GetMapping("/item/{id}/events")
+	@GetMapping(value = "/item/{id}/events", produces = "application/json")
 	@CrossOrigin(origins = "*")
-	public ResponseEntity<MappingJacksonValue> findAllEventsById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
+	public ResponseEntity<String> findAllEventsById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
 		return eventService.sortAndLimitEnrich(reqParam, qp -> { 
 			var eventIds = itemService.findAllEventIdsById(id);
 			if(eventIds.size() == 0) return Stream.empty();
@@ -127,10 +126,10 @@ public class ItemController extends EntityController<String, Item> {
 		});
 	}
 
-	@GetMapping("/item/{id}/tree")
+	@GetMapping(value = "/item/{id}/tree", produces = "application/json")
 	@CrossOrigin(origins = "*")
 	// TODO rename children/tree
-	public ResponseEntity<MappingJacksonValue> getTree(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
+	public ResponseEntity<String> getTree(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
 		return itemService.sortAndLimitEnrich(reqParam, qp -> itemService.findById(id).stream(), (s, qp) -> {
 			qp.addPropertyIfNotEmpty(QUERY_CHILDREN);
 			return s.findFirst()
@@ -159,9 +158,9 @@ public class ItemController extends EntityController<String, Item> {
 		return outItem.build();
 	}
 
-	@GetMapping("/item/{id}/parents/tree")
+	@GetMapping(value = "/item/{id}/parents/tree", produces = "application/json")
 	@CrossOrigin(origins = "*")
-	ResponseEntity<MappingJacksonValue> findParentsTreeById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
+	ResponseEntity<String> findParentsTreeById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
 		return itemService.sortAndLimitEnrich(reqParam, qp -> itemService.findById(id).stream(), (s, qp) -> {
 			qp.addPropertyIfNotEmpty(QUERY_PARENTS);
 			return s.findFirst()

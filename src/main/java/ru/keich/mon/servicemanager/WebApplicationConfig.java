@@ -1,5 +1,16 @@
 package ru.keich.mon.servicemanager;
 
+import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import lombok.extern.java.Log;
+import tools.jackson.databind.ser.std.SimpleFilterProvider;
+
 /*
  * Copyright 2024 the original author or authors.
  *
@@ -16,34 +27,15 @@ package ru.keich.mon.servicemanager;
  * limitations under the License.
  */
 
-
-import org.springframework.boot.web.server.ErrorPage;
-import org.springframework.boot.web.server.WebServerFactoryCustomizer;
-import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-
-import lombok.extern.java.Log;
-
 @Configuration
 @Log
 public class WebApplicationConfig implements WebMvcConfigurer {
 
 	@Override
-	public void addViewControllers(ViewControllerRegistry registry) {
-		registry.addViewController("/notFound").setViewName("forward:/index.html");
-	}
-
-	@Bean
-	public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> containerCustomizer() {
-		return container -> {
-			container.addErrorPages(new ErrorPage(HttpStatus.NOT_FOUND, "/notFound"));
-		};
+	public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry
+        .addResourceHandler("/static/**")
+        .addResourceLocations("classpath:/static/");	
 	}
 	
 	@Bean
@@ -55,4 +47,10 @@ public class WebApplicationConfig implements WebMvcConfigurer {
 		http.csrf(csrf -> csrf.disable());
 		return http.build();
 	}
+
+	@Bean
+	JsonMapperBuilderCustomizer jacksonCustomizer() {
+	    return builder -> builder.filterProvider(new SimpleFilterProvider().setFailOnUnknownId(false));
+	}
+
 }

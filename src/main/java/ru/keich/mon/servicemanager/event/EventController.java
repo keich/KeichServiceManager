@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.json.MappingJacksonValue;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -38,36 +37,36 @@ import ru.keich.mon.servicemanager.entity.EntityController;
 @RequestMapping("/api/v1")
 public class EventController extends EntityController<String, Event> {
 	final EventService eventService;
-	
+
 	public EventController(EventService eventService) {
 		super(eventService);
 		this.eventService = eventService;
 	}
 
 	@Override
-	@PostMapping("/event")
+	@PostMapping(value = "/event", produces = "application/json")
 	public ResponseEntity<String> addOrUpdate(@RequestBody List<Event> events) {
 		return super.addOrUpdate(events);
 	}
-	
+
 	@Override
-	@GetMapping("/event")
+	@GetMapping(value = "/event", produces = "application/json")
 	@CrossOrigin(origins = "*")
-	public ResponseEntity<MappingJacksonValue> find(@RequestParam MultiValueMap<String, String> reqParam) {
+	public ResponseEntity<String> find(@RequestParam MultiValueMap<String, String> reqParam) {
 		return super.find(reqParam);
 	}
-	
-	@GetMapping("/event/{id}")
+
+	@GetMapping(value = "/event/{id}", produces = "application/json")
 	@CrossOrigin(origins = "*")
-	public ResponseEntity<MappingJacksonValue> findById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
+	public ResponseEntity<String> findById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
 		return super.findById(id, reqParam);
 	}
-	
+
 	@Override
-	@DeleteMapping("/event")
+	@DeleteMapping(value = "/event", produces = "application/json")
 	@CrossOrigin(origins = "*")
 	public ResponseEntity<Integer> deleteByFilter(@RequestBody(required = false) List<String> ids, @RequestParam Map<String, String> reqParam) {
 		return super.deleteByFilter(ids, reqParam);
 	}
-	
+
 }
