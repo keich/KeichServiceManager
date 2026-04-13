@@ -1,10 +1,10 @@
 package ru.keich.mon.servicemanager.item;
 
-import java.io.IOException;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ValueSerializer;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
 
 /*
  * Copyright 2025 the original author or authors.
@@ -22,10 +22,10 @@ import com.fasterxml.jackson.databind.SerializerProvider;
  * limitations under the License.
  */
 
-public class AggregateStatusSerializer extends JsonSerializer<AggregateStatus> {
+public class AggregateStatusSerializer extends ValueSerializer<AggregateStatus> {
 
 	@Override
-	public void serialize(AggregateStatus value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+	public void serialize(AggregateStatus value, JsonGenerator gen, SerializationContext ctxt) throws JacksonException {
 		gen.writeString(value.getMax().toString());
 	}
 

@@ -11,13 +11,13 @@ import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import lombok.Getter;
 import ru.keich.mon.servicemanager.BaseStatus;
 import ru.keich.mon.servicemanager.SourceType;
 import ru.keich.mon.servicemanager.entity.Entity;
 import ru.keich.mon.servicemanager.event.Event;
+import tools.jackson.databind.annotation.JsonSerialize;
 
 /*
  * Copyright 2024 the original author or authors.
