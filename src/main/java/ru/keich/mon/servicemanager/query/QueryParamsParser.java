@@ -136,6 +136,8 @@ public class QueryParamsParser {
 				return QueryPredicate.notContain(name, valueConverter.apply(name, arr[1]));
 			case NI:
 				return QueryPredicate.notInclude(name, valueConverter.apply(name, arr[1]));
+			case ISNULL:
+				return QueryPredicate.isNull(name, null);
 			case SORT:
 				return new QuerySort(name, operator, Integer.valueOf(arr[1]));
 			case SORTDESC:
