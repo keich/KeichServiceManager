@@ -3,10 +3,10 @@ package ru.keich.mon.servicemanager.replication;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
 
-import ru.keich.mon.servicemanager.event.EventReplication;
-import ru.keich.mon.servicemanager.item.ItemReplication;
+import ru.keich.mon.servicemanager.entity.EntityReplication;
+import ru.keich.mon.servicemanager.event.Event;
+import ru.keich.mon.servicemanager.item.Item;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -24,12 +24,11 @@ import ru.keich.mon.servicemanager.item.ItemReplication;
  * limitations under the License.
  */
 
-@Component
 public class Replication {
-	final private EventReplication eventReplication;
-	final private ItemReplication itemReplication;
+	final private EntityReplication<String, Event> eventReplication;
+	final private EntityReplication<String, Item> itemReplication;
 	
-	public Replication(EventReplication eventReplication, ItemReplication itemReplication) {
+	public Replication(EntityReplication<String, Event> eventReplication, EntityReplication<String, Item> itemReplication) {
 		super();
 		this.eventReplication = eventReplication;
 		this.itemReplication = itemReplication;
