@@ -1,6 +1,8 @@
 package ru.keich.mon.servicemanager.item;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -110,7 +112,13 @@ public class ItemService extends EntityService<String, Item> {
 				builder.name(item.getName());
 			}
 			if(item.getRules() != null) {
-				builder.rules(Collections.unmodifiableMap(item.getRules()));
+				if(item.getRules().isEmpty()) {
+					builder.rules(ItemRule.DEFAULT);
+				} else {
+					builder.rules(Collections.unmodifiableMap(item.getRules()));
+				}
+			} else {
+				builder.rules(ItemRule.DEFAULT);
 			}
 			if(item.getFilters() != null) {
 				builder.filters(Collections.unmodifiableMap(item.getFilters()));
@@ -195,49 +203,47 @@ public class ItemService extends EntityService<String, Item> {
 				.forEach(itemId -> itemUpdateEventsStatus(itemId, m -> m.remove(event.getId())));
 	}
 
-	public Set<String> eventChanged(Event event) {
-		return findFiltersByEqualFields(event.getFields())
-				.map(itft -> {
-					var itemId = itft.getKey().getId();
-					var newStatus = itft.getValue().getStatus(event);
-					itemUpdateEventsStatus(itemId, m -> m.put(event.getId(), newStatus));
-					return itemId;
-				})
-				.collect(Collectors.toSet());
-	}
-
-	private Stream<BaseStatus> calculateRulesStatus(Item parent) {	
-		if(parent.getRules().isEmpty()) {
-			return Stream.of(ItemRule.doDefault(findChildren(parent)));
+	public List<String> eventChanged(Event event) {
+		var itemFilters = findFiltersByEqualFields(event.getFields());
+		var out = new ArrayList<String>(itemFilters.size());
+		for(var itft: itemFilters) {
+			var itemId = itft.item.getId();
+			out.add(itemId);
+			itemUpdateEventsStatus(itemId, m -> m.put(event.getId(), itft.itemFilter.getStatus(event)));
 		}
-		return parent.getRules()
-				.entrySet()
-				.stream()
-				.map(e -> e.getValue().calculate(findChildren(parent)));
+		return out;
 	}
 
 	private BaseStatus calculateStatus(Item item) {
-		var rulesStatus = calculateRulesStatus(item);
-		var eventsStatus = item.getEventsStatus().values().stream();
-		return BaseStatus.max(rulesStatus, eventsStatus);
+		var children = findByIds(item.getChildrenIds());
+		children.sort((a, b) -> b.getStatus().compareTo(a.getStatus()));
+		var rulesStatus = ItemRule.calculateMax(item.getRules().values(), children);
+		var eventsStatus = BaseStatus.max(item.getEventsStatus().values());
+		return eventsStatus.lessThen(rulesStatus) ? rulesStatus : eventsStatus;
 	}
+	
+	
+	private record ItemsFiltres(Item item, ItemFilter itemFilter) {};
 
-	private Stream<Map.Entry<Item, ItemFilter>> findFiltersByEqualFields(Map<String, String> fields) {
-		return fields.entrySet().stream()
-				.map(e -> entityCache.keySetIndexEq(Item.FIELD_FILTERS_EQL, e))
-				.collect(Collectors.toUnmodifiableSet())
-				.stream()
-				.map(this::findByIds)
-				.flatMap(List::stream)
-				.filter(Item::isNotDeleted)
-				.map(item -> {
-					return item.getFilters().entrySet().stream()
-							.filter(flt -> fields.entrySet().containsAll(flt.getValue().getEqualFields().entrySet()))
-							.findFirst()
-							.map(e -> Map.entry(item, e.getValue()));
-				})
-				.filter(Optional::isPresent)
-				.map(Optional::get);
+	private List<ItemsFiltres> findFiltersByEqualFields(Map<String, String> fields) {
+		Collection<?> k = fields.entrySet();
+		@SuppressWarnings("unchecked")
+		var ids = entityCache.keySetIndexEqAll(Item.FIELD_FILTERS_EQL, (Collection<Object>) k);
+		var out = new ArrayList<ItemsFiltres>();
+		var set = fields.entrySet();
+		findByIds(ids).forEach(item -> {
+			if (item.isNotDeleted()) {
+				var filters = item.getFilters().values();
+				for (var f : filters) {
+					if (set.containsAll(f.getEqualFields().entrySet())) {
+						new ItemsFiltres(item, f);
+						out.add(new ItemsFiltres(item, f));
+						break;
+					}
+				}
+			}
+		});
+		return out;
 	}
 
 	private Set<String> findParentIdsById(String itemId) {

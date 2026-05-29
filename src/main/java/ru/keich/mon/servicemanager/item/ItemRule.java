@@ -1,7 +1,9 @@
 package ru.keich.mon.servicemanager.item;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -41,6 +43,9 @@ public class ItemRule {
 	public enum RuleType {
 		DEFAULT, CLUSTER
 	}
+
+	public static String DEFAULT_NAME = "DefaultRule";
+	public static Map<String, ItemRule> DEFAULT = Map.of(DEFAULT_NAME, new ItemRule(null, false, null, null, RuleType.DEFAULT));
 
 	@Override
 	public String toString() {
@@ -83,8 +88,22 @@ public class ItemRule {
 		this.valueThreshold = valueThreshold == null ? 0 : valueThreshold;
 		this.type = type;
 	}
+	
+	public static BaseStatus calculateMax(Collection<ItemRule> rules, List<Item> items) {
+		var maxStatus = BaseStatus.CLEAR;
+		for (var rule : rules) {
+			var status = rule.calculate(items);
+			if (maxStatus.lessThen(status)) {
+				maxStatus = status;
+			}
+			if (maxStatus.equals(BaseStatus.MAX)) {
+				break;
+			}
+		}
+		return maxStatus;
+	}
 
-	public BaseStatus calculate(Stream<Item> items) {
+	public BaseStatus calculate(List<Item> items) {
 		switch(type) {
 		case CLUSTER:
 			return doCluster(items);
@@ -93,42 +112,50 @@ public class ItemRule {
 		}
 	}
 
-	private class ClusterResult {
+	private BaseStatus doCluster(List<Item> items) {	
+		if (items.size() == 0) {
+			return BaseStatus.CLEAR;
+		}
 		int count = 0;
 		int filteredCount = 0;
-		BaseStatus minStatus = BaseStatus.CLEAR;
-	}
-
-	private BaseStatus doCluster(Stream<Item> items) {				
-		var result = items.reduce(new ClusterResult(), (r, item) -> {
-			r.count++;
+		var minStatus = BaseStatus.CLEAR;
+		for(var item: items) {
+			if (item.isDeleted()) {
+				continue;
+			}
+			count++;
 			var status = item.getStatus();
-			if(statusThreshold.lessThenOrEqual(item.getStatus())) {
-				if(r.minStatus.moreThen(status)) {
-					r.minStatus = status;
+			if (statusThreshold.lessThenOrEqual(status)) {
+				if (minStatus.moreThen(status)) {
+					minStatus = status;
 				}
-				r.filteredCount++;
+				filteredCount++;
 			}
-			return r;
-		}, (r1, r2) -> {
-			r1.count += r2.count;
-			r1.filteredCount += r2.filteredCount;
-			r1.minStatus = r1.minStatus.min(r2.minStatus);
-			return r1;
-		});
-		if(result.count > 0) {
-			if (100 * result.filteredCount / result.count >= valueThreshold) {
-				if (usingResultStatus) {
-					return getResultStatus();
-				}
-				return result.minStatus;
+		}
+		if (100 * filteredCount / count >= valueThreshold) {
+			if (usingResultStatus) {
+				return getResultStatus();
 			}
+			return minStatus;
 		}
 		return BaseStatus.CLEAR;
 	}
 
-	public static BaseStatus doDefault(Stream<Item> items) {
-		return BaseStatus.max(items.map(Item::getStatus));
+	public static BaseStatus doDefault(List<Item> items) {
+		var maxStatus = BaseStatus.CLEAR;
+		for(var item: items) {
+			if (item.isDeleted()) {
+				continue;
+			}
+			var status = item.getStatus();
+			if(maxStatus.lessThen(status)) {
+				maxStatus = status;
+			}
+			if(maxStatus.equals(BaseStatus.MAX)) {
+				break;
+			}
+		}
+		return maxStatus;
 	}
 
 }
