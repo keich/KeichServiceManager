@@ -216,6 +216,7 @@ public class ItemService extends EntityService<String, Item> {
 
 	private BaseStatus calculateStatus(Item item) {
 		var children = findByIds(item.getChildrenIds());
+		children.removeIf(child -> child.isDeleted());
 		children.sort((a, b) -> b.getStatus().compareTo(a.getStatus()));
 		var rulesStatus = ItemRule.calculateMax(item.getRules().values(), children);
 		var eventsStatus = BaseStatus.max(item.getEventsStatus().values());

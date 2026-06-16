@@ -116,14 +116,9 @@ public class ItemRule {
 		if (items.size() == 0) {
 			return BaseStatus.CLEAR;
 		}
-		int count = 0;
 		int filteredCount = 0;
-		var minStatus = BaseStatus.CLEAR;
+		var minStatus = BaseStatus.MAX;
 		for(var item: items) {
-			if (item.isDeleted()) {
-				continue;
-			}
-			count++;
 			var status = item.getStatus();
 			if (statusThreshold.lessThenOrEqual(status)) {
 				if (minStatus.moreThen(status)) {
@@ -132,7 +127,7 @@ public class ItemRule {
 				filteredCount++;
 			}
 		}
-		if (100 * filteredCount / count >= valueThreshold) {
+		if (100 * filteredCount / items.size() >= valueThreshold) {
 			if (usingResultStatus) {
 				return getResultStatus();
 			}
@@ -144,9 +139,6 @@ public class ItemRule {
 	public static BaseStatus doDefault(List<Item> items) {
 		var maxStatus = BaseStatus.CLEAR;
 		for(var item: items) {
-			if (item.isDeleted()) {
-				continue;
-			}
 			var status = item.getStatus();
 			if(maxStatus.lessThen(status)) {
 				maxStatus = status;
