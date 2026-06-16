@@ -174,18 +174,15 @@ public class ItemController extends EntityController<String, Item> {
 		var childId = child.getId();
 		history.add(childId);
 		var outItem = new Item.Builder(child);
-		itemService.findParentsById(childId).ifPresent(stream -> {
-			var l = stream.filter(parent -> {
-				if (history.contains(parent.getId())) {
-					log.warning("setParents: circle found from " + parent.getId() + " to " + childId);
-					return false;
-				}
-				return true;
-			})
-			.map(parent -> setParents(parent, history))
-			.toList();
-			outItem.parents(l);
-		});
+		var parents = itemService.findParentsById(childId);
+		for(var parent: parents) {
+			if (!history.contains(parent.getId())) {
+				setParents(parent, history);
+			} else {
+				log.warning("setParents: circle found from " + parent.getId() + " to " + childId);
+			}
+		}
+		outItem.parents(parents);
 		history.remove(childId);
 		return outItem.build();
 	}

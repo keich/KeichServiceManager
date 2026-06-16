@@ -254,11 +254,14 @@ public class ItemService extends EntityService<String, Item> {
 		return findParentIdsById(item.getId());
 	}
 
-	public Optional<Stream<Item>> findParentsById(String itemId) {
+	public List<Item> findParentsById(String itemId) {
 		return findById(itemId)
 				.map(this::findParentIds)
 				.map(this::findByIds)
-				.map(List::stream);
+				.map(List::stream)
+				.orElse(Stream.empty())
+				.filter(Item::isNotDeleted)
+				.toList();
 	}
 
 	public Stream<Item> findChildren(Item parent) {
@@ -271,9 +274,10 @@ public class ItemService extends EntityService<String, Item> {
 				.filter(Item::isNotDeleted);	
 	}
 
-	public Optional<Stream<Item>> findChildrenById(String id) {
+	public Stream<Item> findChildrenById(String id) {
 		return findById(id)
-				.map(this::findChildren);
+				.map(this::findChildren)
+				.orElse(Stream.empty());
 	}
 
 	private Set<String> findAllChildrenById(String parentId) {
