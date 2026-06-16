@@ -141,19 +141,16 @@ public class ItemController extends EntityController<String, Item> {
 
 	private Item setChildren(Item parent, HashSet<String> history) {
 		var parentId = parent.getId();
+		if (history.contains(parentId)) {
+			log.warning("setChildren: circle found from " + parentId + " to " + parentId);
+			return parent;
+		}
 		history.add(parentId);
 		var outItem = new Item.Builder(parent);
-		var l = itemService.findChildren(parent)
-				.filter(child -> {
-					if (history.contains(child.getId())) {
-						log.warning("setChildren: circle found from " + parentId + " to " + child.getId());
-						return false;
-					}
-					return true;
-				})
+		var children = itemService.findChildren(parent)
 				.map(child -> setChildren(child, history))
 				.toList();
-		outItem.children(l);
+		outItem.children(children);
 		history.remove(parentId);
 		return outItem.build();
 	}
@@ -172,16 +169,15 @@ public class ItemController extends EntityController<String, Item> {
 
 	private Item setParents(Item child, HashSet<String> history) {
 		var childId = child.getId();
+		if (history.contains(childId)) {
+			log.warning("setParents: circle found from " + childId + " to " + childId);
+			return child;
+		}
 		history.add(childId);
 		var outItem = new Item.Builder(child);
-		var parents = itemService.findParentsById(childId);
-		for(var parent: parents) {
-			if (!history.contains(parent.getId())) {
-				setParents(parent, history);
-			} else {
-				log.warning("setParents: circle found from " + parent.getId() + " to " + childId);
-			}
-		}
+		var parents = itemService.findParentsById(childId)
+				.map(parent -> setParents(parent, history))
+				.toList();
 		outItem.parents(parents);
 		history.remove(childId);
 		return outItem.build();

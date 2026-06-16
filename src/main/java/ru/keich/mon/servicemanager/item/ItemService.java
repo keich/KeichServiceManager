@@ -255,14 +255,13 @@ public class ItemService extends EntityService<String, Item> {
 		return findParentIdsById(item.getId());
 	}
 
-	public List<Item> findParentsById(String itemId) {
+	public Stream<Item> findParentsById(String itemId) {
 		return findById(itemId)
 				.map(this::findParentIds)
 				.map(this::findByIds)
 				.map(List::stream)
 				.orElse(Stream.empty())
-				.filter(Item::isNotDeleted)
-				.toList();
+				.filter(Item::isNotDeleted);
 	}
 
 	public Stream<Item> findChildren(Item parent) {
