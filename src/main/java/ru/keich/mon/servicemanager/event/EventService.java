@@ -57,10 +57,8 @@ public class EventService extends EntityService<String, Event>{
 		entityCache.addIndexSorted(Event.FIELD_ENDSON, Event::getEndsOnForIndex);
 	}
 
-	public EventService(@Value("${replication.nodename}") String nodeName
-			,MeterRegistry registry
-			,@Value("${event.thread.count:2}") Integer threadCount) {
-		super(nodeName, registry, threadCount);
+	public EventService(@Value("${replication.nodename}") String nodeName, MeterRegistry registry) {
+		super(nodeName, registry);
 		queryValueMapper.put(Event.FIELD_NODE, Event::getNodeForQuery);
 		queryValueMapper.put(Event.FIELD_SUMMARY, Event::getSummaryForQuery);
 		entityCache.addIndexSmallInt(Event.FIELD_CALCULATED, 2, Event::getCalculatedForIndex);

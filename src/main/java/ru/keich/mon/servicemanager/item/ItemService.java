@@ -65,9 +65,8 @@ public class ItemService extends EntityService<String, Item> {
 	public ItemService(@Value("${replication.nodename}") String nodeName
 			,EventService eventService
 			,MeterRegistry registry
-			,@Value("${item.thread.count:2}") Integer threadCount
 			,@Value("${item.aggstatus.seconds:60}") Long aggStatusSeconds) {
-		super(nodeName, registry, threadCount);
+		super(nodeName, registry);
 		AggregateStatus.setSeconds(aggStatusSeconds);
 		entityCache.addIndexEqual(Item.FIELD_FILTERS_EQL, Item::getFiltersForIndex);
 		entityCache.addIndexEqual(Item.FIELD_PARENTS, Item::getParentsForIndex);

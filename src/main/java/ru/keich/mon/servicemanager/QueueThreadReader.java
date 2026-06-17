@@ -29,32 +29,20 @@ public class QueueThreadReader<K> {
 	static final public String METRIC_NAME_ADDED = "added";
 	static final public String METRIC_NAME_REMOVED = "removed";
 	static final Integer POLL_SECONDS = 30;
-	private final Consumer<K> consumer;
 	private BlockingQueue<K> queue = new LinkedBlockingDeque<K>();
 
-	public QueueThreadReader(String name, int  number, Consumer<K> consumer) {
+	public QueueThreadReader(Consumer<K> consumer) {
 		super();
-		this.consumer = consumer;
-		for (int i = 0; i < number; i++) {
-			runThread(name + "-queue-" + i);
-		}
-	}
-
-	private Thread runThread(String name) {
-		var thread = new Thread(() -> {
-			try {
-				while (true) {
+		Thread.startVirtualThread(() -> {
+			while (true) {
+				try {
 					var info = queue.poll(POLL_SECONDS, TimeUnit.SECONDS);
-					if(info != null) {
-						consumer.accept(info);
-					}
+					if (info != null) Thread.startVirtualThread(() -> consumer.accept(info));
+				} catch (Exception v) {
+					v.printStackTrace();
 				}
-			} catch (Exception v) {
-				v.printStackTrace();
 			}
-		}, name);
-		thread.start();
-		return thread;
+		});
 	}
 
 	public void add(K value) {

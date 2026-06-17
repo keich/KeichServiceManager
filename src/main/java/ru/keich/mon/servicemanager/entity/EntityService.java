@@ -82,12 +82,12 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	private final MeterRegistry registry;
 	private final Tags metricTags;
 
-	public EntityService(String nodeName, MeterRegistry registry, Integer threadCount) {
+	public EntityService(String nodeName, MeterRegistry registry) {
 		this.nodeName = nodeName.intern();
 		this.registry = registry;
 		var serviceName = this.getClass().getSimpleName();
 		entityCache = new IndexedHashMap<>();
-		entityChangedQueue = new QueueThreadReader<QueueInfo<K>>(serviceName, threadCount, this::queueRead);
+		entityChangedQueue = new QueueThreadReader<QueueInfo<K>>(this::queueRead);
 
 		entityCache.addIndexLongUniq(Entity.FIELD_VERSION, Entity::getVersionForIndex);
 		entityCache.addIndexEqual(Entity.FIELD_SOURCE, Entity::getSourceForIndex);
