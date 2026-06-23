@@ -125,8 +125,10 @@ public class ItemService extends EntityService<String, Item> {
 			if(item.getChildrenIds() != null) {
 				builder.childrenIds(Collections.unmodifiableSet(item.getChildrenIds()));
 			}
-			if(item.getMaintenance()  != null) {
+			if(item.getMaintenance() != null) {
 				builder.maintenance(item.getMaintenance());
+			} else {
+				builder.maintenance(ItemMaintenance.EMPTY);
 			}
 			if(item.getSourceType()  != null) {
 				builder.sourceType(item.getSourceType());

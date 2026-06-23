@@ -109,7 +109,7 @@ public class Item extends Entity<String> {
 	}
 	
 	public boolean isMaintenanceOn() {
-		return maintenance == null ? false : maintenance.test();
+		return maintenance.test();
 	}
 
 	public static Set<Object> getFiltersForIndex(Item item) {
@@ -177,6 +177,7 @@ public class Item extends Entity<String> {
 		public Builder(String id) {
 			super(id);
 			aggStatus = AggregateStatus.EMPTY;
+			maintenance = ItemMaintenance.EMPTY;
 		}
 
 		public Builder(Item item) {
