@@ -1,6 +1,8 @@
 package ru.keich.mon.servicemanager.item;
 
 import java.time.Instant;
+import java.util.Collections;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -42,7 +44,11 @@ public class ItemMaintenance {
 
 	@JsonIgnore
 	private final Supplier<Boolean> func;
-	private final AbsoluteMaintenance absolute;
+	private final AbsoluteMaintenance absolute;	
+	@JsonIgnore
+	private final Set<Object> absoluteStartsOnForIndex;
+	@JsonIgnore
+	private final Set<Object> absoluteEndsOnForIndex;
 
 	@JsonCreator
 	public ItemMaintenance(
@@ -51,9 +57,13 @@ public class ItemMaintenance {
 		this.absolute = absolute;
 		if(absolute != null) {
 			func = () -> absolute.test();
+			absoluteStartsOnForIndex = Collections.singleton(absolute.getStartsOn());
+			absoluteEndsOnForIndex = Collections.singleton(absolute.getEndsOn());
 			return;
 		}
 		func = () -> false;
+		absoluteStartsOnForIndex = Collections.emptySet();
+		absoluteEndsOnForIndex = Collections.emptySet();
 	}
 
 	@Override
@@ -63,6 +73,14 @@ public class ItemMaintenance {
 	
 	public boolean test() {
 		return func.get();
+	}
+
+	public static Set<Object> getAbsoluteStartsOnForIndex(ItemMaintenance maintenance) {
+		return maintenance.getAbsoluteStartsOnForIndex();
+	}
+
+	public static Set<Object> getAbsoluteEndsOnForIndex(ItemMaintenance maintenance) {
+		return maintenance.getAbsoluteEndsOnForIndex();
 	}
 
 }

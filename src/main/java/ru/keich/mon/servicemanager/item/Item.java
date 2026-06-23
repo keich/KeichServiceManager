@@ -45,6 +45,8 @@ public class Item extends Entity<String> {
 	public static final String FIELD_AGGSTATUS = "aggStatus";
 	public static final String FIELD_EVENTS= "events";
 	public static final String FIELD_EVENTSSTATUS= "eventsStatus";
+	public static final String FIELD_MAINTENANCE_ABSOLUTE_STARTSON = "maintenanceAbsoluteStartsOn";
+	public static final String FIELD_MAINTENANCE_ABSOLUTE_ENDSON = "maintenanceAbsoluteEndsOn";
 
 	private final Map<String, ItemRule> rules;
 
@@ -136,7 +138,15 @@ public class Item extends Entity<String> {
 	public static Set<Object>  getAggStatusForQuery(Item item) {
 		return Collections.singleton(item.getAggStatus().getMax());
 	}
-	
+
+	public static Set<Object> getMaintenanceAbsolutStartOnForIndex(Item item) {
+		return item.getMaintenance().getAbsoluteStartsOnForIndex();
+	}
+
+	public static Set<Object> getMaintenanceAbsolutEndOnForIndex(Item item) {
+		return item.getMaintenance().getAbsoluteEndsOnForIndex();
+	}
+
 	public static Object fieldValueOf(String fieldName, String str) {
 		switch (fieldName) {
 		case FIELD_NAME:

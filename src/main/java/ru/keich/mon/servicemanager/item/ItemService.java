@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -19,6 +20,7 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import io.micrometer.core.instrument.MeterRegistry;
@@ -71,6 +73,8 @@ public class ItemService extends EntityService<String, Item> {
 		entityCache.addIndexEqual(Item.FIELD_FILTERS_EQL, Item::getFiltersForIndex);
 		entityCache.addIndexEqual(Item.FIELD_PARENTS, Item::getParentsForIndex);
 		entityCache.addIndexEqual(Item.FIELD_EVENTIDS, Item::getEventsIdsForIndex);
+		entityCache.addIndexSorted(Item.FIELD_MAINTENANCE_ABSOLUTE_STARTSON, Item::getMaintenanceAbsolutStartOnForIndex);
+		entityCache.addIndexSorted(Item.FIELD_MAINTENANCE_ABSOLUTE_ENDSON, Item::getMaintenanceAbsolutEndOnForIndex);
 		this.eventService = eventService;
 		eventService.setItemService(this);
 		queryValueMapper.put(Item.FIELD_NAME, Item::getNameForQuery);
@@ -358,6 +362,16 @@ public class ItemService extends EntityService<String, Item> {
 		var q = new EntitySearchListener(eventService, this, ServiceType.ITEM);
 		walker.walk(q, tree);
 		return q;
+	}
+
+	@Scheduled(fixedRateString = "${item.maintenance.fixedrate:60}", timeUnit = TimeUnit.SECONDS)
+	public void maintenanceScheduled() {
+		var started = entityCache.keySetIndexGetBefore(Item.FIELD_MAINTENANCE_ABSOLUTE_STARTSON, Instant.now());
+		var ended = entityCache.keySetIndexGetBefore(Item.FIELD_MAINTENANCE_ABSOLUTE_ENDSON, Instant.now());
+		started.addAll(ended);
+		started.forEach(itemId -> {
+			entityChangedQueue.add(new QueueInfo<String>(itemId, QueueInfo.QueueInfoType.UPDATE));
+		});
 	}
 
 }
