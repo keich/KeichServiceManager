@@ -80,13 +80,13 @@ public class ItemService extends EntityService<String, Item> {
 
 	@Override
 	public void addOrUpdate(Item item) {
-		entityCache.compute(item.getId(), (eventId, oldItem) -> {
+		entityCache.compute(item.getId(), (itemId, oldItem) -> {
 			Item.Builder builder;
 			if(oldItem != null) {
 				builder = new Item.Builder(oldItem);
 				builder.updatedOn(Instant.now());
 			} else {
-				builder = Item.Builder.getDefault(eventId);
+				builder = Item.Builder.getDefault(itemId);
 				if(item.getCreatedOn() != null) {
 					builder.createdOn(item.getCreatedOn());
 				}
