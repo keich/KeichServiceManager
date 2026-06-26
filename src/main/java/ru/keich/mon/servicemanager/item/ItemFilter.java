@@ -2,7 +2,9 @@ package ru.keich.mon.servicemanager.item;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -87,6 +89,10 @@ public class ItemFilter {
 		this.resultStatus = Optional.ofNullable(resultStatus).orElse(BaseStatus.INDETERMINATE);
 		this.usingResultStatus = Optional.ofNullable(usingResultStatus).orElse(false);
 		this.equalFields = Optional.ofNullable(equalFields).map(Collections::unmodifiableMap).orElse(Collections.emptyMap());
+	}
+
+	public boolean test(Set<Entry<String, String>> fields) {
+		return fields.containsAll(equalFields.entrySet());
 	}
 
 }

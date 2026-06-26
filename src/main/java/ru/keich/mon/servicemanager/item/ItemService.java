@@ -237,17 +237,16 @@ public class ItemService extends EntityService<String, Item> {
 		var ids = entityCache.keySetIndexEqAll(Item.FIELD_FILTERS_EQL, (Collection<Object>) k);
 		var out = new ArrayList<ItemsFiltres>();
 		var set = fields.entrySet();
-		findByIds(ids).forEach(item -> {
-			if (item.isNotDeleted()) {
-				var filters = item.getFilters().values();
-				for (var f : filters) {
-					if (set.containsAll(f.getEqualFields().entrySet())) {
-						out.add(new ItemsFiltres(item, f));
-						break;
-					}
+		for (var item : findByIds(ids)) {
+			if (item.isDeleted())
+				continue;
+			for (var f : item.getFilters().values()) {
+				if (f.test(set)) {
+					out.add(new ItemsFiltres(item, f));
+					break;
 				}
 			}
-		});
+		}
 		return out;
 	}
 
