@@ -242,7 +242,6 @@ public class ItemService extends EntityService<String, Item> {
 				var filters = item.getFilters().values();
 				for (var f : filters) {
 					if (set.containsAll(f.getEqualFields().entrySet())) {
-						new ItemsFiltres(item, f);
 						out.add(new ItemsFiltres(item, f));
 						break;
 					}
