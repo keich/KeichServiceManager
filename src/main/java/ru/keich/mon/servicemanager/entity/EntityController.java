@@ -31,15 +31,15 @@ import tools.jackson.databind.ser.std.SimpleFilterProvider;
  * limitations under the License.
  */
 
-public class EntityController<K, T extends Entity<K>> {
+public class EntityController<T extends Entity> {
 
-	private EntityService<K, T> entityService;
+	private EntityService<T> entityService;
 
 	public static final String FILTER_NAME = "propertiesFilter";
 
 	protected final SimpleFilterProvider jsonDefaultFilter;
 
-	public EntityController(EntityService<K, T> entityService) {
+	public EntityController(EntityService<T> entityService) {
 		super();
 		this.entityService = entityService;
 		this.jsonDefaultFilter = new SimpleFilterProvider().addFilter(FILTER_NAME, SimpleBeanPropertyFilter.serializeAll()).setFailOnUnknownId(false);
@@ -67,7 +67,7 @@ public class EntityController<K, T extends Entity<K>> {
 		return entityService.sortAndLimitEnrich(reqParam, entityService::find, (s, qp) -> applyFilter(s.toList(), qp));
 	}
 
-	public ResponseEntity<String> findById(K id, MultiValueMap<String, String> reqParam) {
+	public ResponseEntity<String> findById(String id, MultiValueMap<String, String> reqParam) {
 		return entityService.sortAndLimitEnrich(reqParam, qp -> entityService.findById(id).stream(), (s, qp) -> { 
 			var opt = s.findFirst();
 			if(opt.isEmpty()) {
@@ -77,7 +77,7 @@ public class EntityController<K, T extends Entity<K>> {
 		});
 	}
 
-	public ResponseEntity<Integer> deleteByFilter(@RequestBody(required = false) List<K> enties, @RequestParam Map<String, String> reqParam) {
+	public ResponseEntity<Integer> deleteByFilter(@RequestBody(required = false) List<String> enties, @RequestParam Map<String, String> reqParam) {
 		if (enties != null) {
 			var ret = entityService.deleteByIds(enties);
 			return ResponseEntity.ok(ret.size());

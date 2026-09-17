@@ -48,7 +48,7 @@ import ru.keich.mon.servicemanager.query.QueryParamsParser;
 import ru.keich.mon.servicemanager.query.QuerySort;
 
 @Service
-public class EventService extends EntityService<String, Event>{
+public class EventService extends EntityService<Event>{
 
 	private ItemService itemService;
 

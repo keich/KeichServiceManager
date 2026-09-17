@@ -60,7 +60,7 @@ import ru.keich.mon.servicemanager.query.QuerySort;
 
 @Service
 @Log
-public class ItemService extends EntityService<String, Item> {
+public class ItemService extends EntityService<Item> {
 	
 	private final EventService eventService;
 	

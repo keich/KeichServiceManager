@@ -51,7 +51,7 @@ import ru.keich.mon.servicemanager.query.QuerySort;
  * limitations under the License.
  */
 
-public abstract class EntityService<K, T extends Entity<K>> {
+public abstract class EntityService<T extends Entity> {
 	static public final Long VERSION_MIN = 0L;
 	static final public String METRIC_NAME_PREFIX = "ksm_";
 	static final public String METRIC_VERSION_NAME = "version";
@@ -69,8 +69,8 @@ public abstract class EntityService<K, T extends Entity<K>> {
 
 	private AtomicLong incrementVersion = new AtomicLong(VERSION_MIN + 1);
 
-	final protected IndexedHashMap<K, T> entityCache;
-	final protected QueueThreadReader<QueueInfo<K>> entityChangedQueue;
+	final protected IndexedHashMap<String, T> entityCache;
+	final protected QueueThreadReader<QueueInfo<String>> entityChangedQueue;
 	final protected Map<String, Function<T, Set<Object>>> queryValueMapper = new HashMap<>();
 
 	final public String nodeName;
@@ -87,7 +87,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 		this.registry = registry;
 		var serviceName = this.getClass().getSimpleName();
 		entityCache = new IndexedHashMap<>();
-		entityChangedQueue = new QueueThreadReader<QueueInfo<K>>(this::queueRead);
+		entityChangedQueue = new QueueThreadReader<QueueInfo<String>>(this::queueRead);
 
 		entityCache.addIndexLongUniq(Entity.FIELD_VERSION, Entity::getVersionForIndex);
 		entityCache.addIndexEqual(Entity.FIELD_SOURCE, Entity::getSourceForIndex);
@@ -128,21 +128,21 @@ public abstract class EntityService<K, T extends Entity<K>> {
 		return incrementVersion.incrementAndGet();
 	}
 
-	protected abstract void queueRead(QueueInfo<K> info);	
+	protected abstract void queueRead(QueueInfo<String> info);	
 
 	public abstract void addOrUpdate(T entity);
 
-	public abstract Optional<T> deleteById(K entityId);
+	public abstract Optional<T> deleteById(String entityId);
 
-	public Optional<T> findById(K id) {
+	public Optional<T> findById(String id) {
 		return Optional.ofNullable(entityCache.get(id));
 	}
 
-	public List<T> findByIds(Set<K> ids) {
+	public List<T> findByIds(Set<String> ids) {
 		return entityCache.get(ids);
 	}
 
-	public List<T> deleteByIds(List<K> ids) {
+	public List<T> deleteByIds(List<String> ids) {
 		return ids.stream()
 				.map(this::deleteById)
 				.filter(Optional::isPresent)
@@ -218,7 +218,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 		return data;
 	}
 
-	public Stream<T> findByPredicates(List<QueryPredicate> predicates, Set<K> filterbyId) {
+	public Stream<T> findByPredicates(List<QueryPredicate> predicates, Set<String> filterbyId) {
 		var opt = predicates.stream()
 				.map(this::find)
 				.reduce((result, el) -> { 
@@ -234,9 +234,9 @@ public abstract class EntityService<K, T extends Entity<K>> {
 				.map(Optional::get);
 	}
 	
-	protected abstract EntitySearchResult<K> getEntitySearchResult(String search);
+	protected abstract EntitySearchResult<String> getEntitySearchResult(String search);
 
-	public Stream<T> findBySearch(String search, Set<K> filterbyId) {
+	public Stream<T> findBySearch(String search, Set<String> filterbyId) {
 		var s = getEntitySearchResult(search).getResult().stream();
 		if(filterbyId.size() > 0) {
 			s = s.filter(id -> filterbyId.contains(id));
@@ -247,7 +247,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 	}
 
 	@SuppressWarnings("rawtypes")
-	public Set<K> find(QueryPredicate predicate) {
+	public Set<String> find(QueryPredicate predicate) {
 		var fieldName = predicate.getName();
 		var indexNames = entityCache.getIndexNames();
 		if (indexNames.contains(fieldName)) {
@@ -270,7 +270,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 			case GE:
 				return entityCache.keySetIndexGetAfterEqual(fieldName, predicate.getValue());
 			case ISNULL:
-				Set<K> eq;
+				Set<String> eq;
 				if(Entity.FIELD_FIELDS.equals(fieldName)) {
 					var subName = predicate.getValue();
 					eq = entityCache.keySetIndexPredicate(fieldName, o -> {
@@ -302,7 +302,7 @@ public abstract class EntityService<K, T extends Entity<K>> {
 		return new HashSet<>(0);
 	}
 
-	public Stream<T> find(QueryParamsParser qp, Set<K> filterbyId) {
+	public Stream<T> find(QueryParamsParser qp, Set<String> filterbyId) {
 		if(qp.isHasSearch()) {
 			return findBySearch(qp.getSearch(), filterbyId);
 		} else {

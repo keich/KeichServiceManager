@@ -36,7 +36,7 @@ import tools.jackson.databind.annotation.JsonSerialize;
  */
 
 @Getter
-public class Item extends Entity<String> {
+public class Item extends Entity {
 
 	public static final String FIELD_NAME = "name";
 	public static final String FIELD_EVENTIDS = "events";

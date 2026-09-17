@@ -25,10 +25,10 @@ import ru.keich.mon.servicemanager.item.Item;
  */
 
 public class Replication {
-	final private EntityReplication<String, Event> eventReplication;
-	final private EntityReplication<String, Item> itemReplication;
+	final private EntityReplication<Event> eventReplication;
+	final private EntityReplication<Item> itemReplication;
 	
-	public Replication(EntityReplication<String, Event> eventReplication, EntityReplication<String, Item> itemReplication) {
+	public Replication(EntityReplication<Event> eventReplication, EntityReplication<Item> itemReplication) {
 		super();
 		this.eventReplication = eventReplication;
 		this.itemReplication = itemReplication;

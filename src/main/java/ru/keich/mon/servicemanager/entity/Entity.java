@@ -32,7 +32,7 @@ import ru.keich.mon.servicemanager.SourceType;
 
 @Getter
 @JsonFilter("propertiesFilter")
-public class Entity<K> {
+public class Entity {
 	
 	public static final String FIELD_VERSION = "version";
 	public static final String FIELD_CREATEDON = "createdOn";
@@ -46,7 +46,7 @@ public class Entity<K> {
 	public static final String FIELD_STATUS = "status";
 	public static final String FIELD_ID = "id";
 
-	private final K id;
+	private final String id;
 	
 	private final Long version;
 	private final String source;
@@ -62,7 +62,7 @@ public class Entity<K> {
 	private final Set<String> fromHistory;
 	private final Map<String, String> fields;
 	
-	public Entity(K id,
+	public Entity(String id,
 			Long version,
 			String source,
 			String sourceKey,
@@ -87,43 +87,43 @@ public class Entity<K> {
 		this.status = status;
 	}
 	
-	public static Set<Object> getSourceForIndex(Entity<?> entity) {
+	public static Set<Object> getSourceForIndex(Entity entity) {
 		return Collections.singleton(entity.getSource());
 	}
 
-	public static Set<Object> getSourceKeyForIndex(Entity<?> entity) {
+	public static Set<Object> getSourceKeyForIndex(Entity entity) {
 		return Collections.singleton(entity.getSourceKey());
 	}
 
-	public static Set<Object> getSourceTypeForIndex(Entity<?> entity) {
+	public static Set<Object> getSourceTypeForIndex(Entity entity) {
 		return Collections.singleton(entity.getSourceType());
 	}
 	
-	public static Long getVersionForIndex(Entity<?> entity) {
+	public static Long getVersionForIndex(Entity entity) {
 		return entity.getVersion();
 	}
 	
-	public static Set<Object> getDeletedOnForIndex(Entity<?> entity) {
+	public static Set<Object> getDeletedOnForIndex(Entity entity) {
 		return entity.deletedOn == null ? Collections.emptySet() : Collections.singleton(entity.deletedOn);
 	}
 	
-	public static Set<Object> getUpdatedOnForIndex(Entity<?> entity) {
+	public static Set<Object> getUpdatedOnForIndex(Entity entity) {
 		return entity.updatedOn == null ? Collections.emptySet() : Collections.singleton(entity.updatedOn);
 	}
 	
-	public static Set<Object> getCreatedOnForIndex(Entity<?> entity) {
+	public static Set<Object> getCreatedOnForIndex(Entity entity) {
 		return entity.createdOn == null ? Collections.emptySet() : Collections.singleton(entity.createdOn);
 	}
 	
-	public static Set<Object> getFieldsForIndex(Entity<?> entity) {
+	public static Set<Object> getFieldsForIndex(Entity entity) {
 		return entity.fields.entrySet().stream().collect(Collectors.toSet());
 	}
 	
-	public static Set<Object> getFromHistoryForIndex(Entity<?> entity) {
+	public static Set<Object> getFromHistoryForIndex(Entity entity) {
 		return entity.getFromHistory().stream().collect(Collectors.toSet());
 	}
 	
-	public static Integer getStatusForIndex(Entity<?> entity) {
+	public static Integer getStatusForIndex(Entity entity) {
 		return entity.getStatus().getInt();
 	}
 	
@@ -186,15 +186,14 @@ public class Entity<K> {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		@SuppressWarnings("unchecked")
-		Entity<K> other = (Entity<K>) obj;
+		Entity other = (Entity) obj;
 		return Objects.equals(id, other.id);
 	}
 
 	@Getter
-	public static abstract class Builder<K, B extends Entity<K>> {
+	public static abstract class Builder<K, B extends Entity> {
 
-		protected final K id;
+		protected final String id;
 		protected Long version;
 		protected String source;
 		protected String sourceKey;
@@ -206,7 +205,7 @@ public class Entity<K> {
 		protected Set<String> fromHistory;
 		protected Map<String, String> fields;
 
-		public Builder(K id) {
+		public Builder(String id) {
 			this.id = id;
 			fromHistory = Collections.emptySet();
 		}

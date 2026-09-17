@@ -22,9 +22,9 @@ public class ReplicationConfig {
 	Replication createReplication(EventService eventService, ItemService itemService,
 			@Value("${replication.nodename}") String nodeName,
 			@Value("${replication.neighbor}") String replicationNeighbor) throws SSLException {
-		var eventReplication = new EntityReplication<String, Event>(eventService, nodeName, replicationNeighbor,
+		var eventReplication = new EntityReplication<Event>(eventService, nodeName, replicationNeighbor,
 				"/api/v1/event", Event.class);
-		var itemReplication = new EntityReplication<String, Item>(itemService, nodeName, replicationNeighbor,
+		var itemReplication = new EntityReplication<Item>(itemService, nodeName, replicationNeighbor,
 				"/api/v1/item", Item.class);
 		return new Replication(eventReplication, itemReplication);
 	}

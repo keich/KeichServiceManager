@@ -32,7 +32,7 @@ import ru.keich.mon.servicemanager.entity.Entity;
  */
 
 @Getter
-public class Event extends Entity<String> {
+public class Event extends Entity {
 	
 	public static final String FIELD_ENDSON = "endsOn";
 	public static final String FIELD_NODE = "node";

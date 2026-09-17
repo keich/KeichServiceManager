@@ -34,19 +34,19 @@ import ru.keich.mon.servicemanager.AddResponseHeaderFilter;
  */
 
 @Log
-public class EntityReplication<K, T extends Entity<K>> {
+public class EntityReplication<T extends Entity> {
 
 	private final String nodeName;
 	private final String replicationNeighbor;
 	private final String path;
 	private final Class<T> elementClass;
 	
-	private final EntityService<K, T> entityService;
+	private final EntityService<T> entityService;
 	private final WebClient webClient;
 	
 	private final EntityReplicationState state = new EntityReplicationState();
 	
-	public EntityReplication(EntityService<K, T> entityService, String nodeName, String replicationNeighbor, String path, Class<T> elementClass) throws SSLException {
+	public EntityReplication(EntityService<T> entityService, String nodeName, String replicationNeighbor, String path, Class<T> elementClass) throws SSLException {
 		this.entityService = entityService;
 		this.nodeName = nodeName;
 		this.replicationNeighbor = replicationNeighbor;

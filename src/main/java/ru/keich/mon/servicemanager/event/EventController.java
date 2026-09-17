@@ -35,7 +35,7 @@ import ru.keich.mon.servicemanager.entity.EntityController;
 
 @RestController
 @RequestMapping("/api/v1")
-public class EventController extends EntityController<String, Event> {
+public class EventController extends EntityController<Event> {
 	final EventService eventService;
 
 	public EventController(EventService eventService) {

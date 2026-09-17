@@ -41,7 +41,7 @@ import ru.keich.mon.servicemanager.event.EventService;
 @RestController
 @RequestMapping("/api/v1")
 @Log
-public class ItemController extends EntityController<String, Item> {
+public class ItemController extends EntityController<Item> {
 
 	public static final String QUERY_CHILDREN = "children";
 	public static final String QUERY_PARENTS = "parents";
