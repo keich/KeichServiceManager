@@ -258,8 +258,7 @@ public class SearchApiTest {
 		apiWrapper.itemAdd(items);
 		
 		var events = new ArrayList<Event>();
-		final var event = new Event
-				.Builder(key + "_t")
+		final var event = Event.Builder.getDefault(key + "_t")
 				.node("name")
 				.source(ApiWrapper.PREFIX_SOURCE + key)
 				.sourceKey(ApiWrapper.PREFIX_SOURCEKEY + key)
@@ -442,8 +441,7 @@ public class SearchApiTest {
 		
 		var eventId = key + "_t";
 		var events = new ArrayList<Event>();
-		final var event = new Event
-				.Builder(eventId)
+		final var event = Event.Builder.getDefault(eventId)
 				.node("name")
 				.source(ApiWrapper.PREFIX_SOURCE + key)
 				.sourceKey(ApiWrapper.PREFIX_SOURCEKEY + key)
@@ -719,8 +717,7 @@ public class SearchApiTest {
 		apiWrapper.itemAdd(items);
 		
 		var events = new ArrayList<Event>();
-		final var event = new Event
-				.Builder(key + "_t")
+		final var event = Event.Builder.getDefault(key + "_t")
 				.node("name")
 				.source(ApiWrapper.PREFIX_SOURCE + key)
 				.sourceKey(ApiWrapper.PREFIX_SOURCEKEY + key)
@@ -769,8 +766,7 @@ public class SearchApiTest {
 		
 		var eventId = key + "_t";
 		var events = new ArrayList<Event>();
-		final var event = new Event
-				.Builder(eventId)
+		final var event = Event.Builder.getDefault(eventId)
 				.node("name")
 				.source("src_" + key)
 				.sourceKey("src_key_" + key)
@@ -798,8 +794,7 @@ public class SearchApiTest {
 		var id1 = key + "_t1";
 		var id2 = key + "_t2";
 		var events = new ArrayList<Event>();
-		var event = new Event
-				.Builder(id1)
+		var event = Event.Builder.getDefault(id1)
 				.node("name")
 				.source(ApiWrapper.PREFIX_SOURCE + key)
 				.sourceKey(ApiWrapper.PREFIX_SOURCEKEY + key)
@@ -807,8 +802,7 @@ public class SearchApiTest {
 				.fields(Collections.singletonMap(key + "_name", key + "_value"))
 				.build();
 		events.add(event);
-		event = new Event
-				.Builder(id2)
+		event = Event.Builder.getDefault(id2)
 				.node("name")
 				.source(ApiWrapper.PREFIX_SOURCE + key)
 				.sourceKey(ApiWrapper.PREFIX_SOURCEKEY + key)

@@ -33,24 +33,24 @@ import ru.keich.mon.servicemanager.entity.Entity;
 
 @Getter
 public class Event extends Entity {
-	
+
 	public static final String FIELD_ENDSON = "endsOn";
 	public static final String FIELD_NODE = "node";
 	public static final String FIELD_SUMMARY = "summary";
 	public static final String FIELD_ITEMIDS = "itemIds";
 	public static final String FIELD_CALCULATED = "calculated";
-	
+
 	public enum EventType {
 		NOTSET, PROBLEM, RESOLUTION, INFORMATION
 	}
-	
+
 	private final EventType type;
 	private final String node;
 	private final String summary;
 	private final Instant endsOn;
 	private final Set<String> itemIds;
 	private final Boolean calculated;
-	
+
 	@JsonCreator
 	public Event(@JsonProperty(value = "id", required = true) String id,
 			@JsonProperty(value = "version", required = false) Long version,
@@ -81,7 +81,7 @@ public class Event extends Entity {
 	public static Set<Object> getEndsOnForIndex(Event event) {
 		return event.endsOn == null ? Collections.emptySet() : Collections.singleton(event.endsOn);
 	}
-	
+
 	public static Integer getCalculatedForIndex(Event event) {
 		return event.calculated ? 1 : 0;
 	}
@@ -93,15 +93,14 @@ public class Event extends Entity {
 	public static Set<Object> getSummaryForQuery(Event event) {
 		return Collections.singleton(event.getSummary());
 	}
-	
+
 	@Override
 	public String toString() {
 		return "Event [id=" + getId() + ", type=" + type + ", status=" + getStatus() +
 				", createdOn=" + getCreatedOn() + ", updatedOn=" + getUpdatedOn() + ", deletedOn=" + getDeletedOn() +
 				", fields=" + getFields() + "]";
 	}
-	
-	@Getter
+
 	public static class Builder extends Entity.Builder<String, Event> {
 		protected String node;
 		protected String summary;
@@ -111,7 +110,7 @@ public class Event extends Entity {
 		protected Set<String> itemIds;
 		protected Boolean calculated;
 
-		public Builder(String id) {
+		protected Builder(String id) {
 			super(id);
 		}
 
@@ -128,23 +127,23 @@ public class Event extends Entity {
 
 		@Override
 		public Event build() {
-			return new Event(this.id,
-			version,
-			source,
-			sourceKey,
-			sourceType,
-			node,
-			summary,
-			type,
-			status,
-			fields,
-			fromHistory,
-			createdOn,
-			updatedOn,
-			deletedOn,
-			endsOn,
-			itemIds,
-			calculated);
+			return new Event(getId(),
+					getVersion(),
+					getSource(),
+					getSourceKey(),
+					getSourceType(),
+					getNode(),
+					getSummary(),
+					getType(),
+					getStatus(),
+					getFields(),
+					getFromHistory(),
+					getCreatedOn(),
+					getUpdatedOn(),
+					getDeletedOn(),
+					getEndsOn(),
+					getItemIds(),
+					getCalculated());
 		}
 
 		public static Event.Builder getDefault(String id) {
@@ -195,7 +194,7 @@ public class Event extends Entity {
 			this.itemIds = itemIds;
 			return this;
 		}
-		
+
 		public Builder itemIdsUpdate(Consumer<Set<String>> s) {
 			itemIds = new HashSet<>(itemIds);
 			s.accept(itemIds);
@@ -255,10 +254,38 @@ public class Event extends Entity {
 			super.fields(fields);
 			return this;
 		}
-		
+
 		public Builder calculated(Boolean calculated) {
 			this.calculated = calculated;
 			return this;
+		}
+
+		public String getNode() {
+			return node;
+		}
+
+		public String getSummary() {
+			return summary;
+		}
+
+		public EventType getType() {
+			return type;
+		}
+
+		public BaseStatus getStatus() {
+			return status;
+		}
+
+		public Instant getEndsOn() {
+			return endsOn;
+		}
+
+		public Set<String> getItemIds() {
+			return Collections.unmodifiableSet(itemIds);
+		}
+
+		public Boolean getCalculated() {
+			return calculated;
 		}
 
 	}

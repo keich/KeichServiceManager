@@ -33,7 +33,7 @@ import ru.keich.mon.servicemanager.SourceType;
 @Getter
 @JsonFilter("propertiesFilter")
 public class Entity {
-	
+
 	public static final String FIELD_VERSION = "version";
 	public static final String FIELD_CREATEDON = "createdOn";
 	public static final String FIELD_UPDATEDON = "updatedOn";
@@ -47,21 +47,21 @@ public class Entity {
 	public static final String FIELD_ID = "id";
 
 	private final String id;
-	
+
 	private final Long version;
 	private final String source;
 	private final String sourceKey;
 	private final SourceType sourceType;
 
 	private final BaseStatus status;
-	
+
 	private final Instant createdOn;
 	private final Instant updatedOn;
 	private final Instant deletedOn;
 
 	private final Set<String> fromHistory;
 	private final Map<String, String> fields;
-	
+
 	public Entity(String id,
 			Long version,
 			String source,
@@ -73,7 +73,7 @@ public class Entity {
 			Instant updatedOn,
 			Instant deletedOn,
 			BaseStatus status) {
-		
+
 		this.id = id;
 		this.version = version;
 		this.source = source;
@@ -86,7 +86,7 @@ public class Entity {
 		this.fields = fields;
 		this.status = status;
 	}
-	
+
 	public static Set<Object> getSourceForIndex(Entity entity) {
 		return Collections.singleton(entity.getSource());
 	}
@@ -98,35 +98,35 @@ public class Entity {
 	public static Set<Object> getSourceTypeForIndex(Entity entity) {
 		return Collections.singleton(entity.getSourceType());
 	}
-	
+
 	public static Long getVersionForIndex(Entity entity) {
 		return entity.getVersion();
 	}
-	
+
 	public static Set<Object> getDeletedOnForIndex(Entity entity) {
 		return entity.deletedOn == null ? Collections.emptySet() : Collections.singleton(entity.deletedOn);
 	}
-	
+
 	public static Set<Object> getUpdatedOnForIndex(Entity entity) {
 		return entity.updatedOn == null ? Collections.emptySet() : Collections.singleton(entity.updatedOn);
 	}
-	
+
 	public static Set<Object> getCreatedOnForIndex(Entity entity) {
 		return entity.createdOn == null ? Collections.emptySet() : Collections.singleton(entity.createdOn);
 	}
-	
+
 	public static Set<Object> getFieldsForIndex(Entity entity) {
 		return entity.fields.entrySet().stream().collect(Collectors.toSet());
 	}
-	
+
 	public static Set<Object> getFromHistoryForIndex(Entity entity) {
 		return entity.getFromHistory().stream().collect(Collectors.toSet());
 	}
-	
+
 	public static Integer getStatusForIndex(Entity entity) {
 		return entity.getStatus().getInt();
 	}
-	
+
 	public static Object parseKeyValString(String str) {
 		try {
 			var newlinePos = str.indexOf(10);
@@ -141,7 +141,7 @@ public class Entity {
 		}
 		return str;
 	}
-	
+
 	public static Object fieldValueOf(String fieldName, String str) {
 		if(str == null) {
 			return null;
@@ -162,17 +162,17 @@ public class Entity {
 		}
 		return str;
 	}
-	
+
 	@JsonIgnore
 	public boolean isNotDeleted() {
 		return deletedOn == null;
 	}
-	
+
 	@JsonIgnore
 	public boolean isDeleted() {
 		return deletedOn != null;
 	}
-	
+
 	@Override
 	public int hashCode() {
 		return Objects.hash(id);
@@ -190,7 +190,6 @@ public class Entity {
 		return Objects.equals(id, other.id);
 	}
 
-	@Getter
 	public static abstract class Builder<K, B extends Entity> {
 
 		protected final String id;
@@ -205,7 +204,7 @@ public class Entity {
 		protected Set<String> fromHistory;
 		protected Map<String, String> fields;
 
-		public Builder(String id) {
+		protected Builder(String id) {
 			this.id = id;
 			fromHistory = Collections.emptySet();
 		}
@@ -276,6 +275,50 @@ public class Entity {
 				this.status = status;
 			}
 			return this;
+		}
+
+		public String getId() {
+			return id;
+		}
+
+		public Long getVersion() {
+			return version;
+		}
+
+		public String getSource() {
+			return source;
+		}
+
+		public String getSourceKey() {
+			return sourceKey;
+		}
+
+		public SourceType getSourceType() {
+			return sourceType;
+		}
+
+		public BaseStatus getStatus() {
+			return status;
+		}
+
+		public Instant getCreatedOn() {
+			return createdOn;
+		}
+
+		public Instant getUpdatedOn() {
+			return updatedOn;
+		}
+
+		public Instant getDeletedOn() {
+			return deletedOn;
+		}
+
+		public Set<String> getFromHistory() {
+			return Collections.unmodifiableSet(fromHistory);
+		}
+
+		public Map<String, String> getFields() {
+			return Collections.unmodifiableMap(fields);
 		}
 
 	}

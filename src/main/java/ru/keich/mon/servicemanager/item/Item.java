@@ -55,23 +55,22 @@ public class Item extends Entity {
 	private final Set<String> childrenIds;
 
 	private final boolean hasChildren;
-	
+
 	private final String name;
 	
-	
 	private final Map<String, BaseStatus> eventsStatus;
-	
+
 	@JsonSerialize(using = AggregateStatusSerializer.class)
 	private final AggregateStatus aggStatus; 
-	
+
 	private final List<Item> children;
-	
+
 	private final List<Item> parents;
-	
+
 	private final List<Event> events;
-	
+
 	private final ItemMaintenance maintenance;
-	
+
 	@JsonCreator
 	public Item(
 			@JsonProperty(value = "id", required = true) String id,
@@ -109,7 +108,7 @@ public class Item extends Entity {
 		this.aggStatus = aggStatus;
 		this.maintenance = maintenance;
 	}
-	
+
 	public boolean isMaintenanceOn() {
 		return maintenance.test();
 	}
@@ -122,19 +121,19 @@ public class Item extends Entity {
 				.flatMap(Set::stream)
 				.collect(Collectors.toSet());
 	}
-	
+
 	public static Set<Object> getParentsForIndex(Item item) {
 		return Collections.unmodifiableSet(item.getChildrenIds());
 	}
-	
+
 	public static Set<Object> getNameForQuery(Item item) {
 		return Collections.singleton(item.getName().toUpperCase());
 	}
-	
+
 	public static Set<Object> getEventsIdsForIndex(Item item) {
 		return Collections.unmodifiableSet(item.getEventsStatus().keySet());
 	}
-	
+
 	public static Set<Object>  getAggStatusForQuery(Item item) {
 		return Collections.singleton(item.getAggStatus().getMax());
 	}
@@ -156,6 +155,7 @@ public class Item extends Entity {
 		}
 		return Entity.fieldValueOf(fieldName, str);
 	}
+
 	@Override
 	public String toString() {
 		return "Item [name=" + name + ", status=" + getStatus() + ", fields=" + getFields() + ", rules=" + rules + ", filters=" + filters
@@ -165,29 +165,26 @@ public class Item extends Entity {
 				+ getId() + "]";
 	}
 
-	@Getter 
 	public static class Builder extends Entity.Builder<String, Item>  {
 
 		@Override
 		public String toString() {
-			return "Builder [status=" + status + ", getId()=" + getId() + "]";
+			return "Builder [status=" + getStatus() + ", getId()=" + getId() + "]";
 		}
 
 		protected Map<String, ItemRule> rules;
 		protected Map<String, ItemFilter> filters;
 		protected Map<String, BaseStatus> eventsStatus;
-		protected AggregateStatus aggStatus;
+		protected AggregateStatus aggStatus = AggregateStatus.EMPTY;
 		protected Set<String> childrenIds;
 		protected String name;
 		protected List<Item> children;
 		protected List<Item> parents;
 		protected List<Event> events;
-		protected ItemMaintenance maintenance;
+		protected ItemMaintenance maintenance = ItemMaintenance.EMPTY;;
 
-		public Builder(String id) {
+		protected Builder(String id) {
 			super(id);
-			aggStatus = AggregateStatus.EMPTY;
-			maintenance = ItemMaintenance.EMPTY;
 		}
 
 		public Builder(Item item) {
@@ -206,29 +203,29 @@ public class Item extends Entity {
 
 		@Override
 		public Item build() {
-			return new Item(this.id,
-			version,
-			source,
-			sourceKey,
-			sourceType,
-			status,
-			name,
-			fields,
-			rules,
-			filters,
-			childrenIds,
-			fromHistory,
-			createdOn,
-			updatedOn,
-			deletedOn,
-			Collections.unmodifiableMap(eventsStatus),
-			aggStatus,
-			children,
-			parents,
-			events,
-			maintenance);
+			return new Item(getId(),
+			getVersion(),
+			getSource(),
+			getSourceKey(),
+			getSourceType(),
+			getStatus(),
+			getName(),
+			getFields(),
+			getRules(),
+			getFilters(),
+			getChildrenIds(),
+			getFromHistory(),
+			getCreatedOn(),
+			getUpdatedOn(),
+			getDeletedOn(),
+			getEventsStatus(),
+			getAggStatus(),
+			getChildren(),
+			getParents(),
+			getEvents(),
+			getMaintenance());
 		}
-		
+
 		public static Item.Builder getDefault(String id) {
 			return new Item
 					.Builder(id)
@@ -368,6 +365,46 @@ public class Item extends Entity {
 		public Builder maintenance(ItemMaintenance maintenance) {
 			this.maintenance = maintenance;
 			return this;
+		}
+
+		public Map<String, ItemRule> getRules() {
+			return Collections.unmodifiableMap(rules);
+		}
+
+		public Map<String, ItemFilter> getFilters() {
+			return Collections.unmodifiableMap(filters);
+		}
+
+		public Map<String, BaseStatus> getEventsStatus() {
+			return Collections.unmodifiableMap(eventsStatus);
+		}
+
+		public AggregateStatus getAggStatus() {
+			return aggStatus;
+		}
+
+		public Set<String> getChildrenIds() {
+			return Collections.unmodifiableSet(childrenIds);
+		}
+
+		public String getName() {
+			return name;
+		}
+
+		public List<Item> getChildren() {
+			return Collections.unmodifiableList(children);
+		}
+
+		public List<Item> getParents() {
+			return Collections.unmodifiableList(parents);
+		}
+
+		public List<Event> getEvents() {
+			return Collections.unmodifiableList(events);
+		}
+
+		public ItemMaintenance getMaintenance() {
+			return maintenance;
 		}
 
 	}

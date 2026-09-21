@@ -54,14 +54,14 @@ public class ControllersTest {
 	public void itemGetChildren() {
 		var key = "itemGetChildren";
 		
-		var child = new Item.Builder(key + "_child")
+		var child = Item.Builder.getDefault(key + "_child")
 				.source(ApiWrapper.PREFIX_SOURCE + key)
 				.sourceKey(ApiWrapper.PREFIX_SOURCEKEY + key)
 				.name("name1")
 				.eventsStatus(Collections.emptyMap())
 				.build();
 		
-		var parent = new Item.Builder(key + "_parent")
+		var parent = Item.Builder.getDefault(key + "_parent")
 				.source(ApiWrapper.PREFIX_SOURCE + key)
 				.sourceKey(ApiWrapper.PREFIX_SOURCEKEY + key)
 				.name("name1")
@@ -122,7 +122,7 @@ public class ControllersTest {
 		var key = "itemFiltersEventMapping";
 		var identity = key;
 		var filter = new ItemFilter(BaseStatus.INDETERMINATE, false, Map.of("identity", identity));
-		var child = new Item.Builder(key + "_child")
+		var child = Item.Builder.getDefault(key + "_child")
 				.source(ApiWrapper.PREFIX_SOURCE + key)
 				.sourceKey(ApiWrapper.PREFIX_SOURCEKEY + key)
 				.name("name1")
@@ -130,7 +130,7 @@ public class ControllersTest {
 				.filters(Map.of("by_identity",filter))
 				.build();
 		
-		var parent = new Item.Builder(key + "_parent")
+		var parent = Item.Builder.getDefault(key + "_parent")
 				.source(ApiWrapper.PREFIX_SOURCE + key)
 				.sourceKey(ApiWrapper.PREFIX_SOURCEKEY + key)
 				.name("name1")
@@ -140,7 +140,7 @@ public class ControllersTest {
 
 		apiWrapper.itemAdd(List.of(child, parent));
 		
-		var event1 = new Event.Builder(key + "_event1")
+		var event1 = Event.Builder.getDefault(key + "_event1")
 				.source(ApiWrapper.PREFIX_SOURCE + key)
 				.sourceKey(ApiWrapper.PREFIX_SOURCEKEY + key)
 				.node("node1")
@@ -158,7 +158,7 @@ public class ControllersTest {
 		assertEquals(BaseStatus.WARNING, apiWrapper.itemGet(child.getId()).getStatus());
 		
 		
-		var event2 = new Event.Builder(key + "_event2")
+		var event2 = Event.Builder.getDefault(key + "_event2")
 				.source(ApiWrapper.PREFIX_SOURCE + key)
 				.sourceKey(ApiWrapper.PREFIX_SOURCEKEY + key)
 				.node("node1")
@@ -175,7 +175,7 @@ public class ControllersTest {
 		assertEquals(BaseStatus.CRITICAL, apiWrapper.itemGet(parent.getId()).getStatus());
 		assertEquals(BaseStatus.CRITICAL, apiWrapper.itemGet(child.getId()).getStatus());
 		
-		var event3 = new Event.Builder(key + "_event3")
+		var event3 = Event.Builder.getDefault(key + "_event3")
 				.source(ApiWrapper.PREFIX_SOURCE + key)
 				.sourceKey(ApiWrapper.PREFIX_SOURCEKEY + key)
 				.node("node1")
@@ -208,7 +208,7 @@ public class ControllersTest {
 		var key = "itemEventClear";
 		var identity = key;
 		var filter = new ItemFilter(BaseStatus.INDETERMINATE, false, Map.of("identity", identity));
-		var item = new Item.Builder(key + "_id")
+		var item = Item.Builder.getDefault(key + "_id")
 				.source(ApiWrapper.PREFIX_SOURCE + key)
 				.sourceKey(ApiWrapper.PREFIX_SOURCEKEY + key)
 				.name("name1")
@@ -216,7 +216,7 @@ public class ControllersTest {
 				.filters(Map.of("by_identity", filter))
 				.build();
 		apiWrapper.itemAdd(List.of(item));
-		var event1 = new Event.Builder(key + "_event1")
+		var event1 = Event.Builder.getDefault(key + "_event1")
 				.source(ApiWrapper.PREFIX_SOURCE + key)
 				.sourceKey(ApiWrapper.PREFIX_SOURCEKEY + key)
 				.node("node1")
@@ -250,7 +250,7 @@ public class ControllersTest {
 		var key = "itemEventDeleted";
 		var identity = key;
 		var filter = new ItemFilter(BaseStatus.INDETERMINATE, false, Map.of("identity", identity));
-		var item = new Item.Builder(key + "_id")
+		var item = Item.Builder.getDefault(key + "_id")
 				.source(ApiWrapper.PREFIX_SOURCE + key)
 				.sourceKey(ApiWrapper.PREFIX_SOURCEKEY + key)
 				.name("name1")
@@ -258,7 +258,7 @@ public class ControllersTest {
 				.filters(Map.of("by_identity", filter))
 				.build();
 		apiWrapper.itemAdd(List.of(item));
-		var event1 = new Event.Builder(key + "_event1")
+		var event1 = Event.Builder.getDefault(key + "_event1")
 				.source(ApiWrapper.PREFIX_SOURCE + key)
 				.sourceKey(ApiWrapper.PREFIX_SOURCEKEY + key)
 				.node("node1")
@@ -389,14 +389,14 @@ public class ControllersTest {
 	@Test
 	public void itemTree()  throws InterruptedException {
 		var key = "itemTree";
-		var child = new Item.Builder(key + "_child")
+		var child = Item.Builder.getDefault(key + "_child")
 				.source(ApiWrapper.PREFIX_SOURCE + key)
 				.sourceKey(ApiWrapper.PREFIX_SOURCEKEY + key)
 				.name("name1")
 				.eventsStatus(Collections.emptyMap())
 				.build();
 		
-		var parent = new Item.Builder(key + "_parent")
+		var parent = Item.Builder.getDefault(key + "_parent")
 				.source(ApiWrapper.PREFIX_SOURCE + key)
 				.sourceKey(ApiWrapper.PREFIX_SOURCEKEY + key)
 				.name("name1")
@@ -415,7 +415,7 @@ public class ControllersTest {
 		var key = "updateItemAndKeepStatus";
 		var identity = key;
 		var filter = new ItemFilter(BaseStatus.INDETERMINATE, false, Map.of("identity", identity));
-		var item = new Item.Builder(key + "_id")
+		var item = Item.Builder.getDefault(key + "_id")
 				.source(ApiWrapper.PREFIX_SOURCE + key)
 				.sourceKey(ApiWrapper.PREFIX_SOURCEKEY + key)
 				.name("name1")
@@ -423,7 +423,7 @@ public class ControllersTest {
 				.filters(Map.of("by_identity", filter))
 				.build();
 		apiWrapper.itemAdd(List.of(item));
-		var event1 = new Event.Builder(key + "_event1")
+		var event1 = Event.Builder.getDefault(key + "_event1")
 				.source(ApiWrapper.PREFIX_SOURCE + key)
 				.sourceKey(ApiWrapper.PREFIX_SOURCEKEY + key)
 				.node("node1")
@@ -458,7 +458,7 @@ public class ControllersTest {
 	@Test
 	public void eventDeleteLogic() {	
 		var key = "eventDeleteLogic";
-		var item = new Item.Builder(key + "_id")
+		var item = Item.Builder.getDefault(key + "_id")
 				.source(ApiWrapper.PREFIX_SOURCE + key)
 				.sourceKey(ApiWrapper.PREFIX_SOURCEKEY + key)
 				.name("name1")
@@ -483,7 +483,7 @@ public class ControllersTest {
 		var endsOn = Instant.now().plus(1, ChronoUnit.HOURS);
 		var absolute = new ItemMaintenance.AbsoluteMaintenance(startsOn, endsOn);
 		var maintenance = new ItemMaintenance(absolute);
-		var item = new Item.Builder(key + "_id")
+		var item = Item.Builder.getDefault(key + "_id")
 				.source(ApiWrapper.PREFIX_SOURCE + key)
 				.sourceKey(ApiWrapper.PREFIX_SOURCEKEY + key)
 				.name("name1")
@@ -493,7 +493,7 @@ public class ControllersTest {
 				.build();
 		apiWrapper.itemAdd(List.of(item));
 		
-		var event = new Event.Builder(key + "_event1")
+		var event = Event.Builder.getDefault(key + "_event1")
 				.source(ApiWrapper.PREFIX_SOURCE + key)
 				.sourceKey(ApiWrapper.PREFIX_SOURCEKEY + key)
 				.node("node1")
@@ -511,7 +511,7 @@ public class ControllersTest {
 	@Test
 	public void eventCalculated() throws IOException, InterruptedException {	
 		var key = "eventCalculated";
-		var event = new Event.Builder(key + "_event1")
+		var event = Event.Builder.getDefault(key + "_event1")
 				.source(ApiWrapper.PREFIX_SOURCE + key)
 				.sourceKey(ApiWrapper.PREFIX_SOURCEKEY + key)
 				.node("node1")
