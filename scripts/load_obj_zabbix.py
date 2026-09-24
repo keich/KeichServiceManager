@@ -112,10 +112,10 @@ for groupId in groups:
     groupIds.append(groupId)
     children = group['children']
     del group['children']
-    objs.append({'id': groupId, 'source': source, 'sourceKey': sourcekey, 'name': group['name'], 'fields': group, 'children': children})
+    objs.append({'id': groupId, 'source': source, 'sourceKey': sourcekey, 'name': group['name'], 'fields': group, 'childrenIds': children})
 
-objs.append({'id': zabbix_id, 'source': source, 'sourceKey': sourcekey, 'name': zabbix_name, 'fields': {'name': zabbix_name,'zabbix_url': zabbix_url}, 'children': groupIds})
-objs.append({'id': '1', 'source': source, 'sourceKey': sourcekey, 'name': 'ROOT', 'fields': {'name': 'ROOT'}, 'children': [zabbix_id]})
+objs.append({'id': zabbix_id, 'source': source, 'sourceKey': sourcekey, 'name': zabbix_name, 'fields': {'name': zabbix_name,'zabbix_url': zabbix_url}, 'childrenIds': groupIds})
+objs.append({'id': '1', 'source': source, 'sourceKey': sourcekey, 'name': 'ROOT', 'fields': {'name': 'ROOT'}, 'childrenIds': [zabbix_id]})
 
 events = []
 
