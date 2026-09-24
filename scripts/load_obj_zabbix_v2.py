@@ -130,9 +130,9 @@ for groupId in kGroups:
     group = kGroups[groupId]
     fields = group['fields']
     children = list(group['children'].keys())
-    objs.append({'id': groupId, 'source': source, 'sourceKey': sourcekey, 'name': fields['name'],  'fields': fields, 'children': children})
+    objs.append({'id': groupId, 'source': source, 'sourceKey': sourcekey, 'name': fields['name'],  'fields': fields, 'childrenIds': children})
 
-objs.append({'id': '1', 'source': source, 'sourceKey': sourcekey, 'name': 'ROOT', 'fields': {'name': 'ROOT'}, 'children': [zabbix_id]})
+objs.append({'id': '1', 'source': source, 'sourceKey': sourcekey, 'name': 'ROOT', 'fields': {'name': 'ROOT'}, 'childrenIds': [zabbix_id]})
 
 events = []
 
