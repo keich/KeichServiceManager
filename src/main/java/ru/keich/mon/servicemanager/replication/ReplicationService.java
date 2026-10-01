@@ -6,14 +6,19 @@ import javax.net.ssl.SSLException;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
+import org.springframework.web.reactive.function.client.WebClient;
 
+import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import lombok.extern.java.Log;
-import ru.keich.mon.servicemanager.entity.EntityReplication;
-import ru.keich.mon.servicemanager.event.Event;
+import reactor.netty.http.client.HttpClient;
+import ru.keich.mon.servicemanager.event.EventReplication;
 import ru.keich.mon.servicemanager.event.EventService;
-import ru.keich.mon.servicemanager.item.Item;
+import ru.keich.mon.servicemanager.item.ItemReplication;
 import ru.keich.mon.servicemanager.item.ItemService;
 
 /*
@@ -37,16 +42,28 @@ import ru.keich.mon.servicemanager.item.ItemService;
 @ConditionalOnProperty(name = "replication.neighbor")
 public class ReplicationService {
 
-	final private EntityReplication<Event> eventReplication;
-	final private EntityReplication<Item> itemReplication;
+	final private EventReplication eventReplication;
+	final private ItemReplication itemReplication;
 
 	public ReplicationService(EventService eventService, ItemService itemService,
 			@Value("${replication.nodename}") String nodeName,
-			@Value("${replication.neighbor}") String replicationNeighbor) throws SSLException {
-		eventReplication = new EntityReplication<Event>(eventService, nodeName, replicationNeighbor, "/api/v1/event", Event.class);
-		itemReplication = new EntityReplication<Item>(itemService, nodeName, replicationNeighbor, "/api/v1/item", Item.class);
+			@Value("${replication.neighbor}") String replicationNeighbor) throws SSLException, IllegalArgumentException, IllegalAccessException, NoSuchFieldException {
+		var webClient = getWebClient(replicationNeighbor);
+		eventReplication = new EventReplication(webClient, nodeName, eventService::addOrUpdate);
+		itemReplication = new ItemReplication(webClient, nodeName, itemService::addOrUpdate);
 	}
 
+	private WebClient getWebClient(String url) throws SSLException {
+		final ExchangeStrategies strategies = ExchangeStrategies.builder()
+				.codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(2621440)).build();
+		var sslContext = SslContextBuilder.forClient().trustManager(InsecureTrustManagerFactory.INSTANCE).build();
+		var httpClient = HttpClient.create().secure(t -> t.sslContext(sslContext));
+		return WebClient
+				.builder().baseUrl(url)
+				.clientConnector(new ReactorClientHttpConnector(httpClient))
+				.exchangeStrategies(strategies).build();
+	}
+	
 	//TODO to params
 	@Scheduled(fixedRate = 5, timeUnit = TimeUnit.SECONDS)
 	public void replicationScheduled() {

@@ -1,20 +1,14 @@
 package ru.keich.mon.servicemanager.entity;
 
 import java.net.URI;
-
-import javax.net.ssl.SSLException;
+import java.util.function.Consumer;
+import java.util.logging.Logger;
 
 import org.springframework.http.MediaType;
-import org.springframework.http.client.reactive.ReactorClientHttpConnector;
-import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriBuilder;
 
-import io.netty.handler.ssl.SslContextBuilder;
-import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
-import lombok.extern.java.Log;
 import reactor.core.publisher.Flux;
-import reactor.netty.http.client.HttpClient;
 import ru.keich.mon.servicemanager.AddResponseHeaderFilter;
 
 /*
@@ -33,36 +27,29 @@ import ru.keich.mon.servicemanager.AddResponseHeaderFilter;
  * limitations under the License.
  */
 
-@Log
 public class EntityReplication<T extends Entity> {
 
 	private final String nodeName;
-	private final String replicationNeighbor;
 	private final String path;
 	private final Class<T> elementClass;
-	
-	private final EntityService<T> entityService;
+	private final Consumer<T> consumer;
+
 	private final WebClient webClient;
-	
+	private final Logger log;
+
 	private final EntityReplicationState state = new EntityReplicationState();
 	
-	public EntityReplication(EntityService<T> entityService, String nodeName, String replicationNeighbor, String path, Class<T> elementClass) throws SSLException {
-		this.entityService = entityService;
+	public EntityReplication(WebClient webClient, String nodeName, String path, Class<T> elementClass, Consumer<T> consumer, Logger log) throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException {
+		this.webClient = webClient;
 		this.nodeName = nodeName;
-		this.replicationNeighbor = replicationNeighbor;
 		this.path = path;
 		this.elementClass = elementClass;
-		final ExchangeStrategies strategies = ExchangeStrategies.builder()
-				.codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(2621440)).build();
-		var sslContext = SslContextBuilder.forClient().trustManager(InsecureTrustManagerFactory.INSTANCE).build();
-		var httpClient = HttpClient.create().secure(t -> t.sslContext(sslContext));
-		webClient = WebClient
-				.builder().baseUrl(replicationNeighbor + path)
-				.clientConnector(new ReactorClientHttpConnector(httpClient))
-				.exchangeStrategies(strategies).build();
+		this.consumer = consumer;
+		this.log = log;	
 	}
-	
+
 	private URI getUri(UriBuilder uriBuilder) {
+		uriBuilder.path(path);
 		if(state.isFirstRun()) {
 			return uriBuilder.queryParam(Entity.FIELD_VERSION, "gt:0").build();
 		}
@@ -74,13 +61,9 @@ public class EntityReplication<T extends Entity> {
 		doReplication(() -> {});
 	}
 	
-	public void doReplication(Runnable onFinally) {
-		if ("none".equals(replicationNeighbor)) {
-			return;
-		}
-		
+	public void doReplication(Runnable onFinally) {	
 		if (state.isActive()) {
-			log.info("Entity " + path + ". Replication still active. State [ " + state.toString() + " ]");
+			log.info("Aactive.   State [ " + state.toString() + " ]");
 			return;
 		}
 
@@ -106,11 +89,11 @@ public class EntityReplication<T extends Entity> {
 				})
 				.doFirst(() -> {
 					state.setActiveTrue();
-					log.info("Entity " + path + ". Replication start. State [ " + state.toString() + " ]");
+					log.info("Start.     State [ " + state.toString() + " ]");
 				})
 				.doOnComplete(() -> {
 					state.setFirstRunFalse();
-					log.info("Entity " + path + ". Replication is completed. State [ " + state.toString() + " ]");
+					log.info("Completed. State [ " + state.toString() + " ]");
 				})
 				.doFinally(s -> {
 					state.setActiveFalse();
@@ -119,8 +102,9 @@ public class EntityReplication<T extends Entity> {
 				.doOnNext(entity -> {
 					state.updateVersion(entity.getVersion());
 					state.incrementCounters(entity.getDeletedOn());
-					entityService.addOrUpdate(entity);
+					consumer.accept(entity);
 				})
 				.subscribe();
 	}
+
 }
