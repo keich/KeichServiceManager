@@ -2,11 +2,19 @@ package ru.keich.mon.servicemanager.replication;
 
 import java.util.concurrent.TimeUnit;
 
-import org.springframework.scheduling.annotation.Scheduled;
+import javax.net.ssl.SSLException;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+
+import lombok.extern.java.Log;
 import ru.keich.mon.servicemanager.entity.EntityReplication;
 import ru.keich.mon.servicemanager.event.Event;
+import ru.keich.mon.servicemanager.event.EventService;
 import ru.keich.mon.servicemanager.item.Item;
+import ru.keich.mon.servicemanager.item.ItemService;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -24,19 +32,25 @@ import ru.keich.mon.servicemanager.item.Item;
  * limitations under the License.
  */
 
-public class Replication {
+@Service
+@Log
+@ConditionalOnProperty(name = "replication.neighbor")
+public class ReplicationService {
+
 	final private EntityReplication<Event> eventReplication;
 	final private EntityReplication<Item> itemReplication;
-	
-	public Replication(EntityReplication<Event> eventReplication, EntityReplication<Item> itemReplication) {
-		super();
-		this.eventReplication = eventReplication;
-		this.itemReplication = itemReplication;
+
+	public ReplicationService(EventService eventService, ItemService itemService,
+			@Value("${replication.nodename}") String nodeName,
+			@Value("${replication.neighbor}") String replicationNeighbor) throws SSLException {
+		eventReplication = new EntityReplication<Event>(eventService, nodeName, replicationNeighbor, "/api/v1/event", Event.class);
+		itemReplication = new EntityReplication<Item>(itemService, nodeName, replicationNeighbor, "/api/v1/item", Item.class);
 	}
-	
+
 	//TODO to params
 	@Scheduled(fixedRate = 5, timeUnit = TimeUnit.SECONDS)
 	public void replicationScheduled() {
 		itemReplication.doReplication(() -> eventReplication.doReplication());
 	}
+
 }
