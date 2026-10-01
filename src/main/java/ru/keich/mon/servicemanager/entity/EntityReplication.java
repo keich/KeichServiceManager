@@ -62,7 +62,7 @@ public class EntityReplication<T extends Entity> {
 				.exchangeStrategies(strategies).build();
 	}
 	
-	public URI getUri(UriBuilder uriBuilder) {
+	private URI getUri(UriBuilder uriBuilder) {
 		if(state.isFirstRun()) {
 			return uriBuilder.queryParam(Entity.FIELD_VERSION, "gt:0").build();
 		}
