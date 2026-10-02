@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import ru.keich.mon.servicemanager.entity.EntityController;
+import ru.keich.mon.servicemanager.entity.EntitySchema;
 
 /*
  * Copyright 2024 the original author or authors.
@@ -67,6 +68,13 @@ public class EventController extends EntityController<Event> {
 	@CrossOrigin(origins = "*")
 	public ResponseEntity<Integer> deleteByFilter(@RequestBody(required = false) List<String> ids, @RequestParam Map<String, String> reqParam) {
 		return super.deleteByFilter(ids, reqParam);
+	}
+
+	@Override
+	@GetMapping(value = "/eventSchema", produces = "application/json")
+	@CrossOrigin(origins = "*")
+	public ResponseEntity<EntitySchema> getMaxVersion() {
+		return super.getMaxVersion();
 	}
 
 }

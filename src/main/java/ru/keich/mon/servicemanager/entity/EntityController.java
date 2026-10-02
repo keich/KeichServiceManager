@@ -96,5 +96,11 @@ public class EntityController<T extends Entity> {
 		}
 		return ResponseEntity.notFound().build();
 	}
+	
+	public ResponseEntity<EntitySchema> getMaxVersion() {
+		var schema = new EntitySchema();
+		schema.setMaxVersion(entityService.getMaxVersion());
+		return ResponseEntity.ok(schema);
+	}
 
 }

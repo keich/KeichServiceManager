@@ -23,7 +23,6 @@ public class EntityReplicationState {
 	private volatile boolean first = true;
 	private String neighborStartTime = "";
 	private Long maxVersion = 0L;
-	private Long minVersion = Long.MAX_VALUE;
 	private Long added = 0L;
 	private Long deleted = 0L;
 	private Instant startTime = Instant.now();
@@ -45,7 +44,6 @@ public class EntityReplicationState {
 		first = true;
 		neighborStartTime = "";
 		maxVersion = 0L;
-		minVersion = Long.MAX_VALUE;
 		reset();
 	}
 	
@@ -71,21 +69,12 @@ public class EntityReplicationState {
 		endTime = Instant.now();
 	}
 	
-	public void updateVersion(Long version) {
-		if (minVersion > version) {
-			minVersion = version;
-		}
-		if (maxVersion < version) {
-			maxVersion = version;
-		}
-	}
-	
 	public Long getMaxVersion() {
 		return maxVersion;
 	}
 	
-	public Long getMinVersion() {
-		return minVersion;
+	public void setMaxVersion(Long maxVersion) {
+		this.maxVersion = maxVersion;
 	}
 	
 	public Long getAdded() {
@@ -105,7 +94,6 @@ public class EntityReplicationState {
 	}
 
 	public void reset() {
-		minVersion = Long.MAX_VALUE;
 		added = 0L;
 		deleted = 0L;
 	}
@@ -118,7 +106,7 @@ public class EntityReplicationState {
 		} else {
 			time = endTime;
 		}
-		return " minVersion: " + minVersion + " maxVersion: " + maxVersion + " added: " + added + " deleted: "
+		return " maxVersion: " + maxVersion + " added: " + added + " deleted: "
 				+ deleted + " time spent " + (time.toEpochMilli() - startTime.toEpochMilli()) + " milliseconds";
 	}
 	

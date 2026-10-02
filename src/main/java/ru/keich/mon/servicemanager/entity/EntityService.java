@@ -127,6 +127,10 @@ public abstract class EntityService<T extends Entity> {
 	protected Long getNextVersion() {
 		return incrementVersion.incrementAndGet();
 	}
+	
+	public Long getMaxVersion() {
+		return incrementVersion.get();
+	}
 
 	protected abstract void queueRead(QueueInfo<String> info);	
 

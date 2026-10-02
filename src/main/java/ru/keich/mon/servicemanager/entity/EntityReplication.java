@@ -5,10 +5,12 @@ import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 import org.springframework.http.MediaType;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriBuilder;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import ru.keich.mon.servicemanager.AddResponseHeaderFilter;
 
 /*
@@ -56,11 +58,39 @@ public class EntityReplication<T extends Entity> {
 		return uriBuilder.queryParam(Entity.FIELD_VERSION, "gt:" + state.getMaxVersion())
 		.queryParam(Entity.FIELD_FROMHISTORY, "ni:" + nodeName).build();
 	}
-	
+
 	public void doReplication() {
 		doReplication(() -> {});
 	}
-	
+
+	private Mono<EntitySchema> getEntitySchema(ClientResponse response) {
+		var startTime = response.headers().header(AddResponseHeaderFilter.HEADER_START_TIME).stream()
+				.findFirst().orElse("");
+		if (state.isFirstRun()) {
+			state.setNeighborStartTime(startTime);
+		} else {
+			if (!state.getNeighborStartTime().equals(startTime)) {
+				var exception = new ChangedNeighborStartTimeException(
+						"NeighborStartTime is changed from " + state.getNeighborStartTime() + " to " + startTime);
+				state.setFirstRunTrue();
+				return Mono.error(exception);
+			}
+		}
+		return response.bodyToMono(EntitySchema.class);
+	}
+
+	private Flux<T> getEntities(ClientResponse response) {
+		var startTime = response.headers().header(AddResponseHeaderFilter.HEADER_START_TIME).stream()
+				.findFirst().orElse("");
+		if (!state.getNeighborStartTime().equals(startTime)) {
+			var exception = new ChangedNeighborStartTimeException(
+					"NeighborStartTime is changed from " + state.getNeighborStartTime() + " to " + startTime);
+			state.setFirstRunTrue();
+			return Flux.error(exception);
+		}
+		return response.bodyToFlux(elementClass);
+	}
+
 	public void doReplication(Runnable onFinally) {	
 		if (state.isActive()) {
 			log.info("Aactive.   State [ " + state.toString() + " ]");
@@ -70,22 +100,18 @@ public class EntityReplication<T extends Entity> {
 		state.reset();
 
 		webClient.get()
-				.uri(this::getUri)
+				.uri(b -> b.path(path + "Schema").build())
 				.accept(MediaType.APPLICATION_JSON)
-				.exchangeToFlux(response -> {
-					var startTime = response.headers().header(AddResponseHeaderFilter.HEADER_START_TIME).stream()
-							.findFirst().orElse("");
-					if (state.isFirstRun()) {
-						state.setNeighborStartTime(startTime);
-					} else {
-						if (!state.getNeighborStartTime().equals(startTime)) {
-							var exception = new ChangedNeighborStartTimeException(
-									"NeighborStartTime is changed from " + state.getNeighborStartTime() + " to " + startTime);
-							state.setFirstRunTrue();
-							return Flux.error(exception);
-						}
-					}
-					return response.bodyToFlux(elementClass);
+				.exchangeToMono(this::getEntitySchema)
+				.flatMapMany(schema -> {
+					return webClient.get()
+							.uri(b -> {
+								var url = getUri(b);
+								state.setMaxVersion(schema.getMaxVersion());
+								return url;
+							})
+							.accept(MediaType.APPLICATION_JSON)
+							.exchangeToFlux(this::getEntities);
 				})
 				.doFirst(() -> {
 					state.setActiveTrue();
@@ -100,7 +126,6 @@ public class EntityReplication<T extends Entity> {
 					onFinally.run();
 				})
 				.doOnNext(entity -> {
-					state.updateVersion(entity.getVersion());
 					state.incrementCounters(entity.getDeletedOn());
 					consumer.accept(entity);
 				})

@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import lombok.extern.java.Log;
 import ru.keich.mon.servicemanager.entity.EntityController;
+import ru.keich.mon.servicemanager.entity.EntitySchema;
 import ru.keich.mon.servicemanager.event.Event;
 import ru.keich.mon.servicemanager.event.EventService;
 
@@ -181,6 +182,13 @@ public class ItemController extends EntityController<Item> {
 		outItem.parents(parents);
 		history.remove(childId);
 		return outItem.build();
+	}
+
+	@Override
+	@GetMapping(value = "/itemSchema", produces = "application/json")
+	@CrossOrigin(origins = "*")
+	public ResponseEntity<EntitySchema> getMaxVersion() {
+		return super.getMaxVersion();
 	}
 
 }
