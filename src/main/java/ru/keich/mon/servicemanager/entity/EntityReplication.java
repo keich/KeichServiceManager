@@ -10,7 +10,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriBuilder;
 
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 import ru.keich.mon.servicemanager.AddResponseHeaderFilter;
 
 /*
@@ -63,7 +62,7 @@ public class EntityReplication<T extends Entity> {
 		doReplication(() -> {});
 	}
 
-	private Mono<EntitySchema> getEntitySchema(ClientResponse response) {
+	private Flux<T> getEntities(ClientResponse response) {
 		var startTime = response.headers().header(AddResponseHeaderFilter.HEADER_START_TIME).stream()
 				.findFirst().orElse("");
 		if (state.isFirstRun()) {
@@ -73,21 +72,12 @@ public class EntityReplication<T extends Entity> {
 				var exception = new ChangedNeighborStartTimeException(
 						"NeighborStartTime is changed from " + state.getNeighborStartTime() + " to " + startTime);
 				state.setFirstRunTrue();
-				return Mono.error(exception);
+				return Flux.error(exception);
 			}
 		}
-		return response.bodyToMono(EntitySchema.class);
-	}
-
-	private Flux<T> getEntities(ClientResponse response) {
-		var startTime = response.headers().header(AddResponseHeaderFilter.HEADER_START_TIME).stream()
-				.findFirst().orElse("");
-		if (!state.getNeighborStartTime().equals(startTime)) {
-			var exception = new ChangedNeighborStartTimeException(
-					"NeighborStartTime is changed from " + state.getNeighborStartTime() + " to " + startTime);
-			state.setFirstRunTrue();
-			return Flux.error(exception);
-		}
+		var maxVersion = Long.valueOf(response.headers().header(EntityController.HEADER_MAXVERSION).stream()
+				.findFirst().orElse("0"));
+		state.setMaxVersion(maxVersion);
 		return response.bodyToFlux(elementClass);
 	}
 
@@ -100,19 +90,9 @@ public class EntityReplication<T extends Entity> {
 		state.reset();
 
 		webClient.get()
-				.uri(b -> b.path(path + "Schema").build())
+				.uri(b -> getUri(b))
 				.accept(MediaType.APPLICATION_JSON)
-				.exchangeToMono(this::getEntitySchema)
-				.flatMapMany(schema -> {
-					return webClient.get()
-							.uri(b -> {
-								var url = getUri(b);
-								state.setMaxVersion(schema.getMaxVersion());
-								return url;
-							})
-							.accept(MediaType.APPLICATION_JSON)
-							.exchangeToFlux(this::getEntities);
-				})
+				.exchangeToFlux(this::getEntities)
 				.doFirst(() -> {
 					state.setActiveTrue();
 					log.info("Start.     State [ " + state.toString() + " ]");
