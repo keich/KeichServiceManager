@@ -4,7 +4,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -36,6 +38,7 @@ public class EntityController<T extends Entity> {
 	private EntityService<T> entityService;
 
 	public static final String FILTER_NAME = "propertiesFilter";
+	public final static String HEADER_MAXVERSION = "KeichServiceManager-Max-Version";
 
 	protected final SimpleFilterProvider jsonDefaultFilter;
 
@@ -57,23 +60,27 @@ public class EntityController<T extends Entity> {
 		return jsonDefaultFilter;
 	}
 
-	protected ResponseEntity<String> applyFilter(Object obj, QueryParamsParser qp) {
+	protected ResponseEntity<String> applyFilter(Object obj, QueryParamsParser qp, Long maxVersion) {
 		var jsonFilter = getJsonFilter(qp.getProperties());
 		var mapper = JsonMapper.builder().filterProvider(jsonFilter).build();
-		return ResponseEntity.ok(mapper.writeValueAsString(obj));
+        var headers = new LinkedMultiValueMap<String, String>();
+        headers.add(HEADER_MAXVERSION, maxVersion.toString());
+        return new ResponseEntity<String>(mapper.writeValueAsString(obj), headers, HttpStatus.OK);
 	}
 
 	public ResponseEntity<String> find(MultiValueMap<String, String> reqParam) {
-		return entityService.sortAndLimitEnrich(reqParam, entityService::find, (s, qp) -> applyFilter(s.toList(), qp));
+		var maxVersion = entityService.getMaxVersion();
+		return entityService.sortAndLimitEnrich(reqParam, entityService::find, (s, qp) -> applyFilter(s.toList(), qp, maxVersion));
 	}
 
 	public ResponseEntity<String> findById(String id, MultiValueMap<String, String> reqParam) {
+		var maxVersion = entityService.getMaxVersion();
 		return entityService.sortAndLimitEnrich(reqParam, qp -> entityService.findById(id).stream(), (s, qp) -> { 
 			var opt = s.findFirst();
 			if(opt.isEmpty()) {
 				return ResponseEntity.notFound().build();
 			}
-			return applyFilter(opt.get(), qp);
+			return applyFilter(opt.get(), qp, maxVersion);
 		});
 	}
 

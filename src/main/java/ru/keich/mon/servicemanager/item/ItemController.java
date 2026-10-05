@@ -80,6 +80,7 @@ public class ItemController extends EntityController<Item> {
 	@GetMapping(value = "/item/{id}/children", produces = "application/json")
 	@CrossOrigin(origins = "*")
 	ResponseEntity<String> findChildrenById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
+		var maxVersion = itemService.getMaxVersion();
 		var opt = itemService.findById(id);
 		if(opt.isEmpty()) {
 			return ResponseEntity.notFound().build();
@@ -89,12 +90,13 @@ public class ItemController extends EntityController<Item> {
 			if(chindrenIds.size() == 0) return Stream.empty();
 			if(!qp.isHasPredicates() && !qp.isHasSearch()) return itemService.findByIds(chindrenIds).stream().filter(Item::isNotDeleted);
 			return itemService.find(qp, chindrenIds).filter(Item::isNotDeleted);
-		}, (s, qp) -> applyFilter(s.toList(), qp));
+		}, (s, qp) -> applyFilter(s.toList(), qp, maxVersion));
 	}
 
 	@GetMapping(value = "/item/{id}/parents", produces = "application/json")
 	@CrossOrigin(origins = "*")
 	ResponseEntity<String> findParentsById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
+		var maxVersion = itemService.getMaxVersion();
 		var opt = itemService.findById(id);
 		if(opt.isEmpty()) {
 			return ResponseEntity.notFound().build();
@@ -104,7 +106,7 @@ public class ItemController extends EntityController<Item> {
 			if(parentIds.size() == 0) return Stream.empty();
 			if(!qp.isHasPredicates() && !qp.isHasSearch()) return itemService.findByIds(parentIds).stream().filter(Item::isNotDeleted);
 			return itemService.find(qp, parentIds).filter(Item::isNotDeleted);
-		}, (s, qp) -> applyFilter(s.toList(), qp));
+		}, (s, qp) -> applyFilter(s.toList(), qp, maxVersion));
 	}
 
 	@Override
@@ -117,13 +119,14 @@ public class ItemController extends EntityController<Item> {
 	@GetMapping(value = "/item/{id}/events", produces = "application/json")
 	@CrossOrigin(origins = "*")
 	public ResponseEntity<String> findAllEventsById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
+		var maxVersion = itemService.getMaxVersion();
 		return eventService.sortAndLimitEnrich(reqParam, qp -> { 
 			var eventIds = itemService.findAllEventIdsById(id);
 			if(eventIds.size() == 0) return Stream.empty();
 			if(!qp.isHasPredicates() && !qp.isHasSearch()) return eventService.findByIds(eventIds).stream().filter(Event::isNotDeleted);
 			return eventService.find(qp, eventIds).filter(Event::isNotDeleted);
 		}, (s, qp) -> {
-			return applyFilter(s.toList(), qp);
+			return applyFilter(s.toList(), qp, maxVersion);
 		});
 	}
 
@@ -131,11 +134,12 @@ public class ItemController extends EntityController<Item> {
 	@CrossOrigin(origins = "*")
 	// TODO rename children/tree
 	public ResponseEntity<String> getTree(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
+		var maxVersion = itemService.getMaxVersion();
 		return itemService.sortAndLimitEnrich(reqParam, qp -> itemService.findById(id).stream(), (s, qp) -> {
 			qp.addPropertyIfNotEmpty(QUERY_CHILDREN);
 			return s.findFirst()
 					.map(parent -> setChildren(parent, new HashSet<String>()))
-					.map(parent -> applyFilter(parent, qp))
+					.map(parent -> applyFilter(parent, qp, maxVersion))
 					.orElse(ResponseEntity.notFound().build());
 		});
 	}
@@ -159,11 +163,12 @@ public class ItemController extends EntityController<Item> {
 	@GetMapping(value = "/item/{id}/parents/tree", produces = "application/json")
 	@CrossOrigin(origins = "*")
 	ResponseEntity<String> findParentsTreeById(@PathVariable String id, @RequestParam MultiValueMap<String, String> reqParam) {
+		var maxVersion = itemService.getMaxVersion();
 		return itemService.sortAndLimitEnrich(reqParam, qp -> itemService.findById(id).stream(), (s, qp) -> {
 			qp.addPropertyIfNotEmpty(QUERY_PARENTS);
 			return s.findFirst()
 					.map(parent -> setParents(parent, new HashSet<String>()))
-					.map(parent -> applyFilter(parent, qp))
+					.map(parent -> applyFilter(parent, qp, maxVersion))
 					.orElse(ResponseEntity.notFound().build());
 		});
 	}
