@@ -1,5 +1,7 @@
 package ru.keich.mon.servicemanager.replication;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLException;
@@ -41,16 +43,21 @@ import ru.keich.mon.servicemanager.item.ItemService;
 @Log
 @ConditionalOnProperty(name = "replication.neighbor")
 public class ReplicationService {
-
-	final private EventReplication eventReplication;
-	final private ItemReplication itemReplication;
+	
+	final private List<Runnable> tasks;
 
 	public ReplicationService(EventService eventService, ItemService itemService,
 			@Value("${replication.nodename}") String nodeName,
-			@Value("${replication.neighbor}") String replicationNeighbor) throws SSLException, IllegalArgumentException, IllegalAccessException, NoSuchFieldException {
-		var webClient = getWebClient(replicationNeighbor);
-		eventReplication = new EventReplication(webClient, nodeName, eventService::addOrUpdate);
-		itemReplication = new ItemReplication(webClient, nodeName, itemService::addOrUpdate);
+			@Value("${replication.neighbor}#{T(java.util.Collections).emptyList()}") List<String> replicationNeighbor)
+			throws SSLException, IllegalArgumentException, IllegalAccessException, NoSuchFieldException {
+		tasks = new ArrayList<Runnable>();
+		for (var neighbor : replicationNeighbor) {
+			log.info("Enable replication from " + neighbor);
+			var webClient = getWebClient(neighbor);
+			var eventReplication = new EventReplication(webClient, nodeName, eventService::addOrUpdate);
+			var itemReplication = new ItemReplication(webClient, nodeName, itemService::addOrUpdate);
+			tasks.add(() -> itemReplication.doReplication(() -> eventReplication.doReplication()));
+		}
 	}
 
 	private WebClient getWebClient(String url) throws SSLException {
@@ -67,7 +74,9 @@ public class ReplicationService {
 	//TODO to params
 	@Scheduled(fixedRate = 5, timeUnit = TimeUnit.SECONDS)
 	public void replicationScheduled() {
-		itemReplication.doReplication(() -> eventReplication.doReplication());
+		for (var task : tasks) {
+			task.run();
+		}
 	}
 
 }
