@@ -10,8 +10,8 @@ import ru.keich.mon.servicemanager.entity.EntityReplication;
 @Log
 public class EventReplication extends EntityReplication<Event> { 
 
-	public EventReplication(WebClient webClient, String nodeName, Consumer<Event> consumer) throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException {
-		super(webClient, nodeName, "/api/v1/event", Event.class, consumer, log);
+	public EventReplication(WebClient webClient, String nodeName, String neighborName, Consumer<Event> consumer) throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException {
+		super(webClient, nodeName, neighborName, "/api/v1/event", Event.class, consumer, log);
 	}
 
 }

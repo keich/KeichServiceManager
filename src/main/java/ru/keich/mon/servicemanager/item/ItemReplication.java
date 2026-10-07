@@ -10,8 +10,8 @@ import ru.keich.mon.servicemanager.entity.EntityReplication;
 @Log
 public class ItemReplication extends EntityReplication<Item> {
 
-	public ItemReplication(WebClient webClient, String nodeName, Consumer<Item> consumer) throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException {
-		super(webClient, nodeName, "/api/v1/item", Item.class, consumer, log);
+	public ItemReplication(WebClient webClient, String nodeName, String neighborName, Consumer<Item> consumer) throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException {
+		super(webClient, nodeName, neighborName, "/api/v1/item", Item.class, consumer, log);
 	}
 
 }

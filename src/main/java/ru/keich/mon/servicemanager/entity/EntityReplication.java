@@ -38,15 +38,18 @@ public class EntityReplication<T extends Entity> {
 	private final WebClient webClient;
 	private final Logger log;
 
+	private String neighborName = "";
+
 	private final EntityReplicationState state = new EntityReplicationState();
 	
-	public EntityReplication(WebClient webClient, String nodeName, String path, Class<T> elementClass, Consumer<T> consumer, Logger log) throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException {
+	public EntityReplication(WebClient webClient, String nodeName, String neighborName, String path, Class<T> elementClass, Consumer<T> consumer, Logger log) throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException {
 		this.webClient = webClient;
 		this.nodeName = nodeName;
 		this.path = path;
 		this.elementClass = elementClass;
 		this.consumer = consumer;
 		this.log = log;	
+		this.neighborName = neighborName;
 	}
 
 	private URI getUri(UriBuilder uriBuilder) {
@@ -65,12 +68,14 @@ public class EntityReplication<T extends Entity> {
 	private Flux<T> getEntities(ClientResponse response) {
 		var startTime = response.headers().header(AddResponseHeaderFilter.HEADER_START_TIME).stream()
 				.findFirst().orElse("");
+		neighborName = response.headers().header(AddResponseHeaderFilter.HEADER_NODE_NAME).stream()
+				.findFirst().orElse(neighborName);
 		if (state.isFirstRun()) {
 			state.setNeighborStartTime(startTime);
 		} else {
 			if (!state.getNeighborStartTime().equals(startTime)) {
 				var exception = new ChangedNeighborStartTimeException(
-						"NeighborStartTime is changed from " + state.getNeighborStartTime() + " to " + startTime);
+						neighborName + " - NeighborStartTime is changed from " + state.getNeighborStartTime() + " to " + startTime);
 				state.setFirstRunTrue();
 				return Flux.error(exception);
 			}
@@ -83,7 +88,7 @@ public class EntityReplication<T extends Entity> {
 
 	public void doReplication(Runnable onFinally) {	
 		if (state.isActive()) {
-			log.info("Aactive.   State [ " + state.toString() + " ]");
+			log.info(neighborName + " - Aactive.   State [ " + state.toString() + " ]");
 			return;
 		}
 
@@ -95,11 +100,11 @@ public class EntityReplication<T extends Entity> {
 				.exchangeToFlux(this::getEntities)
 				.doFirst(() -> {
 					state.setActiveTrue();
-					log.info("Start.     State [ " + state.toString() + " ]");
+					log.info(neighborName + " - Start.     State [ " + state.toString() + " ]");
 				})
 				.doOnComplete(() -> {
 					state.setFirstRunFalse();
-					log.info("Completed. State [ " + state.toString() + " ]");
+					log.info(neighborName + " - Completed. State [ " + state.toString() + " ]");
 				})
 				.doFinally(s -> {
 					state.setActiveFalse();

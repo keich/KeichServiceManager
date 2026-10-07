@@ -54,8 +54,8 @@ public class ReplicationService {
 		for (var neighbor : replicationNeighbor) {
 			log.info("Enable replication from " + neighbor);
 			var webClient = getWebClient(neighbor);
-			var eventReplication = new EventReplication(webClient, nodeName, eventService::addOrUpdate);
-			var itemReplication = new ItemReplication(webClient, nodeName, itemService::addOrUpdate);
+			var eventReplication = new EventReplication(webClient, nodeName, neighbor, eventService::addOrUpdate);
+			var itemReplication = new ItemReplication(webClient, nodeName, neighbor, itemService::addOrUpdate);
 			tasks.add(() -> itemReplication.doReplication(() -> eventReplication.doReplication()));
 		}
 	}
