@@ -83,9 +83,6 @@ public class EntityReplication<T extends Entity> {
 			log.info(state.getNeighborName() + " - Aactive.   State [ " + state.toString() + " ]");
 			return;
 		}
-
-		state.reset();
-
 		webClient.get()
 				.uri(b -> getUri(b))
 				.accept(MediaType.APPLICATION_JSON)
@@ -96,10 +93,10 @@ public class EntityReplication<T extends Entity> {
 				})
 				.doOnComplete(() -> {
 					log.info(state.getNeighborName() + " - Completed. State [ " + state.toString() + " ]");
+					onFinally.run();
 				})
 				.doFinally(s -> {
 					state.setActiveFalse();
-					onFinally.run();
 				})
 				.doOnNext(entity -> {
 					state.incrementCounters(entity.getDeletedOn());

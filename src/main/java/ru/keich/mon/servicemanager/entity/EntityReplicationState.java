@@ -64,6 +64,7 @@ public class EntityReplicationState {
 	public void setActiveTrue() {
 		this.active = true;
 		startTime = Instant.now();
+		reset();
 	}
 
 	public void setActiveFalse() {
