@@ -1,15 +1,15 @@
 package ru.keich.mon.servicemanager.replication;
 
-import java.util.ArrayList;
+import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLException;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.scheduling.support.PeriodicTrigger;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -43,20 +43,21 @@ import ru.keich.mon.servicemanager.item.ItemService;
 @Log
 @ConditionalOnProperty(name = "replication.neighbor")
 public class ReplicationService {
-	
-	final private List<Runnable> tasks;
 
 	public ReplicationService(EventService eventService, ItemService itemService,
 			@Value("${replication.nodename}") String nodeName,
-			@Value("${replication.neighbor}#{T(java.util.Collections).emptyList()}") List<String> replicationNeighbor)
+			@Value("${replication.neighbor}#{T(java.util.Collections).emptyList()}") List<String> replicationNeighbor,
+			ThreadPoolTaskScheduler threadPoolTaskScheduler)
 			throws SSLException, IllegalArgumentException, IllegalAccessException, NoSuchFieldException {
-		tasks = new ArrayList<Runnable>();
 		for (var neighbor : replicationNeighbor) {
 			log.info("Enable replication from " + neighbor);
 			var webClient = getWebClient(neighbor);
 			var eventReplication = new EventReplication(webClient, nodeName, neighbor, eventService::addOrUpdate);
 			var itemReplication = new ItemReplication(webClient, nodeName, neighbor, itemService::addOrUpdate);
-			tasks.add(() -> itemReplication.doReplication(() -> eventReplication.doReplication()));
+			var trigger = new PeriodicTrigger(Duration.ofSeconds(5));
+			threadPoolTaskScheduler.schedule(() -> {
+				itemReplication.doReplication(() -> eventReplication.doReplication());
+			}, trigger);
 		}
 	}
 
@@ -69,14 +70,6 @@ public class ReplicationService {
 				.builder().baseUrl(url)
 				.clientConnector(new ReactorClientHttpConnector(httpClient))
 				.exchangeStrategies(strategies).build();
-	}
-	
-	//TODO to params
-	@Scheduled(fixedRate = 5, timeUnit = TimeUnit.SECONDS)
-	public void replicationScheduled() {
-		for (var task : tasks) {
-			task.run();
-		}
 	}
 
 }
