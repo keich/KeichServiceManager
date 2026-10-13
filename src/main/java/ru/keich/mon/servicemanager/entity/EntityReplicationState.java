@@ -25,6 +25,19 @@ public class EntityReplicationState {
 	private Long added = 0L;
 	private Long deleted = 0L;
 	private Instant startTime = Instant.now();
+	private String neighborName;
+
+	public EntityReplicationState(String neighborName) {
+		this.neighborName = neighborName;
+	}
+
+	public String getNeighborName() {
+		return neighborName;
+	}
+
+	public void setNeighborName(String neighborName) {
+		this.neighborName = neighborName;
+	}
 
 	public void setNeighborStartTime(String time) {
 		neighborStartTime = time;
@@ -61,8 +74,8 @@ public class EntityReplicationState {
 		return maxVersion;
 	}
 
-	public void setMaxVersion(Long maxVersion) {
-		this.maxVersion = maxVersion;
+	public void setMaxVersion(String str) {
+		this.maxVersion = Long.valueOf(str);
 	}
 
 	public Long getAdded() {

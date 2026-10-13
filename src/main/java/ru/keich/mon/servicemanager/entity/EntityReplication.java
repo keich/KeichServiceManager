@@ -38,9 +38,7 @@ public class EntityReplication<T extends Entity> {
 	private final WebClient webClient;
 	private final Logger log;
 
-	private String neighborName = "";
-
-	private final EntityReplicationState state = new EntityReplicationState();
+	private final EntityReplicationState state;
 	
 	public EntityReplication(WebClient webClient, String nodeName, String neighborName, String path, Class<T> elementClass, Consumer<T> consumer, Logger log) throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException {
 		this.webClient = webClient;
@@ -49,16 +47,12 @@ public class EntityReplication<T extends Entity> {
 		this.elementClass = elementClass;
 		this.consumer = consumer;
 		this.log = log;	
-		this.neighborName = neighborName;
+		state = new EntityReplicationState(neighborName);
 	}
 
 	private URI getUri(UriBuilder uriBuilder) {
-		uriBuilder.path(path);
-		if(state.isFirstRun()) {
-			return uriBuilder.queryParam(Entity.FIELD_VERSION, "gt:0").build();
-		}
-		return uriBuilder.queryParam(Entity.FIELD_VERSION, "gt:" + state.getMaxVersion())
-		.queryParam(Entity.FIELD_FROMHISTORY, "ni:" + nodeName).build();
+		return uriBuilder.path(path).queryParam(Entity.FIELD_VERSION, "gt:" + state.getMaxVersion())
+				.queryParam(Entity.FIELD_FROMHISTORY, "ni:" + nodeName).build();
 	}
 
 	public void doReplication() {
@@ -68,27 +62,25 @@ public class EntityReplication<T extends Entity> {
 	private Flux<T> getEntities(ClientResponse response) {
 		var startTime = response.headers().header(AddResponseHeaderFilter.HEADER_START_TIME).stream()
 				.findFirst().orElse("");
-		neighborName = response.headers().header(AddResponseHeaderFilter.HEADER_NODE_NAME).stream()
-				.findFirst().orElse(neighborName);
+		response.headers().header(AddResponseHeaderFilter.HEADER_NODE_NAME).stream()
+				.findFirst().ifPresent(state::setNeighborName);
 		if (state.isFirstRun()) {
 			state.setNeighborStartTime(startTime);
 		} else {
 			if (!state.getNeighborStartTime().equals(startTime)) {
 				var exception = new ChangedNeighborStartTimeException(
-						neighborName + " - NeighborStartTime is changed from " + state.getNeighborStartTime() + " to " + startTime);
+						state.getNeighborName() + " - NeighborStartTime is changed from " + state.getNeighborStartTime() + " to " + startTime);
 				state.firstRun();
 				return Flux.error(exception);
 			}
 		}
-		var maxVersion = Long.valueOf(response.headers().header(EntityController.HEADER_MAXVERSION).stream()
-				.findFirst().orElse("0"));
-		state.setMaxVersion(maxVersion);
+		response.headers().header(EntityController.HEADER_MAXVERSION).stream().findFirst().ifPresent(state::setMaxVersion);
 		return response.bodyToFlux(elementClass);
 	}
 
 	public void doReplication(Runnable onFinally) {	
 		if (state.isActive()) {
-			log.info(neighborName + " - Aactive.   State [ " + state.toString() + " ]");
+			log.info(state.getNeighborName() + " - Aactive.   State [ " + state.toString() + " ]");
 			return;
 		}
 
@@ -100,10 +92,10 @@ public class EntityReplication<T extends Entity> {
 				.exchangeToFlux(this::getEntities)
 				.doFirst(() -> {
 					state.setActiveTrue();
-					log.info(neighborName + " - Start.     State [ " + state.toString() + " ]");
+					log.info(state.getNeighborName() + " - Start.     State [ " + state.toString() + " ]");
 				})
 				.doOnComplete(() -> {
-					log.info(neighborName + " - Completed. State [ " + state.toString() + " ]");
+					log.info(state.getNeighborName() + " - Completed. State [ " + state.toString() + " ]");
 				})
 				.doFinally(s -> {
 					state.setActiveFalse();
