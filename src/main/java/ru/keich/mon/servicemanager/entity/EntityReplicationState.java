@@ -25,22 +25,21 @@ public class EntityReplicationState {
 	private Long added = 0L;
 	private Long deleted = 0L;
 	private Instant startTime = Instant.now();
-	private Instant endTime = Instant.now();
-	
+
 	public void setNeighborStartTime(String time) {
 		neighborStartTime = time;
 	}
-	
+
 	public String getNeighborStartTime() {
 		return neighborStartTime;
 	}
-	
+
 	public void firstRun() {
 		neighborStartTime = "";
 		maxVersion = 0L;
 		reset();
 	}
-	
+
 	public boolean isFirstRun() {
 		return maxVersion == 0L;
 	}
@@ -56,27 +55,26 @@ public class EntityReplicationState {
 
 	public void setActiveFalse() {
 		this.active = false;
-		endTime = Instant.now();
 	}
-	
+
 	public Long getMaxVersion() {
 		return maxVersion;
 	}
-	
+
 	public void setMaxVersion(Long maxVersion) {
 		this.maxVersion = maxVersion;
 	}
-	
+
 	public Long getAdded() {
 		return added;
 	}
-	
+
 	public Long getDeleted() {
 		return deleted;
 	}
-	
+
 	public void incrementCounters(Instant deletedOn) {
-		if(deletedOn == null) {
+		if (deletedOn == null) {
 			added++;
 		} else {
 			deleted++;
@@ -87,17 +85,11 @@ public class EntityReplicationState {
 		added = 0L;
 		deleted = 0L;
 	}
-	
+
 	@Override
 	public String toString() {
-		final Instant time;
-		if(active) {
-			time = Instant.now();
-		} else {
-			time = endTime;
-		}
-		return " maxVersion: " + maxVersion + " added: " + added + " deleted: "
-				+ deleted + " time spent " + (time.toEpochMilli() - startTime.toEpochMilli()) + " milliseconds";
+		return " maxVersion: " + maxVersion + " added: " + added + " deleted: " + deleted + " time spent "
+				+ (Instant.now().toEpochMilli() - startTime.toEpochMilli()) + " milliseconds";
 	}
-	
+
 }
