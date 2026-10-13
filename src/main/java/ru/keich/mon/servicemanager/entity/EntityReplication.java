@@ -76,7 +76,7 @@ public class EntityReplication<T extends Entity> {
 			if (!state.getNeighborStartTime().equals(startTime)) {
 				var exception = new ChangedNeighborStartTimeException(
 						neighborName + " - NeighborStartTime is changed from " + state.getNeighborStartTime() + " to " + startTime);
-				state.setFirstRunTrue();
+				state.firstRun();
 				return Flux.error(exception);
 			}
 		}
@@ -103,7 +103,6 @@ public class EntityReplication<T extends Entity> {
 					log.info(neighborName + " - Start.     State [ " + state.toString() + " ]");
 				})
 				.doOnComplete(() -> {
-					state.setFirstRunFalse();
 					log.info(neighborName + " - Completed. State [ " + state.toString() + " ]");
 				})
 				.doFinally(s -> {

@@ -20,17 +20,12 @@ import java.time.Instant;
 
 public class EntityReplicationState {
 	private volatile boolean active = false;
-	private volatile boolean first = true;
 	private String neighborStartTime = "";
 	private Long maxVersion = 0L;
 	private Long added = 0L;
 	private Long deleted = 0L;
 	private Instant startTime = Instant.now();
 	private Instant endTime = Instant.now();
-	
-	public EntityReplicationState() {
-		setFirstRunTrue();
-	}
 	
 	public void setNeighborStartTime(String time) {
 		neighborStartTime = time;
@@ -40,19 +35,14 @@ public class EntityReplicationState {
 		return neighborStartTime;
 	}
 	
-	public void setFirstRunTrue() {
-		first = true;
+	public void firstRun() {
 		neighborStartTime = "";
 		maxVersion = 0L;
 		reset();
 	}
 	
-	public void setFirstRunFalse() {
-		first = false;
-	}
-	
 	public boolean isFirstRun() {
-		return first;
+		return maxVersion == 0L;
 	}
 
 	public boolean isActive() {
