@@ -237,12 +237,14 @@ public abstract class EntityService<T extends Entity> {
 				.reduce((result, el) -> { 
 					result.retainAll(el);
 					return result;
+				}).map(ids -> {
+					if(filterbyId.size() > 0) {
+						ids.retainAll(filterbyId);
+					}
+					return ids;
 				});
-		var s = opt.orElse(Collections.emptySet()).stream();
-		if(filterbyId.size() > 0) {
-			s = s.filter(id -> filterbyId.contains(id));
-		}
-		return	s.map(this::findById)
+		return opt.orElse(Collections.emptySet()).stream()
+				.map(this::findById)
 				.filter(Optional::isPresent)
 				.map(Optional::get);
 	}
@@ -250,11 +252,12 @@ public abstract class EntityService<T extends Entity> {
 	protected abstract EntitySearchResult<String> getEntitySearchResult(String search);
 
 	public Stream<T> findBySearch(String search, Set<String> filterbyId) {
-		var s = getEntitySearchResult(search).getResult().stream();
+		var s = getEntitySearchResult(search).getResult();
 		if(filterbyId.size() > 0) {
-			s = s.filter(id -> filterbyId.contains(id));
+			s.retainAll(filterbyId);
 		}
-		return s.map(this::findById)
+		return s.stream()
+				.map(this::findById)
 				.filter(Optional::isPresent)
 				.map(Optional::get);
 	}
