@@ -37,7 +37,8 @@ public class QueueThreadReader {
 			while (true) {
 				try {
 					var info = queue.poll(POLL_SECONDS, TimeUnit.SECONDS);
-					if (info != null) Thread.startVirtualThread(() -> consumer.accept(info));
+//					if (info != null) Thread.startVirtualThread(() -> consumer.accept(info));
+					if (info != null) consumer.accept(info);
 				} catch (Exception v) {
 					v.printStackTrace();
 				}
