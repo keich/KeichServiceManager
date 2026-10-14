@@ -21,7 +21,7 @@ import java.util.function.Consumer;
  * limitations under the License.
  */
 
-public class QueueThreadReader<K> {
+public class QueueThreadReader {
 	
 	static final public String METRIC_NAME_QUEUE = "queueThreadReader_";
 	static final public String METRIC_NAME_OPERATION = "operation";
@@ -29,9 +29,9 @@ public class QueueThreadReader<K> {
 	static final public String METRIC_NAME_ADDED = "added";
 	static final public String METRIC_NAME_REMOVED = "removed";
 	static final Integer POLL_SECONDS = 30;
-	private BlockingQueue<K> queue = new LinkedBlockingDeque<K>();
+	private BlockingQueue<QueueInfo> queue = new LinkedBlockingDeque<QueueInfo>();
 
-	public QueueThreadReader(Consumer<K> consumer) {
+	public QueueThreadReader(Consumer<QueueInfo> consumer) {
 		super();
 		Thread.startVirtualThread(() -> {
 			while (true) {
@@ -45,7 +45,7 @@ public class QueueThreadReader<K> {
 		});
 	}
 
-	public void add(K value) {
+	public void add(QueueInfo value) {
 		queue.add(value);
 	}
 

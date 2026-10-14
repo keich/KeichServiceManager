@@ -113,7 +113,7 @@ public class EventService extends EntityService<Event>{
 			if(event.getSourceType() != null) {
 				builder.sourceType(event.getSourceType());
 			}
-			entityChangedQueue.add(new QueueInfo<String>(event.getId(), QueueInfo.QueueInfoType.UPDATE));
+			entityChangedQueue.add(new QueueInfo(event.getId(), QueueInfo.QueueInfoType.UPDATE));
 			return builder
 					.source(event.getSource())
 					.sourceKey(event.getSourceKey())
@@ -131,7 +131,7 @@ public class EventService extends EntityService<Event>{
 			if (oldEvent.isDeleted()) {
 				return oldEvent;
 			}
-			entityChangedQueue.add(new QueueInfo<String>(eventId, QueueInfo.QueueInfoType.UPDATE));
+			entityChangedQueue.add(new QueueInfo(eventId, QueueInfo.QueueInfoType.UPDATE));
 			return new Event.Builder(oldEvent)
 					.version(getNextVersion())
 					.calculated(true)
@@ -142,7 +142,7 @@ public class EventService extends EntityService<Event>{
 	}
 
 	@Override
-	protected void queueRead(QueueInfo<String> info) {
+	protected void queueRead(QueueInfo info) {
 		switch (info.getType()) {
 		case UPDATE:
 			entityCache.computeIfPresent(info.getId(), (k, event) -> {

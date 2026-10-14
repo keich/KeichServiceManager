@@ -137,7 +137,7 @@ public class ItemService extends EntityService<Item> {
 			if(item.getSourceType()  != null) {
 				builder.sourceType(item.getSourceType());
 			}
-			entityChangedQueue.add(new QueueInfo<String>(item.getId(), QueueInfo.QueueInfoType.UPDATE));
+			entityChangedQueue.add(new QueueInfo(item.getId(), QueueInfo.QueueInfoType.UPDATE));
 			return builder
 					.version(getNextVersion())
 					.source(item.getSource())
@@ -153,7 +153,7 @@ public class ItemService extends EntityService<Item> {
 			if (item.isDeleted()) {
 				return item;
 			}
-			entityChangedQueue.add(new QueueInfo<String>(itemId, QueueInfo.QueueInfoType.UPDATE));
+			entityChangedQueue.add(new QueueInfo(itemId, QueueInfo.QueueInfoType.UPDATE));
 			return new Item.Builder(item)
 					.version(getNextVersion())
 					.fromHistory(Collections.singleton(nodeName))
@@ -163,7 +163,7 @@ public class ItemService extends EntityService<Item> {
 	}
 
 	@Override
-	protected void queueRead(QueueInfo<String> info) {
+	protected void queueRead(QueueInfo info) {
 		switch(info.getType()) {
 		case UPDATE:
 			entityCache.computeIfPresent(info.getId(), (id, item) -> {
@@ -172,7 +172,7 @@ public class ItemService extends EntityService<Item> {
 					newStatus = calculateStatus(item);
 				}
 				if(item.getStatus() != newStatus) {
-					entityChangedQueue.add(new QueueInfo<String>(id, QueueInfo.QueueInfoType.UPDATED));
+					entityChangedQueue.add(new QueueInfo(id, QueueInfo.QueueInfoType.UPDATED));
 					return new Item.Builder(item)
 							.version(getNextVersion())
 							.status(newStatus)
@@ -184,7 +184,7 @@ public class ItemService extends EntityService<Item> {
 		case UPDATED:
 			entityCache.computeIfPresent(info.getId(), (id, item) -> {
 				findParentIdsById(info.getId())
-						.forEach(parentId -> entityChangedQueue.add(new QueueInfo<String>(parentId, QueueInfo.QueueInfoType.UPDATE)));
+						.forEach(parentId -> entityChangedQueue.add(new QueueInfo(parentId, QueueInfo.QueueInfoType.UPDATE)));
 				return item;
 			});
 			break;
@@ -195,7 +195,7 @@ public class ItemService extends EntityService<Item> {
 
 	public void itemUpdateEventsStatus(String itemId, Consumer<Map<String, BaseStatus>> s) {
 		entityCache.computeIfPresent(itemId, (k, item) -> {
-			entityChangedQueue.add(new QueueInfo<String>(itemId, QueueInfo.QueueInfoType.UPDATE));
+			entityChangedQueue.add(new QueueInfo(itemId, QueueInfo.QueueInfoType.UPDATE));
 			return new Item.Builder(item)
 					.version(getNextVersion())
 					.eventsStatusUpdate(s)
@@ -368,7 +368,7 @@ public class ItemService extends EntityService<Item> {
 		var ended = entityCache.keySetIndexGetBefore(Item.FIELD_MAINTENANCE_ABSOLUTE_ENDSON, Instant.now());
 		started.addAll(ended);
 		started.forEach(itemId -> {
-			entityChangedQueue.add(new QueueInfo<String>(itemId, QueueInfo.QueueInfoType.UPDATE));
+			entityChangedQueue.add(new QueueInfo(itemId, QueueInfo.QueueInfoType.UPDATE));
 		});
 	}
 

@@ -70,7 +70,7 @@ public abstract class EntityService<T extends Entity> {
 	private AtomicLong incrementVersion = new AtomicLong(VERSION_MIN + 1);
 
 	final protected IndexedHashMap<String, T> entityCache;
-	final protected QueueThreadReader<QueueInfo<String>> entityChangedQueue;
+	final protected QueueThreadReader entityChangedQueue;
 	final protected Map<String, Function<T, Set<Object>>> queryValueMapper = new HashMap<>();
 
 	final public String nodeName;
@@ -87,7 +87,7 @@ public abstract class EntityService<T extends Entity> {
 		this.registry = registry;
 		var serviceName = this.getClass().getSimpleName();
 		entityCache = new IndexedHashMap<>();
-		entityChangedQueue = new QueueThreadReader<QueueInfo<String>>(this::queueRead);
+		entityChangedQueue = new QueueThreadReader(this::queueRead);
 
 		entityCache.addIndexLongUniq(Entity.FIELD_VERSION, Entity::getVersionForIndex);
 		entityCache.addIndexEqual(Entity.FIELD_SOURCE, Entity::getSourceForIndex);
@@ -132,7 +132,7 @@ public abstract class EntityService<T extends Entity> {
 		return incrementVersion.get();
 	}
 
-	protected abstract void queueRead(QueueInfo<String> info);	
+	protected abstract void queueRead(QueueInfo info);	
 
 	public abstract void addOrUpdate(T entity);
 
