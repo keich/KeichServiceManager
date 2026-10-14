@@ -169,7 +169,16 @@ public abstract class EntityService<T extends Entity> {
 
 	@Scheduled(fixedRateString = "${entity.delete.fixedrate:60}", timeUnit = TimeUnit.SECONDS)
 	public void deleteOldScheduled() {
-		entityCache.keySetIndexGetBefore(Entity.FIELD_DELETEDON, Instant.now().minusSeconds(seconds)).forEach(entityCache::remove);
+		var threshold = Instant.now().minusSeconds(seconds);
+		entityCache.keySetIndexGetBefore(Entity.FIELD_DELETEDON, threshold)
+				.forEach(id -> {
+					entityCache.computeIfPresent(id, (entityId, entity) -> {
+						if(entity.isDeleted() && threshold.isAfter(entity.getDeletedOn())) {
+							return null;
+						}
+						return entity;
+					});
+				});
 	}
 
 	public Comparator<T> getSortComparator(QuerySort sort) {
