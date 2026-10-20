@@ -8,6 +8,19 @@ import lombok.Getter;
 public class ReplicationStatus {
 
 	private final boolean enable;
-	private final boolean firstReplicationComplete;
+	private boolean firstReplicationComplete;
+
+	public void firstReplicationComplete() {
+		firstReplicationComplete = true;
+		synchronized (this) {
+			this.notifyAll();
+		}
+	}
+
+	public void waitFirstReplicationComplete() throws InterruptedException {
+		synchronized (this) {
+			this.wait();
+		}
+	}
 
 }

@@ -18,6 +18,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.java.Log;
 import reactor.netty.http.client.HttpClient;
 import ru.keich.mon.servicemanager.event.EventReplication;
@@ -46,7 +47,7 @@ import ru.keich.mon.servicemanager.item.ItemService;
 @ConditionalOnProperty(name = "replication.neighbor")
 public class ReplicationServiceImpl implements ReplicationService {
 
-	private ReplicationStatus status = new ReplicationStatus(true, false);
+	private final ReplicationStatus status = new ReplicationStatus(true, false);
 	private final Map<String, Boolean> neighborReplicationStatus = new HashMap<String, Boolean>();
 
 	public ReplicationServiceImpl(EventService eventService, ItemService itemService,
@@ -82,7 +83,7 @@ public class ReplicationServiceImpl implements ReplicationService {
 		if (!status.isFirstReplicationComplete()) {
 			neighborReplicationStatus.put(neighbor, true);
 			if (!neighborReplicationStatus.containsValue(false)) {
-				status = new ReplicationStatus(true, true);
+				status.firstReplicationComplete();
 			}
 		}
 	}
@@ -90,6 +91,12 @@ public class ReplicationServiceImpl implements ReplicationService {
 	@Override
 	public ReplicationStatus getStatus() {
 		return status;
+	}
+
+	@PostConstruct
+	public void init() throws InterruptedException {
+		log.info("Wait full first replication");
+		status.waitFirstReplicationComplete();
 	}
 
 }
