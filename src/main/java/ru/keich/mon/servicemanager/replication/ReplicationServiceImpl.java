@@ -81,10 +81,8 @@ public class ReplicationServiceImpl implements ReplicationService {
 	private void replicationComplete(String neighbor) {
 		if (!status.isFirstReplicationComplete()) {
 			neighborReplicationStatus.put(neighbor, true);
-			System.out.println("replicationComplete " + neighbor);
 			if (!neighborReplicationStatus.containsValue(false)) {
 				status = new ReplicationStatus(true, true);
-				System.out.println("replicationComplete final");
 			}
 		}
 	}
