@@ -1,6 +1,7 @@
 package ru.keich.mon.servicemanager.entity;
 
 import java.net.URI;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
@@ -51,8 +52,14 @@ public class EntityReplication<T extends Entity> {
 	}
 
 	private URI getUri(UriBuilder uriBuilder) {
-		return uriBuilder.path(path).queryParam(Entity.FIELD_VERSION, "gt:" + state.getMaxVersion())
-				.queryParam(Entity.FIELD_FROMHISTORY, "ni:" + nodeName).build();
+		var opt = Optional.empty();
+		if(state.getMaxVersion() > 0L) {
+			opt = Optional.of("ni:" + nodeName);
+		}
+		return uriBuilder.path(path)
+				.queryParam(Entity.FIELD_VERSION, "gt:" + state.getMaxVersion())
+				.queryParamIfPresent(Entity.FIELD_FROMHISTORY, opt)
+				.build();
 	}
 
 	public void doReplication() {
