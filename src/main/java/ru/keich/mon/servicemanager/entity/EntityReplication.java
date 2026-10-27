@@ -53,7 +53,7 @@ public class EntityReplication<T extends Entity> {
 
 	private URI getUri(UriBuilder uriBuilder) {
 		var opt = Optional.empty();
-		if(state.getMaxVersion() > 0L) {
+		if(!state.isFirstRun()) {
 			opt = Optional.of("ni:" + nodeName);
 		}
 		return uriBuilder.path(path)
@@ -67,21 +67,33 @@ public class EntityReplication<T extends Entity> {
 	}
 
 	private Flux<T> getEntities(ClientResponse response) {
-		var startTime = response.headers().header(AddResponseHeaderFilter.HEADER_START_TIME).stream()
-				.findFirst().orElse("");
-		response.headers().header(AddResponseHeaderFilter.HEADER_NODE_NAME).stream()
-				.findFirst().ifPresent(state::setNeighborName);
+		var startTime = response
+				.headers()
+				.header(AddResponseHeaderFilter.HEADER_START_TIME)
+				.stream()
+				.findFirst()
+				.orElse("");
+		response.headers().header(AddResponseHeaderFilter.HEADER_NODE_NAME)
+				.stream()
+				.findFirst()
+				.ifPresent(state::setNeighborName);
+		response.headers()
+				.header(EntityController.HEADER_MAXVERSION)
+				.stream()
+				.findFirst()
+				.map(Long::valueOf)
+				.ifPresent(state::setMaxVersion);
 		if (state.isFirstRun()) {
 			state.setNeighborStartTime(startTime);
 		} else {
 			if (!state.getNeighborStartTime().equals(startTime)) {
+				state.setNeighborStartTime(startTime);
+				state.setMaxVersion(0L);
 				var exception = new ChangedNeighborStartTimeException(
 						state.getNeighborName() + " - NeighborStartTime is changed from " + state.getNeighborStartTime() + " to " + startTime);
-				state.firstRun();
 				return Flux.error(exception);
 			}
 		}
-		response.headers().header(EntityController.HEADER_MAXVERSION).stream().findFirst().ifPresent(state::setMaxVersion);
 		return response.bodyToFlux(elementClass);
 	}
 
@@ -103,6 +115,7 @@ public class EntityReplication<T extends Entity> {
 					onFinally.run();
 				})
 				.doFinally(s -> {
+					state.setFirstRunFalse();
 					state.setActiveFalse();
 				})
 				.doOnNext(entity -> {

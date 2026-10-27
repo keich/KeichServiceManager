@@ -1,9 +1,9 @@
 package ru.keich.mon.servicemanager.replication;
 
 import java.time.Duration;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.net.ssl.SSLException;
 
@@ -48,7 +48,7 @@ import ru.keich.mon.servicemanager.item.ItemService;
 public class ReplicationServiceImpl implements ReplicationService {
 
 	private final ReplicationStatus status = new ReplicationStatus(true, false);
-	private final Map<String, Boolean> neighborReplicationStatus = new HashMap<String, Boolean>();
+	private final Map<String, Boolean> neighborReplicationStatus = new ConcurrentHashMap<String, Boolean>();
 
 	public ReplicationServiceImpl(EventService eventService, ItemService itemService,
 			@Value("${replication.nodename}") String nodeName,

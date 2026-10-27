@@ -20,6 +20,7 @@ import java.time.Instant;
 
 public class EntityReplicationState {
 	private volatile boolean active = false;
+	private boolean firstRun = true;
 	private String neighborStartTime = "";
 	private Long maxVersion = 0L;
 	private Long added = 0L;
@@ -47,14 +48,12 @@ public class EntityReplicationState {
 		return neighborStartTime;
 	}
 
-	public void firstRun() {
-		neighborStartTime = "";
-		maxVersion = 0L;
-		reset();
+	public boolean isFirstRun() {
+		return firstRun;
 	}
 
-	public boolean isFirstRun() {
-		return maxVersion == 0L;
+	public void setFirstRunFalse() {
+		this.firstRun = false;
 	}
 
 	public boolean isActive() {
@@ -64,7 +63,8 @@ public class EntityReplicationState {
 	public void setActiveTrue() {
 		this.active = true;
 		startTime = Instant.now();
-		reset();
+		added = 0L;
+		deleted = 0L;
 	}
 
 	public void setActiveFalse() {
@@ -75,8 +75,8 @@ public class EntityReplicationState {
 		return maxVersion;
 	}
 
-	public void setMaxVersion(String str) {
-		this.maxVersion = Long.valueOf(str);
+	public void setMaxVersion(Long version) {
+		this.maxVersion = version;
 	}
 
 	public Long getAdded() {
@@ -93,11 +93,6 @@ public class EntityReplicationState {
 		} else {
 			deleted++;
 		}
-	}
-
-	public void reset() {
-		added = 0L;
-		deleted = 0L;
 	}
 
 	@Override
