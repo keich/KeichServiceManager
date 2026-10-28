@@ -99,7 +99,7 @@ public class EntityReplication<T extends Entity> {
 
 	public void doReplication(Runnable onFinally) {	
 		if (state.isActive()) {
-			log.info(state.getNeighborName() + " - Aactive.   State [ " + state.toString() + " ]");
+			log.info(state.getNeighborName() + " - Active.   State [ " + state.toString() + " ]");
 			return;
 		}
 		webClient.get()
